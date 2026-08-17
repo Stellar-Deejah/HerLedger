@@ -26,18 +26,23 @@ export async function findAllActiveBusinessWallets(
   const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE;
 
   try {
-    const rows = await prisma.businessProfile.findMany({
-      where: { active: true },
-      select: { id: true, businessId: true, walletAddress: true },
-      orderBy: { id: "asc" },
-      take: pageSize + 1,
-      ...(options?.cursor
-        ? { cursor: { id: options.cursor }, skip: 1 }
-        : {}),
-    });
+    const rows: Array<{ id: string; businessId: string; walletAddress: string | null }> =
+      await prisma.businessProfile.findMany({
+        // A business with an unlinked wallet (see settings panel wallet
+        // unlink/re-link flow) has nothing for the sync job to watch on
+        // Stellar until it re-links, so it's excluded here rather than
+        // surfaced with a null walletAddress.
+        where: { active: true, walletAddress: { not: null } },
+        select: { id: true, businessId: true, walletAddress: true },
+        orderBy: { id: "asc" },
+        take: pageSize + 1,
+        ...(options?.cursor ? { cursor: { id: options.cursor }, skip: 1 } : {}),
+      });
 
     const hasMore = rows.length > pageSize;
-    const wallets = hasMore ? rows.slice(0, pageSize) : rows;
+    const page = hasMore ? rows.slice(0, pageSize) : rows;
+    // walletAddress is guaranteed non-null by the `not: null` filter above.
+    const wallets = page.map((row) => ({ ...row, walletAddress: row.walletAddress! }));
     const nextCursor = hasMore ? wallets[wallets.length - 1]!.id : null;
 
     return { wallets, nextCursor };
@@ -46,34 +51,22 @@ export async function findAllActiveBusinessWallets(
   }
 }
 
-export async function findBusinessByWallet(
-  prisma: PrismaClient,
-  walletAddress: string
-) {
+export async function findBusinessByWallet(prisma: PrismaClient, walletAddress: string) {
   try {
     return await prisma.businessProfile.findUnique({
       where: { walletAddress },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to find business by wallet ${walletAddress}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to find business by wallet ${walletAddress}`, cause);
   }
 }
 
-export async function findBusinessById(
-  prisma: PrismaClient,
-  businessId: string
-) {
+export async function findBusinessById(prisma: PrismaClient, businessId: string) {
   try {
     return await prisma.businessProfile.findUnique({
       where: { businessId },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to find business by id ${businessId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to find business by id ${businessId}`, cause);
   }
 }
