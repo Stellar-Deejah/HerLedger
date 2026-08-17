@@ -27,6 +27,8 @@ model User {
   sessions      Session[]
   accounts      Account[]
   businessProfile BusinessProfile?
+  notificationPreferences NotificationPreference[]
+  personalAccessTokens    PersonalAccessToken[]
 
   @@map("users")
 }
@@ -90,8 +92,14 @@ model BusinessProfile {
   userId        String   @unique
   /// On-chain business ID (hex-encoded BytesN<32>)
   businessId    String   @unique
-  /// Stellar address of the registered wallet
-  walletAddress String   @unique
+  /// Stellar address of the currently linked wallet. Nullable: a business
+  /// owner can unlink their wallet from the settings panel (blocked while
+  /// the business has an active dispute) and later re-link a wallet — the
+  /// same one or a different one — by signing an ownership challenge with
+  /// Freighter. This is the application's off-chain "current wallet"
+  /// record; it does not rewrite the immutable on-chain BusinessRegistry
+  /// association.
+  walletAddress String?  @unique
   displayName   String
   /// Hex-encoded metadata hash committed on-chain
   metadataHash  String
@@ -156,6 +164,52 @@ model Attestation {
   @@map("attestations")
 }
 
+// Infrastructure for a future notification system — one row per
+// (user, eventType), so each on-chain-triggered event a user cares about
+// (a new attestation, a dispute resolution, a business deactivation) can be
+// toggled independently per channel. Nothing sends notifications yet; this
+// is the data model a future dispatcher reads from.
+model NotificationPreference {
+  id        String                @id @default(cuid())
+  userId    String
+  eventType NotificationEventType
+  email     Boolean               @default(true)
+  inApp     Boolean               @default(true)
+  createdAt DateTime              @default(now()) @db.Timestamptz
+  updatedAt DateTime              @updatedAt @db.Timestamptz
+
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventType])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+// Long-lived API credential for read-only access to the indexer API
+// (Bearer scheme), so a business can let third-party tools (accounting
+// software, auditors) read its financial events without sharing its
+// session cookie. Only a SHA-256 (HMAC-peppered) hash of the token is ever
+// stored — see packages/config/src/tokens.ts. The plaintext value is
+// returned once, at creation time, and never again.
+model PersonalAccessToken {
+  id         String    @id @default(cuid())
+  userId     String
+  /// User-chosen label, e.g. "QuickBooks sync"
+  name       String
+  /// HMAC-SHA256(BETTER_AUTH_SECRET, token) hex digest — never the plaintext token
+  tokenHash  String    @unique
+  /// Non-secret display prefix (e.g. "hl_pat_ab12cd34") so a user can tell tokens apart in the UI
+  prefix     String
+  lastUsedAt DateTime? @db.Timestamptz
+  revokedAt  DateTime? @db.Timestamptz
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("personal_access_tokens")
+}
+
 model StellarTransaction {
   /// Stellar transaction hash (hex string)
   hash           String   @id
@@ -201,4 +255,10 @@ enum EventStatus {
 enum AttestationStatus {
   Active
   Revoked
+}
+
+enum NotificationEventType {
+  NewAttestation
+  DisputeResolution
+  BusinessDeactivation
 }
