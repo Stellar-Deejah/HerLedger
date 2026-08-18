@@ -473,6 +473,51 @@ pnpm db:migrate
 The indexer requires access to `DATABASE_URL` and all Stellar environment variables.
 It does **not** need `BETTER_AUTH_SECRET` or any `NEXT_PUBLIC_*` variables.
 
+#### Graceful shutdown
+
+When the container platform sends **SIGTERM** (rolling deploy, scale-down, or manual stop),
+the indexer follows this shutdown sequence:
+
+1. The `AbortController` signals the sync loop to stop scheduling new batches.
+2. If a `syncCycle()` is running (actively writing to the database), the shutdown handler
+   waits for it to complete — up to `SHUTDOWN_GRACE_MS` milliseconds (default **10\u202f000 ms**).
+   If the cycle finishes first, the process moves on immediately; if the grace period
+   expires first, the process proceeds and logs a warning.
+3. The Fastify HTTP server is closed, draining any open keep-alive connections.
+4. `prisma.$disconnect()` is called to flush the connection pool cleanly.
+5. The process exits with code `0`.
+
+**SIGINT** (Ctrl-C in development) runs the same sequence.
+
+Set the container stop timeout to at least `SHUTDOWN_GRACE_MS` plus a few seconds for HTTP
+drain time. On Render this is the **Graceful Shutdown Timeout** field; on Kubernetes it is
+`terminationGracePeriodSeconds`.
+
+```env
+# Tunable via environment variables (defaults shown):
+SHUTDOWN_GRACE_MS=10000        # ms to wait for an in-progress sync batch
+DB_CONNECT_MAX_RETRIES=5       # retry attempts before fatal exit on startup
+DB_CONNECT_RETRY_DELAY_MS=2000 # ms between connect attempts
+DB_STATEMENT_TIMEOUT_MS=10000  # PostgreSQL statement_timeout per query
+```
+
+#### Startup DB connection retry
+
+Before accepting HTTP requests or starting the sync job, the indexer calls
+`prisma.$connect()`. If the database is temporarily unreachable, it retries up to
+`DB_CONNECT_MAX_RETRIES` times (default **5**) with `DB_CONNECT_RETRY_DELAY_MS`
+back-off (default **2 s**) between attempts. If all retries are exhausted, the
+process exits with code `1`, which triggers an orchestrator restart. This integrates
+naturally with Render health checks and Kubernetes readiness probes.
+
+#### Prisma connection pool — singleton guard (Next.js)
+
+Next.js hot-module replacement in development re-executes every module on each file
+save. Without a guard, each reload creates a new `PrismaClient` and opens a new
+connection pool. `apps/web/lib/db.ts` stores the single instance on
+`globalThis.__prisma`, which survives HMR reloads. In production this guard is
+a no-op because module caching is sufficient for a long-lived process.
+
 ### Database Ã¢â‚¬â€ PostgreSQL
 
 - Provision PostgreSQL 16 in the same region as the indexer.

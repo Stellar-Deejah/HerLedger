@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
 import { auth } from "@/lib/auth/server";
+import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
-
-const prisma = new PrismaClient();
 
 const querySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
