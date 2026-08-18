@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { PrismaClient } from "@prisma/client";
 import { auth } from "@/lib/auth/server";
+import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
-
-const prisma = new PrismaClient();
 
 const bodySchema = z.object({
   businessId: z.string().length(64),
