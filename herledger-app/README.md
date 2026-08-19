@@ -761,9 +761,30 @@ The indexer is a long-running Node.js process that:
 
 ### Ledger checkpoint
 
-The indexer stores a `IndexerCheckpoint` record per stream (e.g. `"main"`).
-On restart it resumes from `lastLedger`. On first run it starts from ledger 0
-(fetching all available history for registered wallets).
+The indexer stores an `IndexerCheckpoint` record per `(stream, walletAddress)`.
+The stream-global checkpoint is keyed by the `"global"` sentinel; each business
+wallet additionally tracks its own last-processed ledger. On restart the
+indexer resumes each wallet from its own checkpoint, and a wallet whose
+checkpoint is already at the latest ledger is skipped without any Horizon call.
+
+### Concurrency and multi-replica deployment
+
+Wallets are processed with bounded in-process concurrency (`SYNC_CONCURRENCY`,
+default 5). We use a small async pool (`p-limit`) rather than worker threads:
+the sync bottleneck is the Horizon/RPC rate limit, not CPU, so worker threads
+would add coordination cost without raising throughput.
+
+To scale horizontally, run multiple indexer replicas against the same Postgres.
+Each replica claims a wallet before processing it by atomically writing
+`lockedBy` + `lockedUntil` to the wallet's `sync_jobs` row (a conditional
+UPDATE guarded by the lease). A replica that loses the claim skips the wallet,
+so two replicas never process the same wallet in the same sync window.
+
+| Env var              | Default        | Purpose                                      |
+| -------------------- | -------------- | -------------------------------------------- |
+| `SYNC_CONCURRENCY`   | `5`            | Wallets processed concurrently per replica   |
+| `SYNC_LEASE_MS`      | `60000`        | Wallet claim lease duration (ms)             |
+| `INDEXER_INSTANCE_ID`| `indexer-<pid>`| Unique replica identifier                    |
 
 ### Idempotency
 
@@ -1737,9 +1758,30 @@ The indexer is a long-running Node.js process that:
 
 ### Ledger checkpoint
 
-The indexer stores a `IndexerCheckpoint` record per stream (e.g. `"main"`).
-On restart it resumes from `lastLedger`. On first run it starts from ledger 0
-(fetching all available history for registered wallets).
+The indexer stores an `IndexerCheckpoint` record per `(stream, walletAddress)`.
+The stream-global checkpoint is keyed by the `"global"` sentinel; each business
+wallet additionally tracks its own last-processed ledger. On restart the
+indexer resumes each wallet from its own checkpoint, and a wallet whose
+checkpoint is already at the latest ledger is skipped without any Horizon call.
+
+### Concurrency and multi-replica deployment
+
+Wallets are processed with bounded in-process concurrency (`SYNC_CONCURRENCY`,
+default 5). We use a small async pool (`p-limit`) rather than worker threads:
+the sync bottleneck is the Horizon/RPC rate limit, not CPU, so worker threads
+would add coordination cost without raising throughput.
+
+To scale horizontally, run multiple indexer replicas against the same Postgres.
+Each replica claims a wallet before processing it by atomically writing
+`lockedBy` + `lockedUntil` to the wallet's `sync_jobs` row (a conditional
+UPDATE guarded by the lease). A replica that loses the claim skips the wallet,
+so two replicas never process the same wallet in the same sync window.
+
+| Env var              | Default        | Purpose                                      |
+| -------------------- | -------------- | -------------------------------------------- |
+| `SYNC_CONCURRENCY`   | `5`            | Wallets processed concurrently per replica   |
+| `SYNC_LEASE_MS`      | `60000`        | Wallet claim lease duration (ms)             |
+| `INDEXER_INSTANCE_ID`| `indexer-<pid>`| Unique replica identifier                    |
 
 ### Idempotency
 

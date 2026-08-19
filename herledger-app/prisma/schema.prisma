@@ -220,13 +220,41 @@ model StellarTransaction {
 }
 
 model IndexerCheckpoint {
-  id          String   @id @default(cuid())
+  id            String   @id @default(cuid())
   /// Logical stream identifier (e.g. "main", "business-events")
-  stream      String   @unique
-  lastLedger  Int
-  updatedAt   DateTime @updatedAt @db.Timestamptz
+  stream        String
+  /// Checkpoint key. `"global"` for the stream-global checkpoint; a Stellar
+  /// `G...` address for a per-wallet checkpoint. (A sentinel is used instead
+  /// of NULL because Postgres treats NULLs as distinct in unique indexes.)
+  walletAddress String
+  lastLedger    Int
+  updatedAt     DateTime @updatedAt @db.Timestamptz
 
+  @@unique([stream, walletAddress])
   @@map("indexer_checkpoints")
+}
+
+/// Claim-based work distribution for multi-replica sync.
+///
+/// One row per registered business wallet. A replica atomically claims a
+/// wallet for a sync pass by writing `lockedBy` + `lockedUntil` only when the
+/// row is currently unlocked (or its lease has expired), so two replicas never
+/// process the same wallet in the same sync window.
+model SyncJob {
+  id              String    @id @default(cuid())
+  /// Stellar address of the business wallet this row tracks
+  walletAddress   String    @unique
+  /// Identifier of the indexer replica currently holding the lock
+  lockedBy        String?
+  /// Lease expiry; while in the future the wallet is considered claimed
+  lockedUntil     DateTime? @db.Timestamptz
+  /// Last time the holding replica refreshed its lease
+  lastHeartbeatAt DateTime? @db.Timestamptz
+  createdAt       DateTime  @default(now()) @db.Timestamptz
+  updatedAt       DateTime  @updatedAt @db.Timestamptz
+
+  @@index([lockedUntil])
+  @@map("sync_jobs")
 }
 
 // ---------------------------------------------------------------------------
