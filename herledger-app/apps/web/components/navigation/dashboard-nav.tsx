@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/settings", label: "Settings" },
 ] as const;
 
-export function DashboardNav() {
+export function DashboardNav({ onboardingCompleted }: { onboardingCompleted: boolean }) {
   const pathname = usePathname();
   const { newEvents, clearNewEvents } = useEventStream();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -173,10 +173,24 @@ export function DashboardNav() {
 
       <ul style={{ listStyle: "none", padding: 0, margin: 0, flex: 1 }}>
         {NAV_ITEMS.map(({ href, label }) => {
+          const requiresBusiness = href === "/dashboard/attestations" || href === "/dashboard/disputes";
+          const disabled = requiresBusiness && !onboardingCompleted;
           const isActive =
             href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
           return (
             <li key={href}>
+              {disabled ? (
+                <span
+                  aria-disabled="true"
+                  title="Register your business to unlock this feature"
+                  style={{
+                    display: "block", padding: "0.5rem 0.75rem", borderRadius: "var(--radius)",
+                    color: "var(--muted)", opacity: 0.55, cursor: "not-allowed", fontSize: "0.9375rem",
+                  }}
+                >
+                  {label} <span aria-hidden="true">🔒</span>
+                </span>
+              ) : (
               <Link
                 href={href}
                 aria-current={isActive ? "page" : undefined}
@@ -193,6 +207,7 @@ export function DashboardNav() {
               >
                 {label}
               </Link>
+              )}
             </li>
           );
         })}

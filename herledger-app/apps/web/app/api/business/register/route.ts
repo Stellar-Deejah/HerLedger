@@ -55,15 +55,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const profile = await prisma.businessProfile.create({
-      data: {
-        userId: session.user.id,
-        businessId,
-        walletAddress,
-        displayName,
-        metadataHash,
-        active: true,
-      },
+    const profile = await prisma.$transaction(async (tx: typeof prisma) => {
+      const created = await tx.businessProfile.create({
+        data: { userId: session.user.id, businessId, walletAddress, displayName, metadataHash, active: true },
+      });
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: { onboardingCompleted: true },
+      });
+      return created;
     });
 
     return typedJson<BusinessRegisterResponse>({

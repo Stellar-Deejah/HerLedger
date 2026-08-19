@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
+import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
 
 const prisma = getPrismaClient();
 export const dynamic = "force-dynamic";
@@ -18,14 +19,10 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
-
-  if (!profile) {
-    return new Response(JSON.stringify({ error: "No business profile" }), {
-      status: 400,
+  const ownership = await requireBusinessOwner(session);
+  if (!ownership.ok) {
+    return new Response(JSON.stringify({ error: ownership.message, code: ownership.code }), {
+      status: ownership.status,
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -50,7 +47,7 @@ export async function GET(req: NextRequest) {
         try {
           const events = await prisma.financialEvent.findMany({
             where: {
-              businessId: profile.businessId,
+              businessId: ownership.businessId,
               updatedAt: { gt: lastChecked },
             },
             orderBy: { updatedAt: "asc" },

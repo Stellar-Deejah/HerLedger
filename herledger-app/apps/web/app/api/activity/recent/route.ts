@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
+import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
 
 import { RequestSchema, type ActivityRecentResponse } from "./schema";
 
@@ -30,20 +31,16 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
-
-  if (!profile) {
-    return typedJson<ActivityRecentResponse>({
-      data: { events: [], pagination: { offset: 0, limit: parsed.data.limit, count: 0 } },
-      error: null,
-    });
+  const ownership = await requireBusinessOwner(session);
+  if (!ownership.ok) {
+    return typedJson<ActivityRecentResponse>(
+      { data: null, error: { code: ownership.code, message: ownership.message } },
+      { status: ownership.status }
+    );
   }
 
   const events = await prisma.financialEvent.findMany({
-    where: { businessId: profile.businessId },
+    where: { businessId: ownership.businessId },
     orderBy: { ledgerSequence: "desc" },
     skip: parsed.data.offset,
     take: parsed.data.limit,

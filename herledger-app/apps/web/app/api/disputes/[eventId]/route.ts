@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/server";
+import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
 import { decryptDisputeReason, DisputeDecryptionError } from "@/lib/crypto/dispute-encryption";
 import { getPrismaClient } from "@/lib/db/client";
 import { deriveDisputeLifecycleStatus } from "@/lib/disputes/status";
@@ -46,20 +47,6 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   }
 
   try {
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId: session.user.id },
-      select: { businessId: true },
-    });
-    if (!profile) {
-      return NextResponse.json(
-        {
-          data: null,
-          error: { code: "NO_BUSINESS", message: "No business registered for this account" },
-        },
-        { status: 403 }
-      );
-    }
-
     const event = await prisma.financialEvent.findUnique({
       where: { eventId },
       select: { businessId: true, status: true },
@@ -70,13 +57,11 @@ export async function GET(_req: NextRequest, context: RouteContext) {
         { status: 404 }
       );
     }
-    if (event.businessId !== profile.businessId) {
+    const ownership = await requireBusinessOwner(session, event.businessId);
+    if (!ownership.ok) {
       return NextResponse.json(
-        {
-          data: null,
-          error: { code: "FORBIDDEN", message: "You do not own this financial event" },
-        },
-        { status: 403 }
+        { data: null, error: { code: ownership.code, message: ownership.message } },
+        { status: ownership.status }
       );
     }
 
