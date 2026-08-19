@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth/server";
 import { headers } from "next/headers";
 import { getServerStellarConfig, getServerContractConfig } from "@/lib/stellar/server-config";
 import { getPrismaClient } from "@/lib/db/client";
+import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
 
 const prisma = getPrismaClient();
 
@@ -33,14 +34,11 @@ export async function POST(
 
   const { attestationId } = await params;
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
-  if (!profile) {
+  const ownership = await requireBusinessOwner(session);
+  if (!ownership.ok) {
     return NextResponse.json(
-      { data: null, error: { code: "NOT_FOUND", message: "Attestation not found" } },
-      { status: 404 }
+      { data: null, error: { code: ownership.code, message: ownership.message } },
+      { status: ownership.status }
     );
   }
 
@@ -50,7 +48,7 @@ export async function POST(
   const existing = await prisma.attestation.findFirst({
     where: {
       attestationId,
-      event: { businessId: profile.businessId },
+      event: { businessId: ownership.businessId },
     },
   });
   if (!existing) {

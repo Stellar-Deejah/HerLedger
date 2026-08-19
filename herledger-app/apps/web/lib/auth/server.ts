@@ -21,10 +21,19 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: false,
   },
+  user: {
+    additionalFields: {
+      // These fields are server-owned. In particular, role must never be
+      // writable through Better Auth's public update-user endpoint.
+      role: { type: "string", defaultValue: "USER", input: false },
+      onboardingCompleted: { type: "boolean", defaultValue: false, input: false },
+    },
+  },
   session: {
     cookieCache: {
-      enabled: true,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      // Role and onboarding state change server-side. Do not serve a stale
+      // cached user payload after business registration or an admin action.
+      enabled: false,
     },
   },
   trustedOrigins: [env.APP_URL],
