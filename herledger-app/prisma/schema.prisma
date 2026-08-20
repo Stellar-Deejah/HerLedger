@@ -16,12 +16,16 @@ datasource db {
 
 model User {
   id            String    @id @default(cuid())
+  /// @PII
   email         String    @unique
   emailVerified Boolean   @default(false)
+  /// @PII
   name          String?
+  /// @PII
   image         String?
   createdAt     DateTime  @default(now()) @db.Timestamptz
   updatedAt     DateTime  @updatedAt @db.Timestamptz
+  deletedAt     DateTime? @db.Timestamptz
 
   sessions      Session[]
   accounts      Account[]
@@ -36,6 +40,7 @@ model Session {
   userId    String
   token     String   @unique
   expiresAt DateTime @db.Timestamptz
+  /// @PII
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now()) @db.Timestamptz
@@ -91,7 +96,9 @@ model BusinessProfile {
   /// On-chain business ID (hex-encoded BytesN<32>)
   businessId    String   @unique
   /// Stellar address of the registered wallet
+  /// @PII
   walletAddress String   @unique
+  /// @PII
   displayName   String
   /// Hex-encoded metadata hash committed on-chain
   metadataHash  String
@@ -145,6 +152,15 @@ model Attestation {
   eventId         String
   attesterAddress String
   claimHash       String
+  /// Human-readable claim text the attester entered before it was hashed to
+  /// `claimHash` (see CreateAttestationForm). Off-chain only -- the on-chain
+  /// contract only ever sees the hash. Nullable because attestations synced
+  /// by the indexer from raw on-chain data (rather than created through the
+  /// app) have no description available. Never overwritten by the indexer's
+  /// upsertAttestation, which only ever updates `status` -- see
+  /// indexer/src/db/schema/attestations.ts and the matching write side in
+  /// POST /api/attestations/[attestationId]/claim-description.
+  claimDescription String?
   status          AttestationStatus @default(Active)
   ledgerSequence  Int
   createdAt       DateTime          @default(now()) @db.Timestamptz
@@ -155,6 +171,27 @@ model Attestation {
   @@index([eventId])
   @@index([attesterAddress])
   @@map("attestations")
+}
+
+// Off-chain profile for a registered attester, keyed by wallet address
+// rather than a HerLedger userId. Attester registration is admin-gated
+// on-chain (AttestationRegistry.register_attester requires the protocol
+// admin's signature, not the attester's own -- see contracts/attestation_registry/src/lib.rs),
+// so the party being registered does not need a HerLedger account at
+// registration time; the wallet address is the only identity that has to
+// exist. `active` mirrors the on-chain Attester.active flag and is what
+// gates CreateAttestationForm visibility (see lib/attestations/attester-status.ts).
+model AttesterProfile {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  displayName   String
+  description   String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  updatedAt     DateTime @updatedAt @db.Timestamptz
+
+  @@index([walletAddress])
+  @@map("attester_profiles")
 }
 
 // Off-chain record of a dispute raised against a FinancialEvent.
@@ -317,4 +354,12 @@ enum DisputeStatus {
   Investigating
   Resolved
   Revoked
+}
+
+model DataMigration {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  appliedAt DateTime @default(now()) @db.Timestamptz
+
+  @@map("data_migrations")
 }

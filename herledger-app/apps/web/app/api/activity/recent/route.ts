@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
+import { getRecentActivity } from "@/lib/data/activity";
 import { getPrismaClient } from "@/lib/db/client";
 
 import { RequestSchema, type ActivityRecentResponse } from "./schema";
@@ -35,29 +36,10 @@ export async function GET(req: NextRequest) {
     select: { businessId: true },
   });
 
-  if (!profile) {
-    return typedJson<ActivityRecentResponse>({
-      data: { events: [], pagination: { offset: 0, limit: parsed.data.limit, count: 0 } },
-      error: null,
-    });
-  }
-
-  const events = await prisma.financialEvent.findMany({
-    where: { businessId: profile.businessId },
-    orderBy: { ledgerSequence: "desc" },
-    skip: parsed.data.offset,
-    take: parsed.data.limit,
+  const data = await getRecentActivity(profile?.businessId ?? null, {
+    offset: parsed.data.offset,
+    limit: parsed.data.limit,
   });
 
-  return typedJson<ActivityRecentResponse>({
-    data: {
-      events,
-      pagination: {
-        offset: parsed.data.offset,
-        limit: parsed.data.limit,
-        count: events.length,
-      },
-    },
-    error: null,
-  });
+  return typedJson<ActivityRecentResponse>({ data, error: null });
 }

@@ -10,7 +10,7 @@ vi.mock("../../db/client.js", () => ({
   getPrismaClient: () => ({ $queryRaw: mockQueryRaw }),
 }));
 
-vi.mock("@herledger/config", () => ({
+vi.mock("@herledger/config/server", () => ({
   getStellarNetworkConfig: () => ({
     network: "testnet",
     rpcUrl: "https://soroban-testnet.stellar.org",

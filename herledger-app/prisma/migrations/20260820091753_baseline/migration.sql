@@ -7,6 +7,9 @@ CREATE TYPE "EventStatus" AS ENUM ('Pending', 'Verified', 'Disputed', 'Revoked')
 -- CreateEnum
 CREATE TYPE "AttestationStatus" AS ENUM ('Active', 'Revoked');
 
+-- CreateEnum
+CREATE TYPE "DisputeStatus" AS ENUM ('Submitted', 'Investigating', 'Resolved', 'Revoked');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" TEXT NOT NULL,
@@ -16,6 +19,7 @@ CREATE TABLE "users" (
     "image" TEXT,
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL,
+    "deletedAt" TIMESTAMPTZ,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -105,12 +109,43 @@ CREATE TABLE "attestations" (
     "eventId" TEXT NOT NULL,
     "attesterAddress" TEXT NOT NULL,
     "claimHash" TEXT NOT NULL,
+    "claimDescription" TEXT,
     "status" "AttestationStatus" NOT NULL DEFAULT 'Active',
     "ledgerSequence" INTEGER NOT NULL,
     "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT "attestations_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "attester_profiles" (
+    "id" TEXT NOT NULL,
+    "walletAddress" TEXT NOT NULL,
+    "displayName" TEXT NOT NULL,
+    "description" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT "attester_profiles_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "disputes" (
+    "id" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "reasonPlaintext" TEXT NOT NULL,
+    "reasonHash" TEXT NOT NULL,
+    "status" "DisputeStatus" NOT NULL DEFAULT 'Submitted',
+    "submittedAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "resolvedAt" TIMESTAMPTZ,
+    "resolutionTxHash" TEXT,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT "disputes_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -132,6 +167,22 @@ CREATE TABLE "indexer_checkpoints" (
     "updatedAt" TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT "indexer_checkpoints_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "indexer_errors" (
+    "id" TEXT NOT NULL,
+    "errorId" TEXT NOT NULL,
+    "rawXdr" TEXT NOT NULL,
+    "context" JSONB,
+    "stage" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "retryCount" INTEGER NOT NULL DEFAULT 0,
+    "resolvedAt" TIMESTAMPTZ,
+    "createdAt" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMPTZ NOT NULL,
+
+    CONSTRAINT "indexer_errors_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -189,6 +240,21 @@ CREATE INDEX "attestations_eventId_idx" ON "attestations"("eventId");
 CREATE INDEX "attestations_attesterAddress_idx" ON "attestations"("attesterAddress");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "attester_profiles_walletAddress_key" ON "attester_profiles"("walletAddress");
+
+-- CreateIndex
+CREATE INDEX "attester_profiles_walletAddress_idx" ON "attester_profiles"("walletAddress");
+
+-- CreateIndex
+CREATE INDEX "disputes_eventId_idx" ON "disputes"("eventId");
+
+-- CreateIndex
+CREATE INDEX "disputes_userId_idx" ON "disputes"("userId");
+
+-- CreateIndex
+CREATE INDEX "disputes_status_idx" ON "disputes"("status");
+
+-- CreateIndex
 CREATE INDEX "stellar_transactions_ledgerSequence_idx" ON "stellar_transactions"("ledgerSequence");
 
 -- CreateIndex
@@ -196,6 +262,15 @@ CREATE INDEX "stellar_transactions_sourceAddress_idx" ON "stellar_transactions"(
 
 -- CreateIndex
 CREATE UNIQUE INDEX "indexer_checkpoints_stream_key" ON "indexer_checkpoints"("stream");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "indexer_errors_errorId_key" ON "indexer_errors"("errorId");
+
+-- CreateIndex
+CREATE INDEX "indexer_errors_stage_idx" ON "indexer_errors"("stage");
+
+-- CreateIndex
+CREATE INDEX "indexer_errors_resolvedAt_idx" ON "indexer_errors"("resolvedAt");
 
 -- AddForeignKey
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -211,3 +286,9 @@ ALTER TABLE "financial_events" ADD CONSTRAINT "financial_events_businessId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "attestations" ADD CONSTRAINT "attestations_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "financial_events"("eventId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "disputes" ADD CONSTRAINT "disputes_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "financial_events"("eventId") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "disputes" ADD CONSTRAINT "disputes_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -4,7 +4,7 @@ import { getPublicEnv } from "@herledger/config";
 import { registerBusiness } from "@herledger/sdk";
 import type { StellarNetworkConfig } from "@herledger/sdk";
 import { Account } from "@stellar/stellar-sdk";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
@@ -61,12 +61,47 @@ function hashMetadata(name: string): string {
   return Math.abs(hash).toString(16).padStart(64, "0");
 }
 
+function getStepAnnouncement(step: Step): string {
+  switch (step) {
+    case "wallet":
+      return "Step 1 of 2: Connect your Stellar wallet";
+    case "details":
+      return "Step 2 of 2: Business details";
+    case "confirmed":
+      return "Business registered on Stellar";
+    case "error":
+      return "There was a problem with your registration";
+    case "submitting":
+      // The submitting view has its own dedicated aria-live paragraph;
+      // announcing here too would read the same content twice.
+      return "";
+  }
+}
+
 export function BusinessRegistrationForm() {
   const [step, setStep] = useState<Step>("wallet");
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+
+  // Each step transition moves focus to that step's heading (or first
+  // interactive element) so keyboard/screen-reader users aren't left
+  // focused on a now-unmounted control from the previous step. The same
+  // ref is reused across the mutually-exclusive step branches below.
+  const stepFocusTarget = useRef<HTMLElement | null>(null);
+  const setStepFocusRef = (node: HTMLElement | null) => {
+    stepFocusTarget.current = node;
+  };
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    stepFocusTarget.current?.focus();
+  }, [step]);
 
   function handleWalletConnected(publicKey: string) {
     setWalletAddress(publicKey);
@@ -129,13 +164,21 @@ export function BusinessRegistrationForm() {
     }
   }
 
+  let content: React.ReactNode;
+
   if (step === "confirmed") {
-    return (
+    content = (
       <div>
         <div style={{ marginBottom: "1rem" }}>
           <StatusBadge status="Verified" />
         </div>
-        <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>Business registered on Stellar</p>
+        <p
+          ref={setStepFocusRef}
+          tabIndex={-1}
+          style={{ fontWeight: 500, marginBottom: "0.5rem" }}
+        >
+          Business registered on Stellar
+        </p>
         <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>
           Your registration has been confirmed on the Stellar network.
         </p>
@@ -146,69 +189,84 @@ export function BusinessRegistrationForm() {
         )}
       </div>
     );
-  }
-
-  if (step === "submitting") {
-    return (
-      <p aria-live="polite" style={{ color: "var(--muted)" }}>
+  } else if (step === "submitting") {
+    content = (
+      <p ref={setStepFocusRef} tabIndex={-1} aria-live="polite" style={{ color: "var(--muted)" }}>
         Submitting your registration to Stellar… This may take a few seconds.
       </p>
+    );
+  } else {
+    content = (
+      <div>
+        {step === "wallet" || step === "details" ? (
+          <>
+            <div style={{ marginBottom: "1.5rem" }}>
+              <h3
+                ref={step === "wallet" ? setStepFocusRef : undefined}
+                tabIndex={step === "wallet" ? -1 : undefined}
+                style={{ fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.75rem" }}
+              >
+                Step 1: Connect your Stellar wallet
+              </h3>
+              <WalletConnect onConnected={handleWalletConnected} />
+            </div>
+
+            {step === "details" && walletAddress && (
+              <form onSubmit={(e) => void handleSubmit(e)}>
+                <h3
+                  ref={setStepFocusRef}
+                  tabIndex={-1}
+                  style={{ fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.75rem" }}
+                >
+                  Step 2: Business details
+                </h3>
+                {error && <ErrorMessage message={error} />}
+                <FormField
+                  id="businessName"
+                  label="Business name"
+                  type="text"
+                  value={businessName}
+                  onChange={setBusinessName}
+                  required
+                />
+                <SubmitButton loading={false}>Register on Stellar</SubmitButton>
+              </form>
+            )}
+          </>
+        ) : null}
+
+        {step === "error" && (
+          <div ref={setStepFocusRef} tabIndex={-1}>
+            {error && <ErrorMessage message={error} />}
+            <button
+              type="button"
+              onClick={() => {
+                setStep(walletAddress ? "details" : "wallet");
+                setError(null);
+              }}
+              style={{
+                background: "none",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius)",
+                padding: "0.5rem 1rem",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+      </div>
     );
   }
 
   return (
     <div>
-      {step === "wallet" || step === "details" ? (
-        <>
-          <div style={{ marginBottom: "1.5rem" }}>
-            <h3 style={{ fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.75rem" }}>
-              Step 1: Connect your Stellar wallet
-            </h3>
-            <WalletConnect onConnected={handleWalletConnected} />
-          </div>
-
-          {step === "details" && walletAddress && (
-            <form onSubmit={(e) => void handleSubmit(e)}>
-              <h3 style={{ fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.75rem" }}>
-                Step 2: Business details
-              </h3>
-              {error && <ErrorMessage message={error} />}
-              <FormField
-                id="businessName"
-                label="Business name"
-                type="text"
-                value={businessName}
-                onChange={setBusinessName}
-                required
-              />
-              <SubmitButton loading={false}>Register on Stellar</SubmitButton>
-            </form>
-          )}
-        </>
-      ) : null}
-
-      {step === "error" && (
-        <div>
-          {error && <ErrorMessage message={error} />}
-          <button
-            type="button"
-            onClick={() => {
-              setStep(walletAddress ? "details" : "wallet");
-              setError(null);
-            }}
-            style={{
-              background: "none",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius)",
-              padding: "0.5rem 1rem",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Try again
-          </button>
-        </div>
-      )}
+      <div role="status" aria-live="polite" className="sr-only">
+        {getStepAnnouncement(step)}
+      </div>
+      {content}
     </div>
   );
 }

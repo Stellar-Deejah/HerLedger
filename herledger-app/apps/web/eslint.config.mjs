@@ -28,6 +28,10 @@ const eslintConfig = [
     rules: {
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
       "react-hooks/exhaustive-deps": "error",
       "import/order": [
         "error",
@@ -55,7 +59,15 @@ const eslintConfig = [
     },
   },
   {
-    ignores: [".next/**", "out/**", "build/**", "next-env.d.ts"],
+    ignores: [
+      ".next/**",
+      "out/**",
+      "build/**",
+      "storybook-static/**",
+      ".storybook/**",
+      "next-env.d.ts",
+      "next.config.ts",
+    ],
   },
 ];
 

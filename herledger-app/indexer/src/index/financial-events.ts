@@ -5,6 +5,7 @@ import { upsertFinancialEvent } from "../db/schema/financial-events.js";
 import { upsertStellarTransaction } from "../db/schema/stellar-transactions.js";
 import { findBusinessByWallet } from "../db/schema/businesses.js";
 import type { ParsedPayment } from "../types/index.js";
+import { eventsIndexedTotal } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Financial event indexing logic
@@ -56,6 +57,7 @@ export async function indexPayment(
       status: "Pending",
       ledgerSequence: payment.ledgerSequence,
     });
+    eventsIndexedTotal.inc({ event_type: "PaymentReceived", status: "Pending" });
   }
 
   // Check if the sender is a registered HerLedger business wallet
@@ -73,6 +75,7 @@ export async function indexPayment(
       status: "Pending",
       ledgerSequence: payment.ledgerSequence,
     });
+    eventsIndexedTotal.inc({ event_type: "PaymentSent", status: "Pending" });
   }
 }
 

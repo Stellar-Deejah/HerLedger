@@ -36,6 +36,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
+      SHADOW_DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_shadow
       BETTER_AUTH_SECRET: ci-test-secret-must-be-at-least-32-chars-long
       APP_URL: http://localhost:3000
       STELLAR_NETWORK: testnet
@@ -92,8 +93,15 @@ jobs:
         run: pnpm prisma validate --schema prisma/schema.prisma
         working-directory: herledger-app
 
+      - name: Create shadow database
+        run: PGPASSWORD=herledger createdb -h localhost -U herledger herledger_shadow
+
       - name: Prisma generate
         run: pnpm db:generate
+        working-directory: herledger-app
+
+      - name: Validate database migrations
+        run: pnpm exec tsx scripts/validate-migrations.ts
         working-directory: herledger-app
 
       - name: Prisma migrate
@@ -107,6 +115,17 @@ jobs:
       - name: Build
         run: pnpm build
         working-directory: herledger-app
+
+      - name: Build Storybook
+        run: pnpm --filter web build-storybook
+        working-directory: herledger-app
+
+      - name: Upload Storybook Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: herledger-app/apps/web/storybook-static
+          retention-days: 7
 
   abi-check:
     name: Contract ABI codegen diff

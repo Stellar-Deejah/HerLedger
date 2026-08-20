@@ -1,5 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
+import { logger, dbQueryDurationSeconds } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Singleton Prisma client for the indexer process.
@@ -35,12 +36,10 @@ function buildDatabaseUrl(): string {
 // "query", ...)` type-check below -- a bare `PrismaClient` annotation
 // erases it back to its default (`never` events).
 function createPrismaClient() {
-  const isDev = process.env["NODE_ENV"] === "development";
-
   return new PrismaClient({
     adapter: new PrismaPg(buildDatabaseUrl()),
     log: [
-      ...(isDev ? [{ emit: "event", level: "query" } as const] : []),
+      { emit: "event", level: "query" } as const,
       { emit: "event", level: "warn" } as const,
       { emit: "event", level: "error" } as const,
     ],
@@ -56,7 +55,7 @@ export function getPrismaClient(): PrismaClient {
     _prisma = createPrismaClient();
 
     _prisma.$on("warn", (e: { message: string }) => {
-      console.warn({ event: "prisma-warn", message: e.message });
+      logger.warn({ event: "prisma-warn", message: e.message }, "Prisma client warning");
     });
 
     // A statement_timeout hit surfaces as a Postgres error on the query.
@@ -64,22 +63,31 @@ export function getPrismaClient(): PrismaClient {
     // including the elapsed time Prisma reports for the failed query.
     _prisma.$on("error", (e: { message: string; target?: unknown }) => {
       const isTimeout = /statement timeout|canceling statement/i.test(e.message);
-      console.error({
-        event: isTimeout ? "prisma-query-timeout" : "prisma-error",
-        message: e.message,
-        target: e.target,
-      });
+      logger.error(
+        {
+          event: isTimeout ? "prisma-query-timeout" : "prisma-error",
+          message: e.message,
+          target: e.target,
+        },
+        isTimeout ? "Prisma statement timeout" : "Prisma client error"
+      );
     });
 
-    if (isDev) {
-      _prisma.$on("query", (e: { query: string; duration: number }) => {
-        console.log({
-          event: "prisma-query",
-          query: e.query,
-          durationMs: e.duration,
-        });
-      });
-    }
+    _prisma.$on("query", (e: { query: string; duration: number }) => {
+      // Record query duration into Prometheus histogram (duration in seconds)
+      dbQueryDurationSeconds.observe({ operation: "prisma_query" }, e.duration / 1000);
+
+      if (isDev) {
+        logger.debug(
+          {
+            event: "prisma-query",
+            query: e.query,
+            durationMs: e.duration,
+          },
+          "Prisma query executed"
+        );
+      }
+    });
   }
   return _prisma;
 }

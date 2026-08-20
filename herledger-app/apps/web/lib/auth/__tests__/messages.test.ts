@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { GENERIC_SIGN_IN_ERROR, normalizeSignInError } from "../messages.js";
 
 describe("normalizeSignInError", () => {

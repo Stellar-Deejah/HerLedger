@@ -121,6 +121,19 @@ Stellar transactions are publicly visible on the blockchain. HerLedger does
 not claim otherwise. The application minimizes additional personal information
 stored on-chain by committing only cryptographic hashes.
 
+## Data Classification
+
+Certain database fields are classified as Personally Identifiable Information (PII). In Prisma (`schema.prisma`), these fields are annotated with the `@PII` JSDoc tag.
+
+| Model | Field | Classification | Retention |
+|-------|-------|----------------|-----------|
+| `User` | `email` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
+| `User` | `name` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
+| `User` | `image` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
+| `Session` | `ipAddress` | **PII** | Purged upon sign out / deletion |
+| `BusinessProfile` | `displayName` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
+| `BusinessProfile` | `walletAddress` | **PII** | Anonymized immediately (SHA-256), hard-deleted after 30 days |
+
 ## Reporting vulnerabilities
 
 If you discover a security vulnerability, please do not open a public issue.

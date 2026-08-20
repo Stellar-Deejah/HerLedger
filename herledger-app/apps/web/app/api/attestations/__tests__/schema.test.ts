@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { RequestSchema } from "../schema";
 
 describe("attestations RequestSchema", () => {

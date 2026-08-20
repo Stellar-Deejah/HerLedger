@@ -1,4 +1,4 @@
-import { getServerEnv } from "@herledger/config";
+import { getServerEnv } from "@herledger/config/server";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 

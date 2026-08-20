@@ -23,7 +23,7 @@ vi.mock("../../../jobs/process-transaction.js", () => ({
   processTransactionForWallet: mockProcessTransaction,
 }));
 
-vi.mock("@herledger/config", () => ({
+vi.mock("@herledger/config/server", () => ({
   getStellarNetworkConfig: () => ({
     network: "testnet",
     rpcUrl: "https://soroban-testnet.stellar.org",

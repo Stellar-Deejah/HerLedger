@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,17 +10,31 @@ import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { formatAmount } from "@/lib/utils/format";
 
-const PAGE_SIZE = 20;
+export const PAGE_SIZE = 20;
 
-export function ActivityList() {
-  const [events, setEvents] = useState<FinancialEventDto[]>([]);
+interface ActivityListProps {
+  /** Page 0, fetched server-side (see ActivityListServer) so it's available on first paint. */
+  initialEvents: FinancialEventDto[];
+  initialHasMore: boolean;
+}
+
+export function ActivityList({ initialEvents, initialHasMore }: ActivityListProps) {
+  const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const { newEvents } = useEventStream();
   const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  // Page 0's data already arrived via props from the server — this effect
+  // should only run when the user actually changes pages.
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     let ignore = false;
 
     async function loadPage() {

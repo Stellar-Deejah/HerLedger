@@ -1,11 +1,12 @@
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
-import { RequestSchema } from "./schema";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
+import { getAttestations } from "@/lib/data/attestations";
 import { getPrismaClient } from "@/lib/db/client";
 
+import { RequestSchema } from "./schema";
 import type { AttestationsResponse } from "./schema";
 
 const prisma = getPrismaClient();
@@ -34,24 +35,8 @@ export async function GET(req: NextRequest) {
     where: { userId: session.user.id },
     select: { businessId: true },
   });
-  if (!profile) {
-    return typedJson<AttestationsResponse>({ data: { attestations: [] }, error: null });
-  }
 
-  const events = await prisma.financialEvent.findMany({
-    where: { businessId: profile.businessId },
-    select: {
-      eventId: true,
-      attestations: {
-        ...(parsed.data.includeRevoked ? {} : { where: { status: "Active" as const } }),
-        orderBy: { ledgerSequence: "desc" },
-      },
-    },
-  });
+  const data = await getAttestations(profile?.businessId ?? null, parsed.data.includeRevoked);
 
-  const attestations = events
-    .flatMap((event) => event.attestations)
-    .sort((a, b) => b.ledgerSequence - a.ledgerSequence);
-
-  return typedJson<AttestationsResponse>({ data: { attestations }, error: null });
+  return typedJson<AttestationsResponse>({ data, error: null });
 }

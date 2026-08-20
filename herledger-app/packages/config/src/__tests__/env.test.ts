@@ -1,4 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
 import { z } from "zod";
 import { StrKey } from "@stellar/stellar-sdk";
 import { validateNetworkConsistency } from "../server.js";

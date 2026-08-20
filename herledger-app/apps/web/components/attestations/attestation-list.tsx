@@ -1,13 +1,11 @@
 "use client";
 
 import { isValidAttestation, resolveAttesterName } from "@herledger/sdk";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { AttestationDto } from "@/app/api/attestations/schema";
 import { EmptyState } from "@/components/ui/empty-state";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { hasStatusDiscrepancy } from "@/lib/attestations/reconcile";
 import { getContractConfig, getStellarConfig } from "@/lib/stellar/network";
 
@@ -26,32 +24,22 @@ import { getContractConfig, getStellarConfig } from "@/lib/stellar/network";
 //     background sweep (indexer-side, alongside its existing sync jobs)
 //     would be worth revisiting — see PR description for more detail.
 // ---------------------------------------------------------------------------
-export function AttestationList() {
-  const [attestations, setAttestations] = useState<AttestationDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+interface AttestationListProps {
+  /** Fetched server-side (see AttestationListServer) so it's available on first paint. */
+  initialAttestations: AttestationDto[];
+}
+
+export function AttestationList({ initialAttestations }: AttestationListProps) {
+  const [attestations, setAttestations] = useState<AttestationDto[]>(initialAttestations);
   const [revalidating, setRevalidating] = useState<Set<string>>(new Set());
+  // Captured via ref (not a dependency) so the mount effect below runs
+  // exactly once against the server-provided rows, the same way
+  // WalletConnect captures onConnected via a ref instead of a dependency.
+  const initialAttestationsRef = useRef(initialAttestations);
 
   useEffect(() => {
     let ignore = false;
-
-    async function loadAttestations() {
-      try {
-        const data = await apiClient.attestations.list();
-        if (ignore) return;
-        setAttestations(data.attestations);
-        void revalidateAll(data.attestations);
-      } catch (err) {
-        if (ignore) return;
-        if (err instanceof ApiRequestError && err.code === "UNAUTHORIZED") {
-          setError("Please sign in again to view attestations.");
-        } else {
-          setError("Could not load attestations.");
-        }
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    }
 
     async function revalidateAll(rows: AttestationDto[]) {
       const stellarConfig = getStellarConfig();
@@ -102,20 +90,12 @@ export function AttestationList() {
       );
     }
 
-    void loadAttestations();
+    void revalidateAll(initialAttestationsRef.current);
     return () => {
       ignore = true;
     };
   }, []);
 
-  if (loading) return <LoadingSpinner />;
-  if (error) {
-    return (
-      <div role="alert" style={{ color: "var(--danger)" }}>
-        {error}
-      </div>
-    );
-  }
   if (attestations.length === 0) {
     return (
       <EmptyState
@@ -156,6 +136,12 @@ export function AttestationList() {
             </span>
           </div>
           <dl style={{ fontSize: "0.875rem", color: "var(--muted)", margin: 0 }}>
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
+              <dt style={{ fontWeight: 500, minWidth: "80px" }}>Claim</dt>
+              <dd style={att.claimDescription ? undefined : { fontFamily: "monospace" }}>
+                {att.claimDescription ?? `${att.claimHash.slice(0, 16)}…`}
+              </dd>
+            </div>
             <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
               <dt style={{ fontWeight: 500, minWidth: "80px" }}>Attester</dt>
               <dd style={{ fontFamily: "monospace", wordBreak: "break-all" }}>

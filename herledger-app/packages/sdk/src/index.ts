@@ -34,7 +34,24 @@ export {
 export type { AppError } from "./errors/index.js";
 
 // RPC
-export { getSorobanRpcServer, getLatestLedger } from "./rpc/client.js";
+export {
+  getSorobanRpcServer,
+  getLatestLedger,
+  checkRpcHealth,
+  withRpcFailover,
+  configureCircuitBreaker,
+  getActiveRpcEndpoint,
+  recordRpcSuccess,
+  recordRpcFailure,
+  resetRpcState,
+  parseRpcUrls,
+} from "./rpc/client.js";
+export type { RpcHealthResult } from "./rpc/client.js";
+export { CircuitBreaker } from "./rpc/circuit-breaker.js";
+export type {
+  CircuitState,
+  CircuitBreakerOptions,
+} from "./rpc/circuit-breaker.js";
 export { simulateAndPrepare, submitAndWait } from "./rpc/transactions.js";
 
 // Wallet

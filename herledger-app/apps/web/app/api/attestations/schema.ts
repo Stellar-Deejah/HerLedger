@@ -30,6 +30,7 @@ export const AttestationSchema = z.object({
   eventId: z.string(),
   attesterAddress: z.string(),
   claimHash: z.string(),
+  claimDescription: z.string().nullable(),
   status: z.enum(["Active", "Revoked"]),
   ledgerSequence: z.number(),
 });

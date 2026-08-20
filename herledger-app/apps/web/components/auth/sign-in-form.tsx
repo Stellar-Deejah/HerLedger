@@ -7,8 +7,8 @@ import { useRef, useState } from "react";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { normalizeSignInError } from "@/lib/auth/messages";
 import { signIn } from "@/lib/auth/client";
+import { normalizeSignInError } from "@/lib/auth/messages";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignInForm() {

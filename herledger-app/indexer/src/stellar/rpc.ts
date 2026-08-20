@@ -3,6 +3,7 @@ import { getSorobanRpcServer } from "@herledger/sdk";
 import type { StellarNetworkConfig } from "@herledger/sdk";
 import { IndexerError } from "../types/index.js";
 import { getTransactionLedger } from "./verification.js";
+import { rpcRequestDurationSeconds } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Stellar RPC helpers for the indexer
@@ -30,6 +31,7 @@ export async function fetchTransactionsForAccount(
   transactions: Horizon.ServerApi.TransactionRecord[];
   nextCursor: string | undefined;
 }> {
+  const timer = rpcRequestDurationSeconds.startTimer({ operation: "fetch_transactions" });
   const server = new Horizon.Server(horizonUrl, { allowHttp: horizonUrl.startsWith("http://") });
 
   try {
@@ -69,7 +71,10 @@ export async function fetchTransactionsForAccount(
         : undefined;
 
     return { transactions, nextCursor };
+    timer({ status: "success" });
+    return { transactions: records, nextCursor };
   } catch (cause) {
+    timer({ status: "error" });
     throw new IndexerError(`Failed to fetch transactions for account ${address}`, cause);
   }
 }
@@ -78,11 +83,14 @@ export async function fetchTransactionsForAccount(
  * Fetch the latest ledger sequence from the Soroban RPC.
  */
 export async function fetchLatestLedger(config: StellarNetworkConfig): Promise<number> {
+  const timer = rpcRequestDurationSeconds.startTimer({ operation: "fetch_latest_ledger" });
   const server = getSorobanRpcServer(config);
   try {
     const result = await server.getLatestLedger();
+    timer({ status: "success" });
     return result.sequence;
   } catch (cause) {
+    timer({ status: "error" });
     throw new IndexerError("Failed to fetch latest ledger from RPC", cause);
   }
 }
@@ -95,6 +103,7 @@ export async function fetchContractEvents(
   startLedger: number,
   config: StellarNetworkConfig
 ): Promise<StellarRpc.Api.GetEventsResponse["events"]> {
+  const timer = rpcRequestDurationSeconds.startTimer({ operation: "fetch_contract_events" });
   const server = getSorobanRpcServer(config);
   try {
     const result = await server.getEvents({
@@ -107,8 +116,10 @@ export async function fetchContractEvents(
       ],
       limit: 100,
     });
+    timer({ status: "success" });
     return result.events;
   } catch (cause) {
+    timer({ status: "error" });
     throw new IndexerError(
       `Failed to fetch events for contract ${contractId} from ledger ${startLedger}`,
       cause

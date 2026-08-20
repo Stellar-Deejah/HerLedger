@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
+
 import { runExclusive } from "../submit-guard.js";
 
 function deferred<T>() {

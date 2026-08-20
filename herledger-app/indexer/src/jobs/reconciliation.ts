@@ -3,12 +3,13 @@ import { getPrismaClient } from "../db/client.js";
 import {
   getStellarNetworkConfig,
   getContractConfig as getRawContractConfig,
-} from "@herledger/config";
+} from "@herledger/config/server";
 import {
   registerCurrentNetworkAddresses,
   buildContractConfig,
   getFinancialEvent,
 } from "@herledger/sdk";
+import { logger, generateCorrelationId, runWithContext } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Nightly reconciliation job.
@@ -55,85 +56,98 @@ export interface ReconciliationDiscrepancy {
 export async function runReconciliationCycle(
   sampleSize: number = DEFAULT_SAMPLE_SIZE
 ): Promise<{ sampled: number; discrepancies: ReconciliationDiscrepancy[] }> {
-  const prisma = getPrismaClient();
-  const stellarConfig = getStellarNetworkConfig();
-  const rawContractConfig = getRawContractConfig();
-  const registry = registerCurrentNetworkAddresses(stellarConfig.network, rawContractConfig);
-  const contractConfig = buildContractConfig(registry, stellarConfig.network, rawContractConfig);
+  const correlationId = generateCorrelationId();
 
-  const rows = await sampleIndexedEvents(prisma, sampleSize);
-  const discrepancies: ReconciliationDiscrepancy[] = [];
+  return runWithContext({ correlationId, job: "reconciliation" }, async () => {
+    const prisma = getPrismaClient();
+    const stellarConfig = getStellarNetworkConfig();
+    const rawContractConfig = getRawContractConfig();
+    const registry = registerCurrentNetworkAddresses(stellarConfig.network, rawContractConfig);
+    const contractConfig = buildContractConfig(registry, stellarConfig.network, rawContractConfig);
 
-  for (const row of rows) {
-    let onChain;
-    try {
-      onChain = await getFinancialEvent(row.eventId, stellarConfig, contractConfig);
-    } catch (err) {
-      console.error({
-        job: "reconciliation",
-        event: "on-chain-fetch-failed",
-        eventId: row.eventId,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      continue;
+    const rows = await sampleIndexedEvents(prisma, sampleSize);
+    const discrepancies: ReconciliationDiscrepancy[] = [];
+
+    for (const row of rows) {
+      let onChain;
+      try {
+        onChain = await getFinancialEvent(row.eventId, stellarConfig, contractConfig);
+      } catch (err) {
+        logger.error(
+          {
+            job: "reconciliation",
+            event: "on-chain-fetch-failed",
+            eventId: row.eventId,
+            error: err instanceof Error ? err.message : String(err),
+          },
+          "Failed to fetch on-chain financial event during reconciliation"
+        );
+        continue;
+      }
+
+      if (!onChain) {
+        discrepancies.push({
+          eventId: row.eventId,
+          field: "existence",
+          indexed: "present",
+          onChain: "missing",
+        });
+        continue;
+      }
+
+      if (onChain.status !== row.status) {
+        discrepancies.push({
+          eventId: row.eventId,
+          field: "status",
+          indexed: row.status,
+          onChain: onChain.status,
+        });
+      }
+
+      if (onChain.eventType !== row.eventType) {
+        discrepancies.push({
+          eventId: row.eventId,
+          field: "eventType",
+          indexed: row.eventType,
+          onChain: onChain.eventType,
+        });
+      }
+
+      if (onChain.amount.toString() !== row.amount) {
+        discrepancies.push({
+          eventId: row.eventId,
+          field: "amount",
+          indexed: row.amount,
+          onChain: onChain.amount.toString(),
+        });
+      }
     }
 
-    if (!onChain) {
-      discrepancies.push({
-        eventId: row.eventId,
-        field: "existence",
-        indexed: "present",
-        onChain: "missing",
-      });
-      continue;
+    if (discrepancies.length > 0) {
+      logger.error(
+        {
+          job: "reconciliation",
+          event: "discrepancies-found",
+          sampled: rows.length,
+          discrepancyCount: discrepancies.length,
+          discrepancies,
+        },
+        "Reconciliation found discrepancies between indexed and on-chain state"
+      );
+    } else {
+      logger.info(
+        {
+          job: "reconciliation",
+          event: "cycle-complete",
+          sampled: rows.length,
+          discrepancyCount: 0,
+        },
+        "Reconciliation cycle completed successfully with 0 discrepancies"
+      );
     }
 
-    if (onChain.status !== row.status) {
-      discrepancies.push({
-        eventId: row.eventId,
-        field: "status",
-        indexed: row.status,
-        onChain: onChain.status,
-      });
-    }
-
-    if (onChain.eventType !== row.eventType) {
-      discrepancies.push({
-        eventId: row.eventId,
-        field: "eventType",
-        indexed: row.eventType,
-        onChain: onChain.eventType,
-      });
-    }
-
-    if (onChain.amount.toString() !== row.amount) {
-      discrepancies.push({
-        eventId: row.eventId,
-        field: "amount",
-        indexed: row.amount,
-        onChain: onChain.amount.toString(),
-      });
-    }
-  }
-
-  if (discrepancies.length > 0) {
-    console.error({
-      job: "reconciliation",
-      event: "discrepancies-found",
-      sampled: rows.length,
-      discrepancyCount: discrepancies.length,
-      discrepancies,
-    });
-  } else {
-    console.log({
-      job: "reconciliation",
-      event: "cycle-complete",
-      sampled: rows.length,
-      discrepancyCount: 0,
-    });
-  }
-
-  return { sampled: rows.length, discrepancies };
+    return { sampled: rows.length, discrepancies };
+  });
 }
 
 /**
@@ -153,18 +167,24 @@ export function scheduleReconciliation(): void {
 
   cron.schedule(schedule, () => {
     runReconciliationCycle(sampleSize).catch((err) => {
-      console.error({
-        job: "reconciliation",
-        event: "cycle-failed",
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.error(
+        {
+          job: "reconciliation",
+          event: "cycle-failed",
+          error: err instanceof Error ? err.message : String(err),
+        },
+        "Reconciliation cycle failed"
+      );
     });
   });
 
-  console.log({
-    job: "reconciliation",
-    event: "scheduled",
-    schedule,
-    sampleSize,
-  });
+  logger.info(
+    {
+      job: "reconciliation",
+      event: "scheduled",
+      schedule,
+      sampleSize,
+    },
+    "Reconciliation job scheduled"
+  );
 }

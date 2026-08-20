@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeAll } from "vitest";
 import { StrKey } from "@stellar/stellar-sdk";
+import { describe, it, expect, beforeAll } from "vitest";
+
+vi.mock("server-only", () => ({}));
 
 // `server.ts` reads all server env vars at module load time (via
 // getServerEnv()), so they must be set before the module is imported. We
@@ -25,7 +27,7 @@ beforeAll(async () => {
   });
 
   ({ auth } = await import("../server.js"));
-});
+}, 30000);
 
 // Better Auth 1.6.28 has no `csrf` config option; sign-in/sign-up carry
 // `formCsrfMiddleware` (see api/middlewares/origin-check.mjs), which rejects
