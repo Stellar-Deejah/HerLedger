@@ -12,6 +12,7 @@ import type {
   StellarNetworkConfig,
   ContractConfig,
   TransactionResult,
+  TransactionSigner,
 } from "../types/index.js";
 import { RpcError, ContractError } from "../errors/index.js";
 import { getSorobanRpcServer } from "../rpc/client.js";
@@ -202,7 +203,8 @@ export async function recordFinancialEvent(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.financialLedgerId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -225,7 +227,8 @@ export async function recordFinancialEvent(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.submitter
@@ -250,7 +253,8 @@ export async function disputeFinancialEvent(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.financialLedgerId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -269,7 +273,8 @@ export async function disputeFinancialEvent(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.owner
@@ -284,7 +289,8 @@ export async function verifyFinancialEvent(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.financialLedgerId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -296,7 +302,8 @@ export async function verifyFinancialEvent(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.submitter
@@ -313,7 +320,8 @@ export async function resolveFinancialEvent(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.financialLedgerId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -332,7 +340,8 @@ export async function resolveFinancialEvent(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.submitter
@@ -348,7 +357,8 @@ export async function revokeFinancialEvent(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.financialLedgerId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -362,7 +372,8 @@ export async function revokeFinancialEvent(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.submitter

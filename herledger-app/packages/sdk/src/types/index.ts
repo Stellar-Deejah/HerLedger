@@ -70,3 +70,10 @@ export interface TransactionResult {
   success: boolean;
   ledger?: number;
 }
+
+/**
+ * Interface for transaction signing - allows injecting different wallet adapters
+ */
+export interface TransactionSigner {
+  signTransaction(xdr: string, passphrase: string, account?: string): Promise<string>;
+}
