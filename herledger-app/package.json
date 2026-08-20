@@ -22,6 +22,7 @@
   "devDependencies": {
     "@prisma/adapter-pg": "7.9.1",
     "@prisma/client": "7.9.1",
+    "dotenv": "17.4.2",
     "@types/pg": "8.23.1",
     "dotenv": "^17.4.2",
     "eslint": "9.18.0",

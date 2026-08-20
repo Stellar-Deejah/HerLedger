@@ -88,6 +88,12 @@ docs(app): improve local setup instructions
 - All API routes validate inputs with Zod.
 - Blockchain-derived records are immutable after indexing.
 
+## Dependency Management & Pinning Policy
+
+- **Exact Version Pinning**: All direct dependencies across all `package.json` files must be pinned to exact versions (no `^` or `~` ranges).
+- **Automated Updates**: Dependency updates are managed automatically via Renovate (`.github/renovate.json`). Security patches auto-merge, while minor and major updates are grouped into PRs.
+- **SDK Peer Dependencies**: Library packages such as `@herledger/sdk` declare large shared packages (e.g., `@stellar/stellar-sdk`, `@stellar/freighter-api`) as `peerDependencies` to avoid duplicate bundling in consuming applications.
+
 ## Testing
 
 - Unit tests: `pnpm test`

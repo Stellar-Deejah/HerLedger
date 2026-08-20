@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@stellar/stellar-sdk": "16.2.0",
-    "server-only": "^0.0.1",
+    "server-only": "0.0.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
