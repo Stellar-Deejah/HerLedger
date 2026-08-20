@@ -56,8 +56,7 @@ export function validateNetworkConsistency(
   rpcUrl: string,
   passphrase: string
 ): void {
-  const expectedPassphrase =
-    network === "mainnet" ? MAINNET_PASSPHRASE : TESTNET_PASSPHRASE;
+  const expectedPassphrase = network === "mainnet" ? MAINNET_PASSPHRASE : TESTNET_PASSPHRASE;
 
   if (passphrase !== expectedPassphrase) {
     throw new Error(

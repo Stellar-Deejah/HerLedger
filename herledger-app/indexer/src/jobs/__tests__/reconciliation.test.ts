@@ -24,6 +24,20 @@ vi.mock("@herledger/config/server", () => ({
   }),
 }));
 
+vi.mock("@herledger/config/server", () => ({
+  getStellarNetworkConfig: () => ({
+    network: "testnet",
+    rpcUrl: "https://soroban-testnet.stellar.org",
+    horizonUrl: "https://horizon-testnet.stellar.org",
+    networkPassphrase: "Test SDF Network ; September 2015",
+  }),
+  getContractConfig: () => ({
+    businessRegistryId: "CBUSINESS",
+    financialLedgerId: "CLEDGER",
+    attestationRegistryId: "CATTEST",
+  }),
+}));
+
 vi.mock("@herledger/sdk", () => ({
   registerCurrentNetworkAddresses: (_network: string, addrs: unknown) => addrs,
   buildContractConfig: (_registry: unknown, _network: string, addrs: unknown) => addrs,

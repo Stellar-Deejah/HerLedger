@@ -4,10 +4,10 @@ import { z } from "zod";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
-import { deactivateBusiness } from "@herledger/sdk";
-import { getStellarNetworkConfig, getContractConfig } from "@/lib/stellar/config";
 import { getAccount } from "@/lib/stellar/account";
+import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
+import { getDbClient } from "@herledger/db";
+import { deactivateBusiness } from "@herledger/sdk";
 
 const RequestSchema = z.object({
   businessId: z.string().min(1),
@@ -17,8 +17,6 @@ interface DeactivateResponse {
   data: { success: boolean } | null;
   error: { code: string; message: string } | null;
 }
-
-const prisma = getPrismaClient();
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -50,15 +48,10 @@ export async function POST(req: NextRequest) {
   const { businessId } = parsed.data;
 
   try {
-    // Verify business ownership
-    const dbBusiness = await prisma.businessProfile.findFirst({
-      where: {
-        businessId,
-        userId: session.user.id,
-      },
-    });
+    const db = getDbClient();
+    const dbBusiness = await db.businesses.findById(businessId);
 
-    if (!dbBusiness) {
+    if (!dbBusiness || dbBusiness.userId !== session.user.id) {
       return typedJson<DeactivateResponse>(
         { data: null, error: { code: "NOT_FOUND", message: "Business not found" } },
         { status: 404 }
@@ -67,7 +60,10 @@ export async function POST(req: NextRequest) {
 
     if (!dbBusiness.active) {
       return typedJson<DeactivateResponse>(
-        { data: null, error: { code: "ALREADY_INACTIVE", message: "Business is already inactive" } },
+        {
+          data: null,
+          error: { code: "ALREADY_INACTIVE", message: "Business is already inactive" },
+        },
         { status: 400 }
       );
     }
@@ -89,10 +85,7 @@ export async function POST(req: NextRequest) {
     );
 
     // Update DB
-    await prisma.businessProfile.update({
-      where: { id: dbBusiness.id },
-      data: { active: false },
-    });
+    await db.businesses.deactivate(dbBusiness.id);
 
     return typedJson<DeactivateResponse>({
       data: { success: true },

@@ -1,12 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
-import { PrismaClient } from "@prisma/client";
-import { getServerEnv } from "@herledger/config/server";
-import { createHash } from "crypto";
-
-const prisma = new PrismaClient({
-  datasourceUrl: getServerEnv().DATABASE_URL,
-});
+import { getDbClient } from "@herledger/db";
 
 export async function DELETE(request: Request) {
   try {
@@ -30,42 +24,19 @@ export async function DELETE(request: Request) {
         body: {
           email: session.user.email,
           password: password,
-        }
+        },
       });
-    } catch (error) {
+    } catch {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    // Process deletion
-    await prisma.$transaction(async (tx) => {
-      // 1. Revoke all active sessions
-      await tx.session.deleteMany({
-        where: { userId: session.user.id },
-      });
+    // Process deletion via db repository
+    const db = getDbClient();
+    await db.users.deleteAccount(session.user.id);
 
-      // 2. Soft-delete user
-      await tx.user.update({
-        where: { id: session.user.id },
-        data: { deletedAt: new Date() },
-      });
-
-      // 3. Anonymize BusinessProfile.walletAddress
-      const profile = await tx.businessProfile.findUnique({
-        where: { userId: session.user.id },
-      });
-
-      if (profile) {
-        const hash = createHash("sha256").update(profile.walletAddress).digest("hex");
-        await tx.businessProfile.update({
-          where: { id: profile.id },
-          data: { walletAddress: hash },
-        });
-      }
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
-    console.error("Account deletion error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Account deletion failed:", error);
+    return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
   }
 }

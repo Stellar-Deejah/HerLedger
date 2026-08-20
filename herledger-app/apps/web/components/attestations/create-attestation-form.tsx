@@ -238,7 +238,12 @@ export function CreateAttestationForm() {
       <div style={{ marginBottom: "1rem" }}>
         <label
           htmlFor="eventId"
-          style={{ display: "block", fontWeight: 500, fontSize: "0.875rem", marginBottom: "0.375rem" }}
+          style={{
+            display: "block",
+            fontWeight: 500,
+            fontSize: "0.875rem",
+            marginBottom: "0.375rem",
+          }}
         >
           Financial event
         </label>

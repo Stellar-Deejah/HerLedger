@@ -17,10 +17,7 @@ export type {
 } from "./types/index.js";
 
 // Attester registry
-export {
-  KNOWN_ATTESTERS,
-  resolveAttesterName,
-} from "./attester-registry.js";
+export { KNOWN_ATTESTERS, resolveAttesterName } from "./attester-registry.js";
 export type { AttesterRegistry, AttesterRegistryEntry } from "./attester-registry.js";
 
 // Errors
@@ -48,11 +45,8 @@ export {
 } from "./rpc/client.js";
 export type { RpcHealthResult } from "./rpc/client.js";
 export { CircuitBreaker } from "./rpc/circuit-breaker.js";
-export type {
-  CircuitState,
-  CircuitBreakerOptions,
-} from "./rpc/circuit-breaker.js";
-export { simulateAndPrepare, submitAndWait } from "./rpc/transactions.js";
+export type { CircuitState, CircuitBreakerOptions } from "./rpc/circuit-breaker.js";
+export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/transactions.js";
 
 // Wallet
 export {
@@ -75,6 +69,7 @@ export {
   decodeU64,
   decodeBool,
   hexToBytes,
+  toHexString32,
 } from "./contracts/encoding.js";
 
 // Contract address registry

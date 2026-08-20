@@ -28,7 +28,10 @@ vi.mock("../../db/schema/businesses.js", () => ({
 }));
 
 describe("Financial Events Indexing & Metrics", () => {
-  const mockPrisma = {} as unknown as import("@prisma/client").PrismaClient;
+  const transactionMock = vi.fn(async (fn: (tx: unknown) => Promise<void>) => fn({}));
+  const mockPrisma = {
+    $transaction: transactionMock,
+  } as unknown as import("@prisma/client").PrismaClient;
   const mockConfig = { network: "testnet" } as unknown as import("@herledger/sdk").StellarNetworkConfig;
   const mockContracts = {} as unknown as import("@herledger/sdk").ContractConfig;
 
@@ -86,5 +89,46 @@ describe("Financial Events Indexing & Metrics", () => {
 
     const metrics = await getMetrics();
     expect(metrics).not.toContain("events_indexed_total{");
+  });
+
+  it("writes the Stellar transaction and derived events inside a single $transaction", async () => {
+    const payment: ParsedPayment = {
+      transactionHash: "d".repeat(64),
+      ledgerSequence: 12348,
+      successful: true,
+      sourceAddress: "GBUSINESS_SENT",
+      destinationAddress: "GBUSINESS_RECV",
+      assetAddress: "CASSET_SUPPORTED",
+      amount: 100000n,
+    };
+
+    await indexPayment(mockPrisma, payment, mockConfig, mockContracts);
+
+    expect(transactionMock).toHaveBeenCalledTimes(1);
+    expect(transactionMock).toHaveBeenCalledWith(expect.any(Function));
+  });
+
+  it("rolls back the whole payment when a write inside the transaction fails", async () => {
+    const payment: ParsedPayment = {
+      transactionHash: "e".repeat(64),
+      ledgerSequence: 12349,
+      successful: true,
+      sourceAddress: "GBUSINESS_SENT",
+      destinationAddress: "GBUSINESS_RECV",
+      assetAddress: "CASSET_SUPPORTED",
+      amount: 100000n,
+    };
+
+    // Fail the second write (sender event). indexPayment must propagate the
+    // error out of the transaction so Prisma rolls back the entire payment.
+    const { upsertFinancialEvent } = await import("../../db/schema/financial-events.js");
+    vi.mocked(upsertFinancialEvent)
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("simulated write failure"));
+
+    await expect(indexPayment(mockPrisma, payment, mockConfig, mockContracts)).rejects.toThrow(
+      "simulated write failure"
+    );
+    expect(transactionMock).toHaveBeenCalledTimes(1);
   });
 });

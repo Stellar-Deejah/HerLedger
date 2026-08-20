@@ -1,11 +1,9 @@
-
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
+import { getDbClient } from "@herledger/db";
 
-const prisma = getPrismaClient();
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
@@ -18,10 +16,8 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
+  const db = getDbClient();
+  const profile = await db.businesses.findByUserId(session.user.id);
 
   if (!profile) {
     return new Response(JSON.stringify({ error: "No business profile" }), {
@@ -48,13 +44,10 @@ export async function GET(req: NextRequest) {
 
       const checkEvents = async () => {
         try {
-          const events = await prisma.financialEvent.findMany({
-            where: {
-              businessId: profile.businessId,
-              updatedAt: { gt: lastChecked },
-            },
-            orderBy: { updatedAt: "asc" },
-          });
+          const events = await db.financialEvents.findUpdatedAfter(
+            profile.businessId,
+            lastChecked
+          );
 
           const lastEvent = events[events.length - 1];
           if (lastEvent) {

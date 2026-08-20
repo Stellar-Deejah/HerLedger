@@ -7,9 +7,7 @@
    the manual path or `docker compose up` (see
    [Docker Compose](README.md#option-b-docker-compose)).
 3. Make your changes.
-4. Run `pnpm typecheck`, `pnpm lint`, and `pnpm test` before committing (a pre-commit
-   hook also runs a scoped version of these automatically — see
-   [Pre-commit hooks](#pre-commit-hooks) below).
+4. Run `pnpm typecheck`, `pnpm lint`, and `pnpm test` before committing.
 5. Use [Conventional Commits](https://www.conventionalcommits.org/) for commit messages.
 6. Open a pull request against `main`.
 
@@ -94,6 +92,42 @@ docs(app): improve local setup instructions
 - Type checking: `pnpm typecheck`
 - Formatting: `pnpm format`
 
+### Testing components that call the SDK: `MockSdkProvider`
+
+Components never call `@herledger/sdk` contract functions directly. They go
+through `useSdk()` (`apps/web/lib/sdk/sdk-context.tsx`), a React context whose
+default value is the real SDK. This is the seam tests use to intercept SDK
+calls — **no `vi.mock("@herledger/sdk")` module mocking** — by wrapping the
+component under test in `MockSdkProvider` (`apps/web/tests/utils/mock-sdk-provider.tsx`)
+and overriding just the function(s) the test needs:
+
+```tsx
+import { render, screen } from "@testing-library/react";
+import { MockSdkProvider, mockRegisterBusinessSuccess } from "@/tests/utils/mock-sdk-provider";
+import { BusinessRegistrationForm } from "@/components/business/business-registration-form";
+
+it("shows the confirmation screen after a successful registration", async () => {
+  render(
+    <MockSdkProvider overrides={{ registerBusiness: mockRegisterBusinessSuccess("tx-123") }}>
+      <BusinessRegistrationForm />
+    </MockSdkProvider>
+  );
+  // ...drive the form, then assert on the confirmed step
+});
+```
+
+`mock-sdk-provider.tsx` ships a few builders for common outcomes —
+`mockRegisterBusinessSuccess()`, `mockRegisterBusinessThrows()`, and
+`mockRegisterBusinessRejectedOnChain()` — to simulate the success, thrown
+error, and on-chain-failure paths respectively. Adding a new SDK call to a
+component means adding it to the `SdkClient` interface in `sdk-context.tsx`
+and wiring the real implementation into `defaultSdkClient`; tests then
+override it the same way.
+
+Component tests that render into the DOM need the jsdom environment. Add a
+`// @vitest-environment jsdom` pragma at the top of the test file — the
+project's default Vitest environment stays `node` for speed on non-DOM tests.
+
 ## Pull request checklist
 
 - [ ] TypeScript strict mode — no new `any`
@@ -152,3 +186,4 @@ CI checks enforce schema and migration sanity:
 - **Schema Drift Check:** CI compares the current schema with the committed migrations using `prisma migrate diff`. If a schema change exists without a corresponding migration file, CI will fail.
 - **Unsafe Migration Detection:** CI checks for unsafe migrations, such as adding a new `NOT NULL` column without a `DEFAULT` to an existing table. Any such statement will fail CI to prevent downtime or deployment errors.
 
+- [ ] CI passes

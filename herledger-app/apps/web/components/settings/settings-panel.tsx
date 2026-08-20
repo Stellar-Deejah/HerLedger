@@ -100,13 +100,20 @@ export function SettingsPanel() {
           padding: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem", color: "var(--destructive)" }}>
+        <h2
+          style={{
+            fontSize: "1.125rem",
+            fontWeight: 600,
+            marginBottom: "0.75rem",
+            color: "var(--destructive)",
+          }}
+        >
           Danger Zone
         </h2>
         <p style={{ color: "var(--muted)", fontSize: "0.9375rem", marginBottom: "1rem" }}>
           Once you delete your account, there is no going back. Please be certain.
         </p>
-        
+
         {!showConfirm ? (
           <button
             onClick={() => setShowConfirm(true)}
@@ -122,16 +129,31 @@ export function SettingsPanel() {
             Delete Account
           </button>
         ) : (
-          <form onSubmit={handleDelete} style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "400px" }}>
-            <div style={{ padding: "1rem", backgroundColor: "var(--destructive-foreground)", borderRadius: "var(--radius)" }}>
-              <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>Are you sure you want to delete your account?</p>
+          <form
+            onSubmit={handleDelete}
+            style={{ display: "flex", flexDirection: "column", gap: "1rem", maxWidth: "400px" }}
+          >
+            <div
+              style={{
+                padding: "1rem",
+                backgroundColor: "var(--destructive-foreground)",
+                borderRadius: "var(--radius)",
+              }}
+            >
+              <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>
+                Are you sure you want to delete your account?
+              </p>
               <p style={{ fontSize: "0.875rem", color: "var(--muted)" }}>
-                This will revoke all active sessions and anonymize your personal data immediately. Hard deletion will occur after a 30-day grace period.
+                This will revoke all active sessions and anonymize your personal data immediately.
+                Hard deletion will occur after a 30-day grace period.
               </p>
             </div>
-            
+
             <div>
-              <label htmlFor="password" style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}>
+              <label
+                htmlFor="password"
+                style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}
+              >
                 Confirm Password
               </label>
               <input
@@ -145,7 +167,7 @@ export function SettingsPanel() {
                   padding: "0.5rem",
                   borderRadius: "var(--radius)",
                   border: "1px solid var(--border)",
-                  backgroundColor: "var(--background)"
+                  backgroundColor: "var(--background)",
                 }}
               />
             </div>

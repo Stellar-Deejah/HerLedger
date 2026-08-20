@@ -15,10 +15,7 @@ export interface MutableFlag {
  * `flag.current` is always reset in a `finally`, including when `fn`
  * throws, so a failed submission doesn't permanently lock the form.
  */
-export async function runExclusive<T>(
-  flag: MutableFlag,
-  fn: () => Promise<T>
-): Promise<T | null> {
+export async function runExclusive<T>(flag: MutableFlag, fn: () => Promise<T>): Promise<T | null> {
   if (flag.current) return null;
   flag.current = true;
   try {

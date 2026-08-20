@@ -136,15 +136,20 @@ export function FieldInput({
   required: propRequired,
   ...props
 }: FieldInputProps) {
-  const { id, error, descriptionId, errorId, required: contextRequired, disabled: contextDisabled } =
-    useFieldContext();
+  const {
+    id,
+    error,
+    descriptionId,
+    errorId,
+    required: contextRequired,
+    disabled: contextDisabled,
+  } = useFieldContext();
 
   const isRequired = propRequired ?? contextRequired;
   const isDisabled = propDisabled ?? contextDisabled;
 
-  const ariaDescribedBy = [descriptionId, error ? errorId : undefined]
-    .filter(Boolean)
-    .join(" ") || undefined;
+  const ariaDescribedBy =
+    [descriptionId, error ? errorId : undefined].filter(Boolean).join(" ") || undefined;
 
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
     if (typeof onChange === "function") {

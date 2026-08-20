@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 
-import { GENERIC_SIGN_IN_ERROR, normalizeSignInError } from "../messages.js";
+import {
+  EMAIL_NOT_VERIFIED_ERROR,
+  GENERIC_SIGN_IN_ERROR,
+  normalizeSignInError,
+} from "../messages.js";
 
 describe("normalizeSignInError", () => {
   it("returns the same generic message for a 'user not found'-shaped error", () => {
@@ -44,5 +48,21 @@ describe("normalizeSignInError", () => {
   it("returns the generic message for null/undefined input", () => {
     expect(normalizeSignInError(null)).toBe(GENERIC_SIGN_IN_ERROR);
     expect(normalizeSignInError(undefined)).toBe(GENERIC_SIGN_IN_ERROR);
+  });
+
+  it("returns the distinct verify-email message for EMAIL_NOT_VERIFIED", () => {
+    // Reaching this code already proves the caller supplied a valid
+    // email/password pair -- Better Auth checks credentials before
+    // verification status (confirmed against the real auth.handler()
+    // response) -- so naming the actual reason here doesn't enable the
+    // enumeration the generic-message layer above exists to prevent.
+    const emailNotVerifiedError = {
+      code: "EMAIL_NOT_VERIFIED",
+      message: "Email not verified",
+      status: 403,
+    };
+
+    expect(normalizeSignInError(emailNotVerifiedError)).toBe(EMAIL_NOT_VERIFIED_ERROR);
+    expect(EMAIL_NOT_VERIFIED_ERROR).not.toBe(GENERIC_SIGN_IN_ERROR);
   });
 });

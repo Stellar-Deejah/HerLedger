@@ -4,10 +4,10 @@ import { z } from "zod";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
-import { updateBusinessMetadata } from "@herledger/sdk";
-import { getStellarNetworkConfig, getContractConfig } from "@/lib/stellar/config";
 import { getAccount } from "@/lib/stellar/account";
+import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
+import { getDbClient } from "@herledger/db";
+import { updateBusinessMetadata } from "@herledger/sdk";
 
 const RequestSchema = z.object({
   businessId: z.string().min(1),
@@ -20,8 +20,6 @@ interface MetadataUpdateResponse {
   data: { success: boolean } | null;
   error: { code: string; message: string } | null;
 }
-
-const prisma = getPrismaClient();
 
 // Idempotency key storage (in production, use Redis or similar)
 const idempotencyKeys = new Map<string, { status: string; result: unknown }>();
@@ -57,7 +55,7 @@ export async function PUT(req: NextRequest) {
 
   // Generate idempotency key from businessId + metadataHash
   const idempotencyKey = `${businessId}:${metadataHash}`;
-  
+
   // Check for existing idempotent request
   const existing = idempotencyKeys.get(idempotencyKey);
   if (existing) {
@@ -84,15 +82,10 @@ export async function PUT(req: NextRequest) {
   idempotencyKeys.set(idempotencyKey, { status: "in_progress", result: null });
 
   try {
-    // Verify business ownership
-    const dbBusiness = await prisma.businessProfile.findFirst({
-      where: {
-        businessId,
-        userId: session.user.id,
-      },
-    });
+    const db = getDbClient();
+    const dbBusiness = await db.businesses.findById(businessId);
 
-    if (!dbBusiness) {
+    if (!dbBusiness || dbBusiness.userId !== session.user.id) {
       idempotencyKeys.delete(idempotencyKey);
       return typedJson<MetadataUpdateResponse>(
         { data: null, error: { code: "NOT_FOUND", message: "Business not found" } },
@@ -118,10 +111,7 @@ export async function PUT(req: NextRequest) {
     );
 
     // Update DB
-    await prisma.businessProfile.update({
-      where: { id: dbBusiness.id },
-      data: { metadataHash },
-    });
+    await db.businesses.update(dbBusiness.id, { metadataHash });
 
     // Mark as completed
     idempotencyKeys.set(idempotencyKey, { status: "completed", result: { success: true } });

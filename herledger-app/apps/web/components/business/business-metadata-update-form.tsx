@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { z } from "zod";
 
-const metadataHashSchema = z.string().regex(
-  /^[0-9a-f]{64}$/i,
-  "Metadata hash must be a 64-character hexadecimal string (SHA-256)"
-);
+const metadataHashSchema = z
+  .string()
+  .regex(/^[0-9a-f]{64}$/i, "Metadata hash must be a 64-character hexadecimal string (SHA-256)");
 
 interface BusinessMetadataUpdateFormProps {
   businessId: string;
@@ -29,7 +28,7 @@ export function BusinessMetadataUpdateForm({
   const validateHash = (hash: string): boolean => {
     const result = metadataHashSchema.safeParse(hash);
     if (!result.success) {
-      setValidationError(result.error.errors[0].message);
+      setValidationError(result.error.issues[0]?.message ?? "Invalid metadata hash");
       return false;
     }
     setValidationError(null);
@@ -38,7 +37,7 @@ export function BusinessMetadataUpdateForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateHash(metadataHash)) {
       return;
     }
@@ -83,14 +82,20 @@ export function BusinessMetadataUpdateForm({
       </h3>
       <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
         Update your business metadata hash on-chain. This will update the metadata hash stored in
-        the smart contract. The metadata hash should be a SHA-256 hash of your business metadata JSON.
+        the smart contract. The metadata hash should be a SHA-256 hash of your business metadata
+        JSON.
       </p>
 
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "1rem" }}>
           <label
             htmlFor="metadataHash"
-            style={{ display: "block", fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.5rem" }}
+            style={{
+              display: "block",
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              marginBottom: "0.5rem",
+            }}
           >
             Metadata Hash (SHA-256)
           </label>
@@ -113,13 +118,22 @@ export function BusinessMetadataUpdateForm({
             }}
           />
           {validationError && (
-            <p style={{ color: "var(--error, #ef4444)", fontSize: "0.75rem", marginTop: "0.25rem" }}>
+            <p
+              style={{ color: "var(--error, #ef4444)", fontSize: "0.75rem", marginTop: "0.25rem" }}
+            >
               {validationError}
             </p>
           )}
         </div>
 
-        <div style={{ marginBottom: "1rem", padding: "0.75rem", backgroundColor: "var(--muted-background, #f5f5f5)", borderRadius: "var(--radius)" }}>
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "0.75rem",
+            backgroundColor: "var(--muted-background, #f5f5f5)",
+            borderRadius: "var(--radius)",
+          }}
+        >
           <p style={{ fontSize: "0.875rem", fontWeight: 500, marginBottom: "0.5rem" }}>
             Current Hash:
           </p>
@@ -128,22 +142,32 @@ export function BusinessMetadataUpdateForm({
           </p>
         </div>
 
-        <div style={{ marginBottom: "1rem", padding: "0.75rem", backgroundColor: "rgba(59, 130, 246, 0.1)", borderRadius: "var(--radius)" }}>
+        <div
+          style={{
+            marginBottom: "1rem",
+            padding: "0.75rem",
+            backgroundColor: "rgba(59, 130, 246, 0.1)",
+            borderRadius: "var(--radius)",
+          }}
+        >
           <p style={{ fontSize: "0.875rem", color: "var(--info, #3b82f6)" }}>
-            <strong>Note:</strong> This action requires a Stellar transaction and will incur network fees.
-            The metadata hash must be a valid 64-character hexadecimal string (SHA-256 format).
+            <strong>Note:</strong> This action requires a Stellar transaction and will incur network
+            fees. The metadata hash must be a valid 64-character hexadecimal string (SHA-256
+            format).
           </p>
         </div>
 
         {error && (
-          <div style={{ 
-            padding: "0.75rem", 
-            marginBottom: "1rem", 
-            backgroundColor: "rgba(239, 68, 68, 0.1)", 
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            borderRadius: "var(--radius)",
-            color: "var(--error, #ef4444)" 
-          }}>
+          <div
+            style={{
+              padding: "0.75rem",
+              marginBottom: "1rem",
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: "var(--radius)",
+              color: "var(--error, #ef4444)",
+            }}
+          >
             {error}
           </div>
         )}

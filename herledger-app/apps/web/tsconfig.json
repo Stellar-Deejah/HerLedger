@@ -22,7 +22,9 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@herledger/db": ["../../packages/db/src/index.ts"],
+      "@herledger/db/*": ["../../packages/db/src/*"]
     },
     "noEmit": true,
     "isolatedModules": true

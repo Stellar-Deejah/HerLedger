@@ -1,5 +1,5 @@
 import { StrKey } from "@stellar/stellar-sdk";
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -16,6 +16,8 @@ beforeAll(async () => {
     APP_URL: "http://localhost:3000",
     DATABASE_URL: "postgresql://herledger:herledger@localhost:5432/herledger_test",
     BETTER_AUTH_SECRET: "test-secret-must-be-at-least-32-characters-long",
+    RESEND_API_KEY: "test-resend-key",
+    EMAIL_FROM: "HerLedger <test@herledger.test>",
     STELLAR_NETWORK: "testnet",
     STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
     STELLAR_HORIZON_URL: "https://horizon-testnet.stellar.org",

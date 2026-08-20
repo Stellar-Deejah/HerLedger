@@ -44,7 +44,7 @@ export function BusinessProfile() {
 
   const fetchBusiness = useCallback(async () => {
     if (!session) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -88,7 +88,7 @@ export function BusinessProfile() {
       }
 
       const data = await response.json();
-      
+
       if (data.discrepancies && data.discrepancies.length > 0) {
         setDiscrepancies(data.discrepancies);
         setShowDiscrepancies(true);
@@ -171,8 +171,8 @@ export function BusinessProfile() {
             Register your business
           </h2>
           <p style={{ color: "var(--muted)", fontSize: "0.9375rem", marginBottom: "1.5rem" }}>
-            Connect your Stellar wallet and register your business on HerLedger. Your business ID and
-            registration will be confirmed on the Stellar network.
+            Connect your Stellar wallet and register your business on HerLedger. Your business ID
+            and registration will be confirmed on the Stellar network.
           </p>
           <BusinessRegistrationForm />
         </section>
@@ -190,10 +190,15 @@ export function BusinessProfile() {
           marginBottom: "1.5rem",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
-          <h2 style={{ fontSize: "1.125rem", fontWeight: 600 }}>
-            Business Profile
-          </h2>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}
+        >
+          <h2 style={{ fontSize: "1.125rem", fontWeight: 600 }}>Business Profile</h2>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             <button
               onClick={verifyOnChain}
@@ -244,14 +249,16 @@ export function BusinessProfile() {
         </div>
 
         {error && (
-          <div style={{ 
-            padding: "0.75rem", 
-            marginBottom: "1rem", 
-            backgroundColor: "rgba(239, 68, 68, 0.1)", 
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            borderRadius: "var(--radius)",
-            color: "var(--error, #ef4444)" 
-          }}>
+          <div
+            style={{
+              padding: "0.75rem",
+              marginBottom: "1rem",
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: "var(--radius)",
+              color: "var(--error, #ef4444)",
+            }}
+          >
             {error}
           </div>
         )}
@@ -289,10 +296,12 @@ export function BusinessProfile() {
             <label style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--muted)" }}>
               Status
             </label>
-            <p style={{
-              marginTop: "0.25rem",
-              color: business.active ? "var(--color-success-text)" : "var(--color-error-text)"
-            }}>
+            <p
+              style={{
+                marginTop: "0.25rem",
+                color: business.active ? "var(--color-success-text)" : "var(--color-error-text)",
+              }}
+            >
               {business.active ? "Active" : "Inactive"}
             </p>
           </div>
@@ -317,7 +326,14 @@ export function BusinessProfile() {
             backgroundColor: "rgba(234, 179, 8, 0.05)",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
             <h3 style={{ fontSize: "1rem", fontWeight: 600, color: "var(--warning, #eab308)" }}>
               On-chain Discrepancies Detected
             </h3>

@@ -86,6 +86,20 @@ model Verification {
   @@map("verifications")
 }
 
+// Better Auth's DB-backed rate limiter (rateLimit.storage: "database" in
+// lib/auth/server.ts) -- one row per rate-limited key (e.g. an IP + route
+// pair), reused as a sliding counter rather than one row per request.
+// lastRequest is a millisecond epoch timestamp (Date.now()), which exceeds
+// Int32 range -- must be BigInt, not Int.
+model RateLimit {
+  id          String @id @default(cuid())
+  key         String
+  count       Int
+  lastRequest BigInt
+
+  @@map("rate_limits")
+}
+
 // ---------------------------------------------------------------------------
 // HerLedger application models
 // ---------------------------------------------------------------------------

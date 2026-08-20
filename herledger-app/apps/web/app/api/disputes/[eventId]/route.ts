@@ -4,30 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/server";
 import { decryptDisputeReason, DisputeDecryptionError } from "@/lib/crypto/dispute-encryption";
-import { getPrismaClient } from "@/lib/db/client";
 import { deriveDisputeLifecycleStatus } from "@/lib/disputes/status";
-
-const prisma = getPrismaClient();
+import { getDbClient } from "@herledger/db";
 
 interface RouteContext {
   params: Promise<{ eventId: string }>;
 }
 
-/**
- * GET /api/disputes/:eventId
- *
- * Returns the most recent dispute raised against a financial event, with
- * `reasonPlaintext` decrypted -- but ONLY when the caller is the business
- * owner who raised it. This is an access-control decision, not just a
- * field-redaction one: an unauthenticated caller, a different HerLedger
- * user, or even the event's attester get a 403 with no dispute data at
- * all, rather than a version of the response with the reason stripped out.
- * A dispute reason can contain sensitive business/financial detail, and the
- * only party with a legitimate need to read it back (as opposed to just
- * seeing that a dispute exists and its lifecycle status, which is already
- * visible via /api/activity/recent's EventStatus) is the business that
- * filed it.
- */
 export async function GET(_req: NextRequest, context: RouteContext) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
@@ -46,10 +29,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   }
 
   try {
-    const profile = await prisma.businessProfile.findFirst({
-      where: { userId: session.user.id },
-      select: { businessId: true },
-    });
+    const db = getDbClient();
+    const profile = await db.businesses.findByUserId(session.user.id);
     if (!profile) {
       return NextResponse.json(
         {
@@ -60,10 +41,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       );
     }
 
-    const event = await prisma.financialEvent.findUnique({
-      where: { eventId },
-      select: { businessId: true, status: true },
-    });
+    const event = await db.financialEvents.findById(eventId);
     if (!event) {
       return NextResponse.json(
         { data: null, error: { code: "NOT_FOUND", message: "Financial event not found" } },
@@ -80,10 +58,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       );
     }
 
-    const dispute = await prisma.dispute.findFirst({
-      where: { eventId },
-      orderBy: { submittedAt: "desc" },
-    });
+    const dispute = await db.disputes.findByEventId(eventId);
     if (!dispute) {
       return NextResponse.json(
         { data: null, error: { code: "NOT_FOUND", message: "No dispute found for this event" } },
@@ -91,10 +66,6 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       );
     }
 
-    // Ownership double-check: the dispute must have been filed by this
-    // session's user, not merely by someone at the same business (a
-    // BusinessProfile is 1:1 with a User in the current schema, so these
-    // should always agree -- this is defense in depth, not a workaround).
     if (dispute.userId !== session.user.id) {
       return NextResponse.json(
         {
@@ -107,14 +78,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 
     const derivedStatus = deriveDisputeLifecycleStatus(event.status, dispute.status);
     if (derivedStatus !== dispute.status) {
-      // Self-heal: the on-chain event has moved past what this dispute
-      // record reflects (e.g. resolve_dispute/revoke_event landed since we
-      // last wrote this row). No indexer job wires this automatically yet
-      // (see prisma/schema.prisma Dispute.resolutionTxHash comment), so we
-      // reconcile lazily on read instead of leaving stale data in front of
-      // the user.
       const resolvedAt = dispute.resolvedAt ?? new Date();
-      await prisma.dispute.update({
+      await db.prisma.dispute.update({
         where: { id: dispute.id },
         data: { status: derivedStatus, resolvedAt },
       });

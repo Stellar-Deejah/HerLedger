@@ -8,7 +8,7 @@ import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { signIn } from "@/lib/auth/client";
-import { normalizeSignInError } from "@/lib/auth/messages";
+import { EMAIL_NOT_VERIFIED_ERROR, normalizeSignInError } from "@/lib/auth/messages";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignInForm() {
@@ -65,6 +65,14 @@ export function SignInForm() {
         required
         autoComplete="current-password"
       />
+
+      {error === EMAIL_NOT_VERIFIED_ERROR && (
+        <p style={{ fontSize: "0.875rem", marginBottom: "1rem" }}>
+          <Link href={`/auth/verify-email?email=${encodeURIComponent(email)}`}>
+            Resend verification email
+          </Link>
+        </p>
+      )}
 
       <SubmitButton loading={loading}>Sign in</SubmitButton>
 

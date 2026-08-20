@@ -9,27 +9,9 @@ import { getPrismaClient } from "@/lib/db/client";
 
 import { RequestSchema, type ClaimDescriptionResponse } from "./schema";
 
-const prisma = getPrismaClient();
-
-/**
- * Store the human-readable claim text for a just-created attestation.
- *
- * Called by CreateAttestationForm immediately after create_attestation
- * confirms on-chain. The Attestation row may not exist yet at that point --
- * the indexer's own sync job (indexer/src/index/attestations.ts) is what
- * normally creates it, and that can lag behind a fresh on-chain write -- so
- * this route upserts the row itself using the same fields the client just
- * used to build the transaction, with `ledgerSequence` taken from the
- * confirmed transaction result.
- *
- * On the update path (row already exists, e.g. the indexer won the race)
- * this ONLY ever sets `claimDescription`, mirroring the indexer's own
- * upsertAttestation, which only ever sets `status` on update -- each side
- * owns a disjoint set of fields so neither can clobber the other.
- */
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ attestationId: string }> }
+  context: { params: Promise<{ attestationId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
@@ -39,7 +21,7 @@ export async function POST(
     );
   }
 
-  const { attestationId } = await params;
+  const { attestationId } = await context.params;
 
   let body: unknown;
   try {
@@ -61,10 +43,8 @@ export async function POST(
 
   const { eventId, attesterAddress, claimHash, claimDescription, ledgerSequence } = parsed.data;
 
-  const attester = await prisma.attesterProfile.findUnique({
-    where: { walletAddress: attesterAddress },
-    select: { active: true },
-  });
+  const db = getDbClient();
+  const attester = await db.attesters.findByWallet(attesterAddress);
   if (!attester?.active) {
     return typedJson<ClaimDescriptionResponse>(
       {
@@ -76,19 +56,13 @@ export async function POST(
   }
 
   try {
-    const attestation = await prisma.attestation.upsert({
-      where: { attestationId },
-      create: {
-        attestationId,
-        eventId,
-        attesterAddress,
-        claimHash,
-        status: "Active",
-        ledgerSequence,
-        claimDescription,
-      },
-      update: { claimDescription },
-      select: { attestationId: true },
+    const attestation = await db.attestations.upsertClaimDescription({
+      attestationId,
+      eventId,
+      attesterAddress,
+      claimHash,
+      claimDescription,
+      ledgerSequence,
     });
 
     const event = await prisma.financialEvent.findUnique({
@@ -111,7 +85,10 @@ export async function POST(
       error: err,
     });
     return typedJson<ClaimDescriptionResponse>(
-      { data: null, error: { code: "INTERNAL_ERROR", message: "Failed to save claim description" } },
+      {
+        data: null,
+        error: { code: "INTERNAL_ERROR", message: "Failed to save claim description" },
+      },
       { status: 500 }
     );
   }

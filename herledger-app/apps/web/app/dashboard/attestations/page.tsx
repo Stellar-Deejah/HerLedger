@@ -38,7 +38,7 @@ export default async function AttestationsPage() {
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>Attestations</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <Link
-            href="/dashboard/attestations/create"
+            href={"/dashboard/attestations/create" as any}
             style={{
               padding: "0.5rem 1rem",
               background: "var(--primary)",
@@ -52,7 +52,7 @@ export default async function AttestationsPage() {
             Create attestation
           </Link>
           <Link
-            href="/dashboard/attestations/register"
+            href={"/dashboard/attestations/register" as any}
             style={{
               padding: "0.5rem 1rem",
               border: "1px solid var(--border)",

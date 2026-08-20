@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
+import { getDbClient } from "@herledger/db";
 
 interface CurrentBusinessResponse {
   data: {
@@ -17,8 +17,6 @@ interface CurrentBusinessResponse {
   error: { code: string; message: string } | null;
 }
 
-const prisma = getPrismaClient();
-
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
@@ -29,9 +27,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const business = await prisma.businessProfile.findFirst({
-      where: { userId: session.user.id },
-    });
+    const db = getDbClient();
+    const business = await db.businesses.findByUserId(session.user.id);
 
     if (!business) {
       return typedJson<CurrentBusinessResponse>(

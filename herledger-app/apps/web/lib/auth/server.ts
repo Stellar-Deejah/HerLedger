@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 
 import { getPrismaClient } from "@/lib/db/client";
+import { sendVerificationEmail } from "@/lib/email/verification";
 
 // ---------------------------------------------------------------------------
 // Better Auth server instance
@@ -19,7 +20,49 @@ export const auth = betterAuth({
   baseURL: env.APP_URL,
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    // Confirmed empirically (see PR description): with this on, sign-up
+    // does not issue a session (no Set-Cookie) until the email is
+    // verified, and sign-in for an unverified user is rejected with a
+    // distinct EMAIL_NOT_VERIFIED error rather than creating one. There is
+    // no code path that hands an unverified user a session cookie, so the
+    // existing cookie-presence check in middleware.ts already keeps them
+    // out of /dashboard without needing its own emailVerified check --
+    // app/dashboard/layout.tsx still re-checks it server-side (see that
+    // file) as defense in depth against a future change to this behavior.
+    requireEmailVerification: true,
+    minPasswordLength: 12,
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    // Refreshes the token (and re-sends) on a sign-in attempt against an
+    // unverified account, so a user who lost the original email isn't
+    // stuck waiting for the resend button specifically.
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendVerificationEmail(user.email, url);
+    },
+  },
+  rateLimit: {
+    enabled: true,
+    // DB-backed rather than in-memory: this app has no other reason to run
+    // a shared cache (Redis/Upstash) yet, and an in-memory counter is
+    // per-process -- wrong the moment this runs as more than one instance
+    // (multiple serverless invocations, or any horizontally-scaled
+    // deployment), since each instance would maintain its own count and a
+    // credential-stuffing attacker could round-robin across instances to
+    // dodge the limit entirely. Postgres is already the source of truth
+    // for everything else in this app; reusing it here needs no new infra.
+    storage: "database",
+    customRules: {
+      // 5 attempts / 15 minutes, matching the issue's acceptance criteria.
+      "/sign-in/email": { window: 900, max: 5 },
+      // The resend-verification-email button (app/auth/verify-email) hits
+      // this same endpoint sendOnSignUp/sendOnSignIn use internally --
+      // without its own limit it'd be a mail-bombing vector against
+      // whatever address is typed into the "email" field.
+      "/send-verification-email": { window: 900, max: 3 },
+    },
   },
   session: {
     cookieCache: {
@@ -37,6 +80,15 @@ export const auth = betterAuth({
     // explicitly so a `test` NODE_ENV can never silently turn off CSRF
     // protection in this app, in CI or otherwise.
     disableOriginCheck: false,
+    // Rate limiting (and session IP recording) key off the resolved client
+    // IP. Without this, Better Auth can't reliably read it from behind a
+    // proxy (Vercel, or any reverse proxy) and every client collapses onto
+    // one shared bucket -- confirmed empirically: omitting this made 6
+    // sign-in attempts from 3 different test IPs all land in the same
+    // rate-limit counter. x-forwarded-for is what Vercel/Next.js set.
+    ipAddress: {
+      ipAddressHeaders: ["x-forwarded-for"],
+    },
   },
 });
 

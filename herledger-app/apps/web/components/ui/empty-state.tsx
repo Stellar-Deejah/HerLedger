@@ -20,14 +20,15 @@ export function EmptyState({ title, description }: EmptyStateProps) {
         color: "var(--color-muted-text)",
       }}
     >
-      <p style={{ fontWeight: "var(--font-weight-medium)", marginBottom: description ? "var(--spacing-sm)" : 0 }}>
+      <p
+        style={{
+          fontWeight: "var(--font-weight-medium)",
+          marginBottom: description ? "var(--spacing-sm)" : 0,
+        }}
+      >
         {title}
       </p>
-      {description && (
-        <p style={{ fontSize: "var(--font-size-sm)", margin: 0 }}>
-          {description}
-        </p>
-      )}
+      {description && <p style={{ fontSize: "var(--font-size-sm)", margin: 0 }}>{description}</p>}
     </div>
   );
 }

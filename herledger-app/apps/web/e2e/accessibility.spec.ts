@@ -89,7 +89,10 @@ async function runAxe(page: Page) {
   expect(
     seriousOrCritical,
     seriousOrCritical
-      .map((v) => `${v.id} (${v.impact}): ${v.help}\n${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)
+      .map(
+        (v) =>
+          `${v.id} (${v.impact}): ${v.help}\n${v.nodes.map((n) => n.target.join(" ")).join(", ")}`
+      )
       .join("\n\n")
   ).toEqual([]);
 }

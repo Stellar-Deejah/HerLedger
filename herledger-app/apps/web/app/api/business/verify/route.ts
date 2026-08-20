@@ -4,9 +4,9 @@ import { z } from "zod";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
+import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
+import { getDbClient } from "@herledger/db";
 import { getBusiness } from "@herledger/sdk";
-import { getStellarNetworkConfig, getContractConfig } from "@/lib/stellar/config";
 
 const RequestSchema = z.object({
   businessId: z.string().min(1),
@@ -25,8 +25,6 @@ interface VerifyResponse {
   } | null;
   error: { code: string; message: string } | null;
 }
-
-const prisma = getPrismaClient();
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -58,15 +56,10 @@ export async function POST(req: NextRequest) {
   const { businessId } = parsed.data;
 
   try {
-    // Get DB record
-    const dbBusiness = await prisma.businessProfile.findFirst({
-      where: {
-        businessId,
-        userId: session.user.id,
-      },
-    });
+    const db = getDbClient();
+    const dbBusiness = await db.businesses.findById(businessId);
 
-    if (!dbBusiness) {
+    if (!dbBusiness || dbBusiness.userId !== session.user.id) {
       return typedJson<VerifyResponse>(
         { data: null, error: { code: "NOT_FOUND", message: "Business not found" } },
         { status: 404 }
@@ -80,7 +73,10 @@ export async function POST(req: NextRequest) {
 
     if (!chainBusiness) {
       return typedJson<VerifyResponse>(
-        { data: null, error: { code: "NOT_FOUND_ON_CHAIN", message: "Business not found on-chain" } },
+        {
+          data: null,
+          error: { code: "NOT_FOUND_ON_CHAIN", message: "Business not found on-chain" },
+        },
         { status: 404 }
       );
     }

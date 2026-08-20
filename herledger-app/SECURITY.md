@@ -63,7 +63,83 @@ production for real financial data without a professional security review.
   defensive client-side normalization layer on top, so the sign-in form
   never surfaces a different message verbatim even if a future plugin,
   misconfiguration, or upstream change makes one path more specific than
-  another.
+  another. The one deliberate exception is `EMAIL_NOT_VERIFIED`: reaching
+  that path already proves the caller supplied a valid email/password pair
+  (Better Auth checks credentials before verification status), so naming
+  the actual reason there doesn't enable enumeration by someone who
+  doesn't already have valid credentials.
+
+- **Required email verification**: `emailAndPassword.requireEmailVerification: true`
+  in `apps/web/lib/auth/server.ts`. Confirmed against the real `auth`
+  instance (not just read from Better Auth's docs): a sign-up no longer
+  returns a session (no `Set-Cookie`, `token: null`) until the address is
+  verified, and a sign-in attempt against an unverified account is
+  rejected with a distinct `EMAIL_NOT_VERIFIED` error rather than
+  succeeding. There is no code path in this app that hands an unverified
+  user a session cookie, so `middleware.ts`'s existing cookie-presence
+  check already keeps `/dashboard` unreachable without needing its own
+  `emailVerified` check.
+
+  - **Email provider**: [Resend](https://resend.com) (`apps/web/lib/email/`).
+    A single `RESEND_API_KEY` env var is enough in development against
+    `onboarding@resend.dev` — no domain verification step. The key is a
+    server-only env var (`packages/config/src/schema.ts`'s `serverEnvSchema`,
+    never `NEXT_PUBLIC_*`) and is read once via `getServerEnv()`, the same
+    pattern every other server secret in this app already follows;
+    `EMAIL_FROM` (also server-only) is the sender address, and needs a
+    domain verified in the Resend dashboard for production.
+  - **UX trade-off**: sign-up no longer lands the user straight on
+    `/dashboard/business` — it redirects to `/auth/verify-email`, which
+    explains the pending verification and offers a resend action
+    (rate-limited, see below). This is a real added step in onboarding,
+    accepted as the cost of not letting an unverified email claim a
+    business identity that then gets committed on-chain.
+
+- **Sign-in rate limiting / account lockout**: Better Auth's built-in
+  `rateLimit` config (`apps/web/lib/auth/server.ts`), not a hand-rolled
+  counter. `/sign-in/email` is limited to 5 attempts per 15-minute window
+  per client IP; the 6th attempt gets a `429` with the number of seconds
+  remaining. Also rate-limited: `/send-verification-email` (3 / 15 min),
+  since the resend-verification button is otherwise a mail-bombing vector
+  against whatever address is typed into the sign-up form's email field.
+
+  - **Storage: database, not in-memory.** An in-memory counter is
+    per-process — wrong the moment this runs as more than one instance
+    (multiple serverless invocations, or any horizontally-scaled
+    deployment), since each instance keeps its own count and a
+    credential-stuffing attacker can round-robin across instances to dodge
+    the limit. Postgres is already the source of truth for everything
+    else in this app (`prisma/schema.prisma`'s `RateLimit` model,
+    `@@map("rate_limits")`), so reusing it needs no new infrastructure
+    (no Redis/Upstash).
+  - **Client IP resolution**: `advanced.ipAddress.ipAddressHeaders: ["x-forwarded-for"]`.
+    Without this, Better Auth can't reliably read the client IP from
+    behind a proxy (Vercel or any reverse proxy) — confirmed empirically
+    against the real handler: omitting it collapsed every caller onto one
+    shared rate-limit bucket regardless of IP, which would either lock out
+    unrelated users sharing an edge/proxy or (worse) make the whole limit
+    meaningless if the resolved "IP" is constant.
+  - **`Retry-After` header**: Better Auth's own `429` response carries the
+    wait time in a custom `x-retry-after` header (seconds), not the
+    standard `Retry-After` — confirmed against the real response, not
+    documented anywhere. `apps/web/app/api/auth/[...all]/route.ts` mirrors
+    it onto the standard header so any client or intermediary that only
+    understands that one still gets a usable value.
+
+- **Password strength**: `emailAndPassword.minPasswordLength: 12`,
+  enforced server-side (Better Auth rejects a shorter password with
+  `PASSWORD_TOO_SHORT` before a user is ever created — confirmed against
+  the real handler). The client also checks this before submitting, purely
+  for immediate feedback; the server check is what actually matters, since
+  a client-side check alone is trivially bypassed.
+
+  `apps/web/components/auth/password-strength-meter.tsx` gives real-time
+  feedback beyond the length minimum, backed by `@zxcvbn-ts/core` rather
+  than the original `zxcvbn` package: same Dropbox `zxcvbn` estimation
+  model, rewritten in TypeScript with tree-shakeable per-language
+  dictionaries instead of one bundled ~800KB blob. Only the English
+  dictionary is included (this app has no i18n yet).
+
 - **Dispute reason encryption at rest**: The plaintext reason a business
   owner gives when disputing a `FinancialEvent` is encrypted before it is
   written to the `disputes` table (`Dispute.reasonPlaintext` -- see field
@@ -125,14 +201,14 @@ stored on-chain by committing only cryptographic hashes.
 
 Certain database fields are classified as Personally Identifiable Information (PII). In Prisma (`schema.prisma`), these fields are annotated with the `@PII` JSDoc tag.
 
-| Model | Field | Classification | Retention |
-|-------|-------|----------------|-----------|
-| `User` | `email` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
-| `User` | `name` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
-| `User` | `image` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
-| `Session` | `ipAddress` | **PII** | Purged upon sign out / deletion |
-| `BusinessProfile` | `displayName` | **PII** | Soft-deleted immediately, hard-deleted after 30 days |
-| `BusinessProfile` | `walletAddress` | **PII** | Anonymized immediately (SHA-256), hard-deleted after 30 days |
+| Model             | Field           | Classification | Retention                                                    |
+| ----------------- | --------------- | -------------- | ------------------------------------------------------------ |
+| `User`            | `email`         | **PII**        | Soft-deleted immediately, hard-deleted after 30 days         |
+| `User`            | `name`          | **PII**        | Soft-deleted immediately, hard-deleted after 30 days         |
+| `User`            | `image`         | **PII**        | Soft-deleted immediately, hard-deleted after 30 days         |
+| `Session`         | `ipAddress`     | **PII**        | Purged upon sign out / deletion                              |
+| `BusinessProfile` | `displayName`   | **PII**        | Soft-deleted immediately, hard-deleted after 30 days         |
+| `BusinessProfile` | `walletAddress` | **PII**        | Anonymized immediately (SHA-256), hard-deleted after 30 days |
 
 ## Reporting vulnerabilities
 

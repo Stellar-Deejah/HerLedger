@@ -67,22 +67,16 @@ describe("Design System UI Components & Primitives", () => {
 
   describe("SubmitButton", () => {
     it("renders normal, loading, and disabled states with tokens", () => {
-      const normalHtml = renderToString(
-        <SubmitButton>Save</SubmitButton>
-      );
+      const normalHtml = renderToString(<SubmitButton>Save</SubmitButton>);
       expect(normalHtml).toContain("Save");
       expect(normalHtml).toContain("var(--color-brand)");
 
-      const loadingHtml = renderToString(
-        <SubmitButton loading>Save</SubmitButton>
-      );
+      const loadingHtml = renderToString(<SubmitButton loading>Save</SubmitButton>);
       expect(loadingHtml).toContain("Please wait…");
       expect(loadingHtml).toContain('aria-busy="true"');
       expect(loadingHtml).toContain("disabled");
 
-      const disabledHtml = renderToString(
-        <SubmitButton disabled>Save</SubmitButton>
-      );
+      const disabledHtml = renderToString(<SubmitButton disabled>Save</SubmitButton>);
       expect(disabledHtml).toContain("disabled");
       expect(disabledHtml).toContain("var(--color-muted-text)");
     });

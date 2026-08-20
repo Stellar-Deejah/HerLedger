@@ -8,6 +8,25 @@ import { logger, dbQueryDurationSeconds } from "../observability/index.js";
 
 const DEFAULT_STATEMENT_TIMEOUT_MS = 10_000;
 
+// Connection pool sizing for the indexer's concurrency profile.
+//
+// The default pg pool used by `@prisma/adapter-pg` is sized for low-concurrency
+// workloads; under a high-volume sync batch (e.g. catching up 10,000 ledgers)
+// it can exhaust the pool and queue queries, slowing the sync job down or
+// timing it out. We therefore configure the pool explicitly:
+//
+// - `DB_CONNECTION_LIMIT` (default 10): maximum number of concurrent
+//   connections the indexer holds. The sync job is single-writer (one
+//   `syncCycle` at a time), so 10 is a deliberate balance: it lets a batch
+//   of `createMany`/`$transaction` writes overlap without reserving more
+//   connections than the workload can actually use. Raise it only if you
+//   observe pool exhaustion in the sync job; lower it on a shared database.
+// - `DB_POOL_TIMEOUT_MS` (default 10_000): how long a query waits for a free
+//   connection before failing, so a busy pool fails fast instead of queuing
+//   indefinitely.
+const DEFAULT_CONNECTION_LIMIT = 10;
+const DEFAULT_POOL_TIMEOUT_MS = 10_000;
+
 /**
  * Builds the DATABASE_URL with a Postgres `statement_timeout` query param
  * attached, so a slow or locked query is killed after a fixed maximum
@@ -37,7 +56,15 @@ function buildDatabaseUrl(): string {
 // erases it back to its default (`never` events).
 function createPrismaClient() {
   return new PrismaClient({
-    adapter: new PrismaPg(buildDatabaseUrl()),
+    adapter: new PrismaPg({
+      connectionString: buildDatabaseUrl(),
+      max: process.env["DB_CONNECTION_LIMIT"]
+        ? Number(process.env["DB_CONNECTION_LIMIT"])
+        : DEFAULT_CONNECTION_LIMIT,
+      connectionTimeoutMillis: process.env["DB_POOL_TIMEOUT_MS"]
+        ? Number(process.env["DB_POOL_TIMEOUT_MS"])
+        : DEFAULT_POOL_TIMEOUT_MS,
+    }),
     log: [
       { emit: "event", level: "query" } as const,
       { emit: "event", level: "warn" } as const,

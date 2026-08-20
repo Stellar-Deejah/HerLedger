@@ -56,22 +56,40 @@ export function BusinessDeactivationFlow({
 
   const renderWarningStep = () => (
     <>
-      <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem", color: "var(--error, #ef4444)" }}>
+      <h3
+        style={{
+          fontSize: "1.125rem",
+          fontWeight: 600,
+          marginBottom: "1rem",
+          color: "var(--error, #ef4444)",
+        }}
+      >
         Deactivate Business
       </h3>
-      
-      <div style={{ 
-        padding: "1rem", 
-        backgroundColor: "rgba(239, 68, 68, 0.1)", 
-        border: "1px solid rgba(239, 68, 68, 0.3)",
-        borderRadius: "var(--radius)",
-        marginBottom: "1.5rem" 
-      }}>
-        <p style={{ fontWeight: 600, marginBottom: "0.5rem" }}>⚠️ Warning: This action is irreversible</p>
+
+      <div
+        style={{
+          padding: "1rem",
+          backgroundColor: "rgba(239, 68, 68, 0.1)",
+          border: "1px solid rgba(239, 68, 68, 0.3)",
+          borderRadius: "var(--radius)",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <p style={{ fontWeight: 600, marginBottom: "0.5rem" }}>
+          ⚠️ Warning: This action is irreversible
+        </p>
         <p style={{ fontSize: "0.875rem", color: "var(--muted)" }}>
           Deactivating your business will have the following consequences:
         </p>
-        <ul style={{ fontSize: "0.875rem", color: "var(--muted)", marginTop: "0.5rem", paddingLeft: "1.5rem" }}>
+        <ul
+          style={{
+            fontSize: "0.875rem",
+            color: "var(--muted)",
+            marginTop: "0.5rem",
+            paddingLeft: "1.5rem",
+          }}
+        >
           <li>Your business will be marked as inactive on the Stellar blockchain</li>
           <li>All financial events associated with this business will become unverifiable</li>
           <li>You will not be able to reactivate this business from the UI</li>
@@ -123,7 +141,7 @@ export function BusinessDeactivationFlow({
       <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
         Confirm Deactivation
       </h3>
-      
+
       <p style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "1rem" }}>
         Type the business name <strong>{businessName}</strong> to confirm deactivation:
       </p>
@@ -150,14 +168,16 @@ export function BusinessDeactivationFlow({
       </div>
 
       {error && (
-        <div style={{ 
-          padding: "0.75rem", 
-          marginBottom: "1rem", 
-          backgroundColor: "rgba(239, 68, 68, 0.1)", 
-          border: "1px solid rgba(239, 68, 68, 0.3)",
-          borderRadius: "var(--radius)",
-          color: "var(--error, #ef4444)" 
-        }}>
+        <div
+          style={{
+            padding: "0.75rem",
+            marginBottom: "1rem",
+            backgroundColor: "rgba(239, 68, 68, 0.1)",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            borderRadius: "var(--radius)",
+            color: "var(--error, #ef4444)",
+          }}
+        >
           {error}
         </div>
       )}
@@ -211,12 +231,19 @@ export function BusinessDeactivationFlow({
 
   const renderCompleteStep = () => (
     <div style={{ textAlign: "center", padding: "2rem" }}>
-      <p style={{ fontSize: "1.125rem", fontWeight: 600, color: "var(--success, #22c55e)", marginBottom: "1rem" }}>
+      <p
+        style={{
+          fontSize: "1.125rem",
+          fontWeight: 600,
+          color: "var(--success, #22c55e)",
+          marginBottom: "1rem",
+        }}
+      >
         ✓ Business Deactivated
       </p>
       <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
-        Your business has been successfully deactivated on the Stellar blockchain.
-        All financial events are now unverifiable.
+        Your business has been successfully deactivated on the Stellar blockchain. All financial
+        events are now unverifiable.
       </p>
       <button
         onClick={onComplete}

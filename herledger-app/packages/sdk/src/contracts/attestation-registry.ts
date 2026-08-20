@@ -22,6 +22,7 @@ import {
   decodeBytes32,
   decodeAddress,
   decodeU64,
+  toHexString32,
 } from "./encoding.js";
 
 // ---------------------------------------------------------------------------
@@ -84,7 +85,7 @@ export async function getAttestation(
     fee: "100",
     networkPassphrase: config.networkPassphrase,
   })
-    .addOperation(contract.call("get_attestation", encodeBytes32(attestationId)))
+    .addOperation(contract.call("get_attestation", encodeBytes32(toHexString32(attestationId))))
     .setTimeout(30)
     .build();
 
@@ -107,7 +108,7 @@ export async function isValidAttestation(
     fee: "100",
     networkPassphrase: config.networkPassphrase,
   })
-    .addOperation(contract.call("is_valid_attestation", encodeBytes32(attestationId)))
+    .addOperation(contract.call("is_valid_attestation", encodeBytes32(toHexString32(attestationId))))
     .setTimeout(30)
     .build();
 
@@ -143,7 +144,7 @@ export async function registerAttester(
       contract.call(
         "register_attester",
         encodeAddress(params.attester),
-        encodeBytes32(params.metadataHash)
+        encodeBytes32(toHexString32(params.metadataHash))
       )
     )
     .setTimeout(300)
@@ -213,10 +214,10 @@ export async function createAttestation(
     .addOperation(
       contract.call(
         "create_attestation",
-        encodeBytes32(params.attestationId),
-        encodeBytes32(params.eventId),
+        encodeBytes32(toHexString32(params.attestationId)),
+        encodeBytes32(toHexString32(params.eventId)),
         encodeAddress(params.attester),
-        encodeBytes32(params.claimHash)
+        encodeBytes32(toHexString32(params.claimHash))
       )
     )
     .setTimeout(300)
@@ -249,8 +250,8 @@ export async function revokeAttestation(
     .addOperation(
       contract.call(
         "revoke_attestation",
-        encodeBytes32(params.attestationId),
-        encodeBytes32(params.reasonHash)
+        encodeBytes32(toHexString32(params.attestationId)),
+        encodeBytes32(toHexString32(params.reasonHash))
       )
     )
     .setTimeout(300)

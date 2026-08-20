@@ -3,11 +3,31 @@ import type { EventStatus, AttestationStatus } from "@herledger/sdk";
 export type Status = EventStatus | AttestationStatus;
 
 const STATUS_STYLES: Record<Status, { background: string; color: string; label: string }> = {
-  Pending: { background: "var(--color-warning-bg)", color: "var(--color-warning-text)", label: "Pending" },
-  Verified: { background: "var(--color-success-bg)", color: "var(--color-success-text)", label: "Verified" },
-  Disputed: { background: "var(--color-disputed-bg)", color: "var(--color-disputed-text)", label: "Disputed" },
-  Revoked: { background: "var(--color-error-bg)", color: "var(--color-error-text)", label: "Revoked" },
-  Active: { background: "var(--color-success-bg)", color: "var(--color-success-text)", label: "Active" },
+  Pending: {
+    background: "var(--color-warning-bg)",
+    color: "var(--color-warning-text)",
+    label: "Pending",
+  },
+  Verified: {
+    background: "var(--color-success-bg)",
+    color: "var(--color-success-text)",
+    label: "Verified",
+  },
+  Disputed: {
+    background: "var(--color-disputed-bg)",
+    color: "var(--color-disputed-text)",
+    label: "Disputed",
+  },
+  Revoked: {
+    background: "var(--color-error-bg)",
+    color: "var(--color-error-text)",
+    label: "Revoked",
+  },
+  Active: {
+    background: "var(--color-success-bg)",
+    color: "var(--color-success-text)",
+    label: "Active",
+  },
 };
 
 export interface StatusBadgeProps {

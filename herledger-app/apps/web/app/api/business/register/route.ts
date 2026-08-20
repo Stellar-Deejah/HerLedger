@@ -1,13 +1,11 @@
+import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
 
 import { RequestSchema, type BusinessRegisterResponse } from "./schema";
-
-const prisma = getPrismaClient();
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -38,32 +36,79 @@ export async function POST(req: NextRequest) {
 
   const { businessId, walletAddress, displayName, metadataHash } = parsed.data;
 
+  // businessId is the idempotency key here: it's generated client-side once
+  // per submission attempt (see generateBusinessId in
+  // apps/web/hooks/use-registration-flow.ts) and is unique in the DB, so a
+  // retried POST for the *same* submission (double-click, a resumed
+  // registration replaying after a tab close — see
+  // lib/business/pending-registration.ts) always carries the same
+  // businessId. We treat an exact replay of that submission as a 200
+  // (nothing new to do, hand back the same result) and reserve 409 for a
+  // genuine conflict: this businessId or wallet already belongs to a
+  // *different* registration.
   try {
-    const existing = await prisma.businessProfile.findFirst({
-      where: { userId: session.user.id },
-    });
-    if (existing) {
+    const db = getDbClient();
+    const existingForUser = await db.businesses.findByUserId(session.user.id);
+    if (existingForUser) {
+      const isSameSubmission =
+        existingForUser.businessId === businessId &&
+        existingForUser.walletAddress === walletAddress &&
+        existingForUser.metadataHash === metadataHash;
+
+      if (isSameSubmission) {
+        return typedJson<BusinessRegisterResponse>({
+          data: { businessId: existingForUser.businessId },
+          error: null,
+        });
+      }
+
       return typedJson<BusinessRegisterResponse>(
         {
           data: null,
           error: {
             code: "ALREADY_REGISTERED",
-            message: "Business already registered for this account",
+            message: `Business already registered for this account (businessId: ${existingForUser.businessId})`,
           },
         },
         { status: 409 }
       );
     }
 
-    const profile = await prisma.businessProfile.create({
-      data: {
-        userId: session.user.id,
-        businessId,
-        walletAddress,
-        displayName,
-        metadataHash,
-        active: true,
-      },
+    const existingWallet = await db.businesses.findByWallet(walletAddress);
+    if (existingWallet) {
+      return typedJson<BusinessRegisterResponse>(
+        {
+          data: null,
+          error: {
+            code: "WALLET_ALREADY_REGISTERED",
+            message: `This wallet is already registered (businessId: ${existingWallet.businessId})`,
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    const existingBusinessId = await db.businesses.findById(businessId);
+    if (existingBusinessId) {
+      return typedJson<BusinessRegisterResponse>(
+        {
+          data: null,
+          error: {
+            code: "BUSINESS_ID_CONFLICT",
+            message: `businessId already registered (businessId: ${existingBusinessId.businessId})`,
+          },
+        },
+        { status: 409 }
+      );
+    }
+
+    const profile = await db.businesses.create({
+      userId: session.user.id,
+      businessId,
+      walletAddress,
+      displayName,
+      metadataHash,
+      active: true,
     });
 
     return typedJson<BusinessRegisterResponse>({

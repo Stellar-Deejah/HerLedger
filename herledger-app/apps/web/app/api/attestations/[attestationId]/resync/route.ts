@@ -8,23 +8,14 @@ import { attestationsTag } from "@/lib/data/attestations";
 import { getPrismaClient } from "@/lib/db/client";
 import { getServerStellarConfig, getServerContractConfig } from "@/lib/stellar/server-config";
 
-const prisma = getPrismaClient();
+import { auth } from "@/lib/auth/server";
+import { getServerContractConfig, getServerStellarConfig } from "@/lib/stellar/server-config";
+import { getDbClient } from "@herledger/db";
+import { getAttestation } from "@herledger/sdk";
 
-/**
- * Re-fetch one attestation's on-chain state and reconcile the DB row.
- *
- * Called on-demand by `AttestationList` when a client-side
- * `isValidAttestation` check disagrees with the DB-indexed status (see
- * apps/web/components/attestations/attestation-list.tsx for the trade-off
- * discussion: on-demand here vs. a background re-validation job). Mirrors
- * indexer's `syncAttestation` (indexer/src/index/attestations.ts) — indexer
- * isn't a dependency of apps/web, so this re-implements the same "only
- * status can change" upsert rule directly against apps/web's own Prisma
- * client rather than importing indexer internals across app boundaries.
- */
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ attestationId: string }> }
+  context: { params: Promise<{ attestationId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
@@ -34,12 +25,10 @@ export async function POST(
     );
   }
 
-  const { attestationId } = await params;
+  const { attestationId } = await context.params;
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
+  const db = getDbClient();
+  const profile = await db.businesses.findByUserId(session.user.id);
   if (!profile) {
     return NextResponse.json(
       { data: null, error: { code: "NOT_FOUND", message: "Attestation not found" } },
@@ -47,15 +36,10 @@ export async function POST(
     );
   }
 
-  // Ownership check: only allow resyncing attestations attached to one of
-  // this business's own events — prevents an authenticated user from
-  // triggering resyncs (and RPC calls) for attestations that aren't theirs.
-  const existing = await prisma.attestation.findFirst({
-    where: {
-      attestationId,
-      event: { businessId: profile.businessId },
-    },
-  });
+  const existing = await db.attestations.findByAttestationIdAndBusiness(
+    attestationId,
+    profile.businessId
+  );
   if (!existing) {
     return NextResponse.json(
       { data: null, error: { code: "NOT_FOUND", message: "Attestation not found" } },
@@ -75,11 +59,13 @@ export async function POST(
     );
   }
 
-  const updated = await prisma.attestation.update({
-    where: { attestationId },
-    // Only status can change — never overwrite blockchain-derived fields
-    // (mirrors indexer/src/db/schema/attestations.ts's upsertAttestation).
-    data: { status: onChain.status },
+  await db.attestations.upsert({
+    attestationId,
+    eventId: existing.eventId,
+    attesterAddress: existing.attesterAddress,
+    claimHash: existing.claimHash,
+    status: onChain.status,
+    ledgerSequence: existing.ledgerSequence,
   });
 
   // "max" per Next.js's own guidance: revalidateTag's second argument

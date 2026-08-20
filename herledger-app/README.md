@@ -1536,6 +1536,10 @@ E2E tests must not depend on Mainnet — use Testnet or mocks.
 
 > **Statement timeout:** the indexer connects to Postgres with a statement_timeout (default 10s) appended to DATABASE_URL at runtime, configurable via DB_STATEMENT_TIMEOUT_MS. This kills a slow or locked query instead of holding its connection (and pool slot) indefinitely. Timed-out queries are logged as errors -- see indexer/src/db/client.ts.
 
+> **Connection pool configuration:** the indexer sizes its Postgres connection pool explicitly. `DB_CONNECTION_LIMIT` (default 10) caps the number of concurrent connections -- the sync job is single-writer, so 10 is a deliberate balance that lets a batch of `createMany`/`$transaction` writes overlap without reserving more connections than the workload can use. `DB_POOL_TIMEOUT_MS` (default 10s) is how long a query waits for a free connection before failing fast. Raise `DB_CONNECTION_LIMIT` only if you observe pool exhaustion during a large catch-up sync; lower it when sharing a database with other services. See indexer/src/db/client.ts.
+
+> **Per-ledger batch writes:** the indexer batches `StellarTransaction` and `FinancialEvent` writes per ledger using `createMany` with `skipDuplicates: true` (PostgreSQL only) instead of issuing per-row `upsert`s -- a single DB round-trip per model per ledger. `skipDuplicates` also makes re-indexing already-synced ledgers safe (duplicates are silently ignored rather than raising unique-constraint errors). Each payment's Stellar transaction plus its derived financial events are written inside a single `prisma.$transaction(...)`, so a partial write failure rolls back the whole payment and the raw ledger never diverges from the events derived from it. Status transitions (Pending → Verified) still flow through the explicit status-update path -- see indexer/src/db/schema/financial-events.ts and indexer/src/index/financial-events.ts.
+
 ### Frontend — Vercel (or equivalent)
 
 | Setting        | Value                     |
@@ -1952,11 +1956,15 @@ GET /businesses/:id/events?offset=0&limit=20
         ↓
 8. Freighter prompts user to sign
         ↓
-9. App submits signed transaction to Stellar
+9. App submits signed transaction to Stellar, and immediately persists a
+   PendingRegistration (businessId, wallet, display name, metadata hash,
+   tx hash) to localStorage — the earliest point a closed tab would
+   otherwise lose track of an in-flight registration
         ↓
 10. App polls for confirmation (up to 60 seconds)
         ↓
-11. On-chain success → app saves BusinessProfile to database
+11. On-chain success → app POSTs to /api/business/register to save the
+    BusinessProfile, then clears the pending-registration entry
         ↓
 12. Redirect to dashboard
         ↓
@@ -1965,6 +1973,41 @@ GET /businesses/:id/events?offset=0&limit=20
 
 The business is **not** marked registered in the database until the on-chain
 transaction is confirmed. If the transaction fails, the flow returns to step 7.
+
+### Recovery: tab-close, retries, and wallet disconnects
+
+**Resuming after a closed tab.** If the browser closes (or crashes) between
+step 9 and step 11, the transaction may already be in flight or confirmed
+on-chain with no local record of it. On the next load of the registration
+page, `useRegistrationFlow` checks localStorage for a `PendingRegistration`
+left by a previous session; if one exists, it skips straight to polling that
+same transaction hash (`pollTransactionStatus`) instead of restarting the
+flow, then finishes the DB write once confirmed. Nothing is re-signed or
+resubmitted — Freighter is never involved in a resume. The pending entry is
+cleared once the DB write succeeds (or once the resumed poll confirms the
+transaction failed on-chain, which is treated as terminal — the user's own
+retry, not another silent resume, is the recovery path there).
+
+**Idempotent retries.** `businessId` is generated once per submission
+attempt and is unique in the database, so it doubles as the idempotency key
+for `POST /api/business/register`: a retried POST for the exact same
+submission (a double-click, or a resumed registration replaying after a
+tab close) is recognized as the same attempt and returns `200` with the
+existing record rather than erroring or creating a duplicate. A `409`
+is reserved for a genuine conflict — this account already has a different
+business registered, or this wallet is already registered under a
+different `businessId` — and its error message names the existing
+`businessId` so the client (or a developer reading the response) can look
+up what's already there.
+
+**Wallet disconnect mid-flow.** If Freighter becomes unreachable between
+connecting (step 2) and signing (step 8) — locked, or access revoked — the
+signing call throws a `WalletError` from `packages/sdk/src/wallet/freighter.ts`.
+`useRegistrationFlow` recognizes that error type specifically (as opposed to
+a generic submission failure) and clears the stored wallet address before
+showing an inline error, so the retry control routes back to the
+wallet-connect step and prompts a reconnect, rather than looping on the
+business-details step with a wallet that's no longer there to sign anything.
 
 ---
 
