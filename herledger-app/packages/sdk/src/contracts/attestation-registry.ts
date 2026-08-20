@@ -11,6 +11,7 @@ import type {
   StellarNetworkConfig,
   ContractConfig,
   TransactionResult,
+  TransactionSigner,
 } from "../types/index.js";
 import { RpcError, ContractError } from "../errors/index.js";
 import { getSorobanRpcServer } from "../rpc/client.js";
@@ -133,7 +134,8 @@ export async function registerAttester(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.attestationRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -151,7 +153,8 @@ export async function registerAttester(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.admin
@@ -166,7 +169,8 @@ export async function deactivateAttester(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.attestationRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -178,7 +182,8 @@ export async function deactivateAttester(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.admin
@@ -204,7 +209,8 @@ export async function createAttestation(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.attestationRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -224,7 +230,8 @@ export async function createAttestation(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.attester
@@ -240,7 +247,8 @@ export async function revokeAttestation(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.attestationRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -258,7 +266,8 @@ export async function revokeAttestation(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.attester

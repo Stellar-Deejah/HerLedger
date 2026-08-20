@@ -14,6 +14,7 @@ export type {
   Brand,
   ContractAddress,
   HexString32,
+  TransactionSigner,
 } from "./types/index.js";
 
 // Attester registry
@@ -49,6 +50,8 @@ export type { CircuitState, CircuitBreakerOptions } from "./rpc/circuit-breaker.
 export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/transactions.js";
 
 // Wallet
+export { WalletAdapter, WalletConnection, WalletAccount } from "./wallet/types.js";
+export { FreighterAdapter } from "./wallet/freighter-adapter.js";
 export {
   isFreighterAvailable,
   connectWallet,
