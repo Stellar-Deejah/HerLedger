@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 import { ResponseSchema as ActivityRecentResponseSchema } from "../../app/api/v1/activity/recent/schema.js";
+import { ResponseSchema as ActivitySummaryResponseSchema } from "../../app/api/v1/activity/summary/schema.js";
 import { ResponseSchema as AttestationsResponseSchema } from "../../app/api/v1/attestations/schema.js";
 import { ResponseSchema as BusinessRegisterResponseSchema } from "../../app/api/v1/business/register/schema.js";
 import { ResponseSchema as HealthResponseSchema } from "../../app/api/v1/health/schema.js";
@@ -185,6 +186,20 @@ export function buildWebOpenApiSpec() {
               required: false,
               schema: { type: "integer", default: 20 },
             },
+            {
+              name: "startDate",
+              in: "query",
+              required: false,
+              description: "Inclusive lower bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+              schema: { type: "string", format: "date" },
+            },
+            {
+              name: "endDate",
+              in: "query",
+              required: false,
+              description: "Inclusive upper bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+              schema: { type: "string", format: "date" },
+            },
           ],
           responses: {
             "200": {
@@ -192,6 +207,72 @@ export function buildWebOpenApiSpec() {
               content: {
                 "application/json": {
                   schema: zodToOpenApi(ActivityRecentResponseSchema),
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/v1/activity/summary": {
+        get: {
+          summary: "Financial KPI summary",
+          description:
+            "Returns total received, total sent, net balance, and event counts by status for the authenticated business, optionally scoped to a date range.",
+          parameters: [
+            {
+              name: "startDate",
+              in: "query",
+              required: false,
+              description: "Inclusive lower bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+              schema: { type: "string", format: "date" },
+            },
+            {
+              name: "endDate",
+              in: "query",
+              required: false,
+              description: "Inclusive upper bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+              schema: { type: "string", format: "date" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Financial KPI summary",
+              content: {
+                "application/json": {
+                  schema: zodToOpenApi(ActivitySummaryResponseSchema),
+                },
+              },
+            },
+          },
+        },
+      },
+      "/api/v1/activity/export": {
+        get: {
+          summary: "Export activity as CSV",
+          description:
+            "Streams every FinancialEvent for the authenticated business (optionally date-filtered) as a CSV file.",
+          parameters: [
+            {
+              name: "startDate",
+              in: "query",
+              required: false,
+              description: "Inclusive lower bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+              schema: { type: "string", format: "date" },
+            },
+            {
+              name: "endDate",
+              in: "query",
+              required: false,
+              description: "Inclusive upper bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+              schema: { type: "string", format: "date" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "CSV export of matching financial events",
+              content: {
+                "text/csv": {
+                  schema: { type: "string" },
                 },
               },
             },
@@ -377,6 +458,7 @@ export function buildWebOpenApiSpec() {
         GenericErrorResponse: zodToOpenApi(GenericErrorResponseSchema),
         HealthResponse: zodToOpenApi(HealthResponseSchema),
         ActivityRecentResponse: zodToOpenApi(ActivityRecentResponseSchema),
+        ActivitySummaryResponse: zodToOpenApi(ActivitySummaryResponseSchema),
         AttestationsResponse: zodToOpenApi(AttestationsResponseSchema),
         BusinessRegisterResponse: zodToOpenApi(BusinessRegisterResponseSchema),
       },

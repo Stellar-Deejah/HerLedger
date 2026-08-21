@@ -132,6 +132,32 @@ export interface PaginationOptions {
   limit?: number;
 }
 
+/**
+ * `PaginationOptions` plus an optional inclusive date range, filtered on
+ * `FinancialEvent.createdAt` (the moment the indexer recorded the row --
+ * the only per-event timestamp available; ledger close time isn't stored).
+ * Both bounds are plain `Date`s and are compared in UTC, matching the
+ * column's `timestamptz` storage.
+ */
+export interface ActivityQueryOptions extends PaginationOptions {
+  startDate?: Date;
+  endDate?: Date;
+}
+
+/**
+ * Financial KPI summary for a business, optionally scoped to a date range
+ * (see `ActivityQueryOptions`). `totalReceived`/`totalSent`/`netBalance` are
+ * decimal strings (raw i128 stroops) -- never cast to `Number` -- matching
+ * how `FinancialEvent.amount` itself is represented everywhere else.
+ */
+export interface FinancialEventsSummary {
+  totalReceived: string;
+  totalSent: string;
+  /** `totalReceived - totalSent`; a negative value is a real, valid balance. */
+  netBalance: string;
+  countByStatus: Record<EventStatus, number>;
+}
+
 export interface PaginatedResult<T> {
   items: T[];
   pagination: {
@@ -162,18 +188,18 @@ export interface BusinessesRepository {
 export interface FinancialEventsRepository {
   upsert(input: CreateFinancialEventInput): Promise<void>;
   updateStatus(eventId: string, status: EventStatus): Promise<void>;
-  findByBusiness(
-    businessId: string,
-    offset?: number,
-    limit?: number
-  ): Promise<FinancialEvent[]>;
+  findByBusiness(businessId: string, offset?: number, limit?: number): Promise<FinancialEvent[]>;
   findRecentByBusiness(
     businessId: string,
-    pagination?: PaginationOptions
+    options?: ActivityQueryOptions
   ): Promise<FinancialEvent[]>;
   findById(eventId: string): Promise<FinancialEvent | null>;
   findUpdatedAfter(businessId: string, after: Date): Promise<FinancialEvent[]>;
   findAttestableEvents(pagination?: PaginationOptions): Promise<FinancialEvent[]>;
+  summarize(
+    businessId: string,
+    range?: { startDate?: Date; endDate?: Date }
+  ): Promise<FinancialEventsSummary>;
 }
 
 export interface AttestationsRepository {

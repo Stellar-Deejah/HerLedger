@@ -55,6 +55,14 @@ const nextConfig: NextConfig = {
         destination: "/api/v1/activity/recent",
       },
       {
+        source: "/api/activity/summary",
+        destination: "/api/v1/activity/summary",
+      },
+      {
+        source: "/api/activity/export",
+        destination: "/api/v1/activity/export",
+      },
+      {
         source: "/api/attestations",
         destination: "/api/v1/attestations",
       },

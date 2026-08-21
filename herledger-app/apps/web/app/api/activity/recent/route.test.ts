@@ -90,12 +90,15 @@ describe("GET /api/activity/recent", () => {
         upsert: vi.fn(),
         updateStatus: vi.fn(),
         findByBusiness: vi.fn(),
-        findRecentByBusiness: vi.fn().mockResolvedValue([
-          { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100 },
-        ] as never),
+        findRecentByBusiness: vi
+          .fn()
+          .mockResolvedValue([
+            { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100 },
+          ] as never),
         findById: vi.fn(),
         findUpdatedAfter: vi.fn(),
         findAttestableEvents: vi.fn(),
+        summarize: vi.fn(),
       },
     });
     setDbClient(mockDb);

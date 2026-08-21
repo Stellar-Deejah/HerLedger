@@ -42,6 +42,12 @@ export function createMockDbClient(overrides?: Partial<DbClient>): DbClient {
     findById: vi.fn().mockResolvedValue(null),
     findUpdatedAfter: vi.fn().mockResolvedValue([]),
     findAttestableEvents: vi.fn().mockResolvedValue([]),
+    summarize: vi.fn().mockResolvedValue({
+      totalReceived: "0",
+      totalSent: "0",
+      netBalance: "0",
+      countByStatus: { Pending: 0, Verified: 0, Disputed: 0, Revoked: 0 },
+    }),
     ...overrides?.financialEvents,
   };
 
