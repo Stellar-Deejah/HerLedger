@@ -1,79 +1,71 @@
 "use client";
 
-import { connectWallet, getConnectedAddress, WalletError } from "@herledger/sdk";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
+import { useWallet } from "@/hooks/use-wallet";
 
 interface WalletConnectProps {
   onConnected: (publicKey: string) => void;
 }
 
+/**
+ * Wallet connection widget.
+ *
+ * All wallet state (address, isConnecting, error) now comes from the shared
+ * `WalletContext` via `useWallet()`.  This means:
+ * - No duplicate Freighter API calls per render.
+ * - Account changes detected by the context polling propagate here
+ *   automatically without any local timer.
+ * - The `onConnected` callback is still forwarded so parent forms can advance
+ *   their own step state when the wallet becomes connected.
+ */
 export function WalletConnect({ onConnected }: WalletConnectProps) {
-  const [address, setAddress] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
-  // Text for the persistent live region below — announces async wallet state
-  // changes to screen readers even though the visual UI is swapped, not just
-  // updated in place.
-  const [statusMessage, setStatusMessage] = useState("");
+  const { address, isConnected, isConnecting, error, connect, disconnect } = useWallet();
 
-  // Effect must run only once on mount; capture the latest `onConnected` via
-  // a ref instead of a dependency so it can't fire from a stale closure.
+  // Capture the latest onConnected in a ref to avoid stale closures in the
+  // effect below without making address the only trigger.
   const onConnectedRef = useRef(onConnected);
   useEffect(() => {
     onConnectedRef.current = onConnected;
   });
 
+  // Forward the connected address to the parent whenever it changes.
+  // Using a ref-tracked "last notified address" prevents double-firing when
+  // the same address is seen across re-renders.
+  const lastNotifiedRef = useRef<string | null>(null);
   useEffect(() => {
-    void (async () => {
-      const existing = await getConnectedAddress();
-      if (existing) {
-        setAddress(existing);
-        setStatusMessage("Wallet already connected.");
-        onConnectedRef.current(existing);
-      }
-      setChecking(false);
-    })();
-  }, []);
+    if (address && address !== lastNotifiedRef.current) {
+      lastNotifiedRef.current = address;
+      onConnectedRef.current(address);
+    }
+    if (!address) {
+      lastNotifiedRef.current = null;
+    }
+  }, [address]);
 
   async function handleConnect() {
-    setError(null);
-    setLoading(true);
-    setStatusMessage("Connecting to Freighter wallet…");
     try {
-      const { publicKey } = await connectWallet();
-      setAddress(publicKey);
-      setStatusMessage("Wallet connected.");
-      onConnected(publicKey);
-    } catch (err) {
-      const message =
-        err instanceof WalletError ? err.message : "Failed to connect wallet. Please try again.";
-      setError(message);
-      setStatusMessage(`Wallet connection failed: ${message}`);
-    } finally {
-      setLoading(false);
+      await connect();
+    } catch {
+      // Error is already captured in context.error — nothing extra to do.
     }
-  }
-
-  function handleDisconnect() {
-    setAddress(null);
-    setError(null);
-    setStatusMessage("Wallet disconnected.");
   }
 
   return (
     <div>
-      {/* Kept mounted across every state (including the initial `checking`
-          phase) so screen readers reliably pick up each announcement —
-          a live region that gets unmounted/remounted is not guaranteed to
-          be observed by assistive tech. */}
+      {/* Persistent live region for screen readers. */}
       <div role="status" aria-live="polite" className="sr-only">
-        {statusMessage}
+        {isConnecting
+          ? "Connecting to Freighter wallet…"
+          : isConnected
+            ? "Wallet connected."
+            : error
+              ? `Wallet connection failed: ${error}`
+              : ""}
       </div>
 
-      {checking ? null : address ? (
+      {isConnected && address ? (
         <div
           style={{
             padding: "1rem",
@@ -96,7 +88,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
             {address}
           </p>
           <button
-            onClick={handleDisconnect}
+            onClick={() => void disconnect()}
             type="button"
             style={{
               background: "none",
@@ -116,7 +108,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
           {error && <ErrorMessage message={error} />}
           <button
             onClick={() => void handleConnect()}
-            disabled={loading}
+            disabled={isConnecting}
             type="button"
             style={{
               padding: "0.625rem 1.25rem",
@@ -126,10 +118,10 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
               borderRadius: "var(--radius)",
               fontSize: "0.9375rem",
               fontWeight: 500,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: isConnecting ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Connecting…" : "Connect Freighter wallet"}
+            {isConnecting ? "Connecting…" : "Connect Freighter wallet"}
           </button>
           <p
             style={{

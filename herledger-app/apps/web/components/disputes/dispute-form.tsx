@@ -1,7 +1,7 @@
 "use client";
 
 import { getPublicEnv } from "@herledger/config";
-import { disputeFinancialEvent, getConnectedAddress } from "@herledger/sdk";
+import { disputeFinancialEvent } from "@herledger/sdk";
 import type { StellarNetworkConfig } from "@herledger/sdk";
 import { Account } from "@stellar/stellar-sdk";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { useWallet } from "@/hooks/use-wallet";
 import { getContractConfig } from "@/lib/stellar/network";
 
 interface DisputeFormProps {
@@ -39,6 +40,8 @@ function hashReason(reason: string): string {
 }
 
 export function DisputeForm({ eventId, onSuccess }: DisputeFormProps) {
+  const { address: ownerAddress } = useWallet();
+
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +68,7 @@ export function DisputeForm({ eventId, onSuccess }: DisputeFormProps) {
     setLoading(true);
 
     try {
-      const ownerAddress = await getConnectedAddress();
+      // `address` is cached in WalletContext — no extra Freighter API call.
       if (!ownerAddress) {
         setError("No Stellar wallet connected. Please connect your wallet first.");
         setLoading(false);

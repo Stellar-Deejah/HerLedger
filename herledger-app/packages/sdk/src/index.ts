@@ -48,8 +48,12 @@ export { CircuitBreaker } from "./rpc/circuit-breaker.js";
 export type { CircuitState, CircuitBreakerOptions } from "./rpc/circuit-breaker.js";
 export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/transactions.js";
 
-// Wallet
+// Wallet — interface + Freighter adapter
+export type { WalletProvider, WalletConnection } from "./wallet/types.js";
 export {
+  FreighterWalletProvider,
+  freighterWalletProvider,
+  // Backward-compatible functional API (deprecated — use useWallet() hook)
   isFreighterAvailable,
   connectWallet,
   getConnectedAddress,
