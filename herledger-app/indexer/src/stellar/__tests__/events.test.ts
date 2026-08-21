@@ -2,6 +2,11 @@ import { Contract, StrKey, xdr } from "@stellar/stellar-sdk";
 import { describe, it, expect } from "vitest";
 
 import { parseContractEvents } from "../events.js";
+import { ParseError, IndexerError } from "../../types/index.js";
+import {
+  CONTRACT_EVENT_FIXTURES,
+  MALFORMED_FINANCIAL_EVENT_RECORDED_XDR_BASE64,
+} from "../__fixtures__/contract-events.js";
 
 const CONTRACT_ID = StrKey.encodeContract(Buffer.alloc(32, 1));
 
@@ -56,5 +61,66 @@ describe("parseContractEvents", () => {
     const [parsed] = parseContractEvents(events);
 
     expect(parsed!.topic).toBe("unknown");
+  });
+
+  describe("XDR fixture schema validation", () => {
+    for (const [topic, fixture] of Object.entries(CONTRACT_EVENT_FIXTURES)) {
+      it(`decodes and validates "${topic}" against its schema`, () => {
+        const events = [
+          baseFields({
+            contractId: new Contract(CONTRACT_ID),
+            topic: [xdr.ScVal.scvSymbol(topic)],
+            value: xdr.ScVal.fromXDR(fixture.valueXdrBase64, "base64"),
+          }),
+        ] as unknown as Parameters<typeof parseContractEvents>[0];
+
+        const [parsed] = parseContractEvents(events);
+
+        expect(parsed).toBeDefined();
+        expect(parsed!.topic).toBe(topic);
+        expect(parsed!.data).toEqual(fixture.expected);
+      });
+    }
+
+    it("throws a ParseError with the raw XDR when a known topic's payload fails schema validation", () => {
+      const events = [
+        baseFields({
+          contractId: new Contract(CONTRACT_ID),
+          topic: [xdr.ScVal.scvSymbol("FinancialEventRecorded")],
+          value: xdr.ScVal.fromXDR(MALFORMED_FINANCIAL_EVENT_RECORDED_XDR_BASE64, "base64"),
+        }),
+      ] as unknown as Parameters<typeof parseContractEvents>[0];
+
+      let thrown: unknown;
+      try {
+        parseContractEvents(events);
+      } catch (err) {
+        thrown = err;
+      }
+
+      expect(thrown).toBeInstanceOf(ParseError);
+      expect(thrown).toBeInstanceOf(IndexerError);
+      const parseErr = thrown as ParseError;
+      expect(parseErr.rawXdr).toBe(MALFORMED_FINANCIAL_EVENT_RECORDED_XDR_BASE64);
+      expect(parseErr.message).toContain("FinancialEventRecorded");
+    });
+
+    it("does not throw and leaves data empty for a topic with no known schema", () => {
+      const events = [
+        baseFields({
+          contractId: new Contract(CONTRACT_ID),
+          topic: [xdr.ScVal.scvSymbol("SomeFutureEvent")],
+          value: xdr.ScVal.fromXDR(
+            CONTRACT_EVENT_FIXTURES["FinancialEventRecorded"]!.valueXdrBase64,
+            "base64"
+          ),
+        }),
+      ] as unknown as Parameters<typeof parseContractEvents>[0];
+
+      const [parsed] = parseContractEvents(events);
+
+      expect(parsed!.topic).toBe("SomeFutureEvent");
+      expect(parsed!.data).toEqual({});
+    });
   });
 });

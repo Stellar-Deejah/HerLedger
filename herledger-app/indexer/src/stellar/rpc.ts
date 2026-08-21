@@ -49,6 +49,47 @@ export async function fetchTransactionsForAccount(
 }
 
 /**
+ * Fetch every operation belonging to a transaction, page by page. Horizon's
+ * transaction record only links to its operations (`tx.operations()`) rather
+ * than embedding them, so this must be a separate round trip -- callers that
+ * need to see *all* operations in a (possibly multi-operation) transaction,
+ * such as `parsePaymentsFromTransaction`, fetch this list explicitly instead
+ * of relying on whatever the first page of a lazy call happens to contain.
+ */
+export async function fetchOperationsForTransaction(
+  transactionHash: string,
+  horizonUrl: string
+): Promise<Horizon.ServerApi.OperationRecord[]> {
+  const timer = rpcRequestDurationSeconds.startTimer({ operation: "fetch_operations" });
+  const server = new Horizon.Server(horizonUrl, { allowHttp: horizonUrl.startsWith("http://") });
+
+  try {
+    const operations: Horizon.ServerApi.OperationRecord[] = [];
+    let page = await server
+      .operations()
+      .forTransaction(transactionHash)
+      .limit(200)
+      .order("asc")
+      .call();
+
+    while (page.records.length > 0) {
+      operations.push(...page.records);
+      // Soroban's `CollectionPage.next()` re-issues the call against the
+      // page's own `next` link, so this terminates once Horizon returns an
+      // empty page rather than looping on a stale cursor.
+      if (page.records.length < 200) break;
+      page = await page.next();
+    }
+
+    timer({ status: "success" });
+    return operations;
+  } catch (cause) {
+    timer({ status: "error" });
+    throw new IndexerError(`Failed to fetch operations for transaction ${transactionHash}`, cause);
+  }
+}
+
+/**
  * Fetch the latest ledger sequence from the Soroban RPC.
  */
 export async function fetchLatestLedger(config: StellarNetworkConfig): Promise<number> {
