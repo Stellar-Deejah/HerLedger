@@ -7,6 +7,12 @@ import {
   type ActivityRecentData,
 } from "@/app/api/activity/recent/schema";
 import {
+  RequestSchema as ActivitySummaryRequestSchema,
+  ResponseSchema as ActivitySummaryResponseSchema,
+  type ActivitySummaryRequest,
+  type ActivitySummaryData,
+} from "@/app/api/v1/activity/summary/schema";
+import {
   RequestSchema as AttestationsRequestSchema,
   ResponseSchema as AttestationsResponseSchema,
   type AttestationsRequest,
@@ -75,6 +81,16 @@ export const apiClient = {
       const normalized = ActivityRecentRequestSchema.parse(params);
       const qs = toQueryString(normalized);
       return request(`/api/v1/activity/recent${qs}`, ActivityRecentResponseSchema);
+    },
+    summary: async (params: ActivitySummaryRequest = {}): Promise<ActivitySummaryData> => {
+      const normalized = ActivitySummaryRequestSchema.parse(params);
+      const qs = toQueryString(normalized);
+      return request(`/api/v1/activity/summary${qs}`, ActivitySummaryResponseSchema);
+    },
+    /** Not a `request()` call: this URL is meant to be navigated to directly so the browser saves the streamed CSV, not fetched and parsed as JSON. */
+    exportUrl: (params: { startDate?: string; endDate?: string } = {}): string => {
+      const qs = toQueryString(params);
+      return `/api/v1/activity/export${qs}`;
     },
   },
 

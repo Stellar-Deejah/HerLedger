@@ -132,6 +132,26 @@
               "type": "integer",
               "default": 20
             }
+          },
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive lower bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive upper bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
           }
         ],
         "responses": {
@@ -215,6 +235,169 @@
                       ]
                     }
                   ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/activity/summary": {
+      "get": {
+        "summary": "Financial KPI summary",
+        "description": "Returns total received, total sent, net balance, and event counts by status for the authenticated business, optionally scoped to a date range.",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive lower bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive upper bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Financial KPI summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "object",
+                          "properties": {
+                            "totalReceived": {
+                              "type": "string"
+                            },
+                            "totalSent": {
+                              "type": "string"
+                            },
+                            "netBalance": {
+                              "type": "string"
+                            },
+                            "countByStatus": {
+                              "type": "object",
+                              "properties": {
+                                "Pending": {
+                                  "type": "number"
+                                },
+                                "Verified": {
+                                  "type": "number"
+                                },
+                                "Disputed": {
+                                  "type": "number"
+                                },
+                                "Revoked": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "Pending",
+                                "Verified",
+                                "Disputed",
+                                "Revoked"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "totalReceived",
+                            "totalSent",
+                            "netBalance",
+                            "countByStatus"
+                          ]
+                        },
+                        "error": {
+                          "type": "null"
+                        }
+                      },
+                      "required": [
+                        "data",
+                        "error"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "data": {
+                          "type": "null"
+                        },
+                        "error": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "string"
+                            },
+                            "message": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "code",
+                            "message"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "data",
+                        "error"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/activity/export": {
+      "get": {
+        "summary": "Export activity as CSV",
+        "description": "Streams every FinancialEvent for the authenticated business (optionally date-filtered) as a CSV file.",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive lower bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": false,
+            "description": "Inclusive upper bound on FinancialEvent.createdAt (YYYY-MM-DD).",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CSV export of matching financial events",
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -889,6 +1072,92 @@
                 "required": [
                   "events",
                   "pagination"
+                ]
+              },
+              "error": {
+                "type": "null"
+              }
+            },
+            "required": [
+              "data",
+              "error"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "null"
+              },
+              "error": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "message": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "message"
+                ]
+              }
+            },
+            "required": [
+              "data",
+              "error"
+            ]
+          }
+        ]
+      },
+      "ActivitySummaryResponse": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "object",
+                "properties": {
+                  "totalReceived": {
+                    "type": "string"
+                  },
+                  "totalSent": {
+                    "type": "string"
+                  },
+                  "netBalance": {
+                    "type": "string"
+                  },
+                  "countByStatus": {
+                    "type": "object",
+                    "properties": {
+                      "Pending": {
+                        "type": "number"
+                      },
+                      "Verified": {
+                        "type": "number"
+                      },
+                      "Disputed": {
+                        "type": "number"
+                      },
+                      "Revoked": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "Pending",
+                      "Verified",
+                      "Disputed",
+                      "Revoked"
+                    ]
+                  }
+                },
+                "required": [
+                  "totalReceived",
+                  "totalSent",
+                  "netBalance",
+                  "countByStatus"
                 ]
               },
               "error": {

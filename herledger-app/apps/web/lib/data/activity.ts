@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 
 import type { ActivityRecentData } from "@/app/api/activity/recent/schema";
+import { toDateRange } from "@/lib/utils/date-range";
 import { getDbClient } from "@herledger/db";
 
 // ---------------------------------------------------------------------------
@@ -24,7 +25,12 @@ const ACTIVITY_REVALIDATE_SECONDS = 20;
 
 export async function getRecentActivity(
   businessId: string | null,
-  { offset, limit }: { offset: number; limit: number }
+  {
+    offset,
+    limit,
+    startDate,
+    endDate,
+  }: { offset: number; limit: number; startDate?: string; endDate?: string }
 ): Promise<ActivityRecentData> {
   if (!businessId) {
     return { events: [], pagination: { offset: 0, limit, count: 0 } };
@@ -32,7 +38,14 @@ export async function getRecentActivity(
 
   const fetchPageFn = async () => {
     const db = getDbClient();
-    const events = await db.financialEvents.findRecentByBusiness(businessId, { offset, limit });
+    const events = await db.financialEvents.findRecentByBusiness(businessId, {
+      offset,
+      limit,
+      ...toDateRange({
+        ...(startDate ? { startDate } : {}),
+        ...(endDate ? { endDate } : {}),
+      }),
+    });
     return events.map((e) => ({
       id: e.id,
       eventId: e.eventId,
@@ -45,10 +58,14 @@ export async function getRecentActivity(
     }));
   };
 
+  // startDate/endDate join the cache key alongside offset/limit -- a
+  // different range is a genuinely different result set, not a cache hit
+  // for the unfiltered one.
+  const cacheKey = `activity-${businessId}-${offset}-${limit}-${startDate ?? ""}-${endDate ?? ""}`;
   const fetchPage =
     process.env.NODE_ENV === "test"
       ? fetchPageFn
-      : unstable_cache(fetchPageFn, [`activity-${businessId}-${offset}-${limit}`], {
+      : unstable_cache(fetchPageFn, [cacheKey], {
           revalidate: ACTIVITY_REVALIDATE_SECONDS,
         });
 

@@ -1,4 +1,5 @@
 import { getRecentActivity } from "@/lib/data/activity";
+import { getActivitySummary } from "@/lib/data/activity-summary";
 import { getActiveAttestationCount } from "@/lib/data/attestations";
 
 import { DashboardSummary, type OverviewBusinessProfile } from "./dashboard-summary";
@@ -10,16 +11,23 @@ interface OverviewPanelProps {
 
 /**
  * Server Component: the one place in the app that fans out independent
- * queries via Promise.all in a single render pass (recent activity +
- * active attestation count) — businessProfile itself is resolved by the
- * caller (app/dashboard/page.tsx) since it's needed to derive businessId
- * before either of these queries can run.
+ * queries via Promise.all in a single render pass (recent activity, KPI
+ * summary, and active attestation count) — businessProfile itself is
+ * resolved by the caller (app/dashboard/page.tsx) since it's needed to
+ * derive businessId before any of these queries can run.
  */
 export async function OverviewPanel({ businessId, businessProfile }: OverviewPanelProps) {
-  let result: [Awaited<ReturnType<typeof getRecentActivity>>, number] | null = null;
+  let result:
+    | [
+        Awaited<ReturnType<typeof getRecentActivity>>,
+        Awaited<ReturnType<typeof getActivitySummary>>,
+        number,
+      ]
+    | null = null;
   try {
     result = await Promise.all([
       getRecentActivity(businessId, { offset: 0, limit: 20 }),
+      getActivitySummary(businessId),
       getActiveAttestationCount(businessId),
     ]);
   } catch {
@@ -34,11 +42,12 @@ export async function OverviewPanel({ businessId, businessProfile }: OverviewPan
     );
   }
 
-  const [activity, attestationCount] = result;
+  const [activity, summary, attestationCount] = result;
 
   return (
     <DashboardSummary
       initialEvents={activity.events}
+      initialSummary={summary}
       attestationCount={attestationCount}
       businessProfile={businessProfile}
     />

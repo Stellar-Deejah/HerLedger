@@ -3,11 +3,14 @@
 import { useEffect, useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
+import type { ActivitySummaryData } from "@/app/api/v1/activity/summary/schema";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient } from "@/lib/api/client";
 import { formatAmount } from "@/lib/utils/format";
+
+import { KpiSummary } from "./kpi-summary";
 
 export interface OverviewBusinessProfile {
   displayName: string;
@@ -17,27 +20,34 @@ export interface OverviewBusinessProfile {
 interface DashboardSummaryProps {
   /** Fetched server-side (see OverviewPanel) so it's available on first paint. */
   initialEvents: FinancialEventDto[];
+  initialSummary: ActivitySummaryData;
   attestationCount: number;
   businessProfile: OverviewBusinessProfile | null;
 }
 
 export function DashboardSummary({
   initialEvents,
+  initialSummary,
   attestationCount,
   businessProfile,
 }: DashboardSummaryProps) {
   const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
+  const [summary, setSummary] = useState<ActivitySummaryData>(initialSummary);
   const [error, setError] = useState<string | null>(null);
   const { newEvents } = useEventStream();
 
-  // Re-fetches recent activity whenever the live SSE stream reports new
-  // events — attestationCount/businessProfile don't need the same
-  // treatment, since they aren't affected by FinancialEvent writes.
+  // Re-fetches recent activity and the KPI summary whenever the live SSE
+  // stream reports new events — attestationCount/businessProfile don't need
+  // the same treatment, since they aren't affected by FinancialEvent writes.
   useEffect(() => {
     async function refetchSummary() {
       try {
-        const data = await apiClient.activity.recent();
-        setEvents(data.events);
+        const [activity, kpis] = await Promise.all([
+          apiClient.activity.recent(),
+          apiClient.activity.summary(),
+        ]);
+        setEvents(activity.events);
+        setSummary(kpis);
       } catch {
         setError("Could not load recent activity. Please try again.");
       }
@@ -50,6 +60,8 @@ export function DashboardSummary({
 
   return (
     <div>
+      <KpiSummary summary={summary} />
+
       {businessProfile && (
         <div
           style={{
@@ -79,9 +91,7 @@ export function DashboardSummary({
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
-              Active attestations
-            </div>
+            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Active attestations</div>
             <div style={{ fontWeight: 500 }}>{attestationCount}</div>
           </div>
         </div>

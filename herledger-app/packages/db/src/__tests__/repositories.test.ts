@@ -26,6 +26,7 @@ import {
   findEventsByBusiness,
   findEventsUpdatedAfter,
   findRecentEventsByBusiness,
+  summarizeFinancialEvents,
   updateEventStatus,
   upsertFinancialEvent,
 } from "../repositories/financial-events.js";
@@ -44,9 +45,13 @@ describe("Database Repositories", () => {
     it("finds business by wallet, id, and userId", async () => {
       const mockPrisma = {
         businessProfile: {
-          findUnique: vi.fn().mockResolvedValue({ id: "1", businessId: "biz-1", walletAddress: "G1" }),
+          findUnique: vi
+            .fn()
+            .mockResolvedValue({ id: "1", businessId: "biz-1", walletAddress: "G1" }),
           findFirst: vi.fn().mockResolvedValue({ id: "1", userId: "u1" }),
-          findMany: vi.fn().mockResolvedValue([{ id: "1", businessId: "biz-1", walletAddress: "G1" }]),
+          findMany: vi
+            .fn()
+            .mockResolvedValue([{ id: "1", businessId: "biz-1", walletAddress: "G1" }]),
           create: vi.fn().mockResolvedValue({ id: "1", businessId: "biz-1" }),
           update: vi.fn().mockResolvedValue({ id: "1", active: false }),
         },
@@ -122,7 +127,10 @@ describe("Database Repositories", () => {
       const events = await findEventsByBusiness(mockPrisma, "biz-1", 0, 10);
       expect(events).toHaveLength(1);
 
-      const recent = await findRecentEventsByBusiness(mockPrisma, "biz-1", { offset: 0, limit: 10 });
+      const recent = await findRecentEventsByBusiness(mockPrisma, "biz-1", {
+        offset: 0,
+        limit: 10,
+      });
       expect(recent).toHaveLength(1);
 
       const event = await findEventById(mockPrisma, "ev-1");
@@ -133,6 +141,83 @@ describe("Database Repositories", () => {
 
       const attestable = await findAttestableEvents(mockPrisma, { offset: 0, limit: 10 });
       expect(attestable).toHaveLength(1);
+    });
+
+    it("filters findRecentEventsByBusiness by createdAt when a date range is given", async () => {
+      const findMany = vi.fn().mockResolvedValue([]);
+      const mockPrisma = { financialEvent: { findMany } } as unknown as PrismaClient;
+      const startDate = new Date("2026-01-01T00:00:00.000Z");
+      const endDate = new Date("2026-01-31T23:59:59.999Z");
+
+      await findRecentEventsByBusiness(mockPrisma, "biz-1", {
+        offset: 0,
+        limit: 10,
+        startDate,
+        endDate,
+      });
+
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { businessId: "biz-1", createdAt: { gte: startDate, lte: endDate } },
+        })
+      );
+    });
+
+    it("omits the createdAt filter entirely when no range is given", async () => {
+      const findMany = vi.fn().mockResolvedValue([]);
+      const mockPrisma = { financialEvent: { findMany } } as unknown as PrismaClient;
+
+      await findRecentEventsByBusiness(mockPrisma, "biz-1", { offset: 0, limit: 10 });
+
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { businessId: "biz-1" } })
+      );
+    });
+
+    it("summarizes total received/sent, net balance, and counts by status", async () => {
+      const queryRaw = vi.fn().mockResolvedValue([
+        {
+          total_received: "5000000000",
+          total_sent: "1000000000",
+          pending_count: 2n,
+          verified_count: 3n,
+          disputed_count: 0n,
+          revoked_count: 1n,
+        },
+      ]);
+      const mockPrisma = { $queryRaw: queryRaw } as unknown as PrismaClient;
+
+      const summary = await summarizeFinancialEvents(mockPrisma, "biz-1");
+
+      expect(summary).toEqual({
+        totalReceived: "5000000000",
+        totalSent: "1000000000",
+        netBalance: "4000000000",
+        countByStatus: { Pending: 2, Verified: 3, Disputed: 0, Revoked: 1 },
+      });
+    });
+
+    it("summarizes as all-zero when the business has no events", async () => {
+      const mockPrisma = { $queryRaw: vi.fn().mockResolvedValue([]) } as unknown as PrismaClient;
+
+      const summary = await summarizeFinancialEvents(mockPrisma, "biz-1");
+
+      expect(summary).toEqual({
+        totalReceived: "0",
+        totalSent: "0",
+        netBalance: "0",
+        countByStatus: { Pending: 0, Verified: 0, Disputed: 0, Revoked: 0 },
+      });
+    });
+
+    it("wraps a query failure in DatabaseError", async () => {
+      const mockPrisma = {
+        $queryRaw: vi.fn().mockRejectedValue(new Error("connection lost")),
+      } as unknown as PrismaClient;
+
+      await expect(summarizeFinancialEvents(mockPrisma, "biz-1")).rejects.toBeInstanceOf(
+        DatabaseError
+      );
     });
   });
 
@@ -146,9 +231,11 @@ describe("Database Repositories", () => {
           findFirst: vi.fn().mockResolvedValue({ attestationId: "att-1" }),
         },
         financialEvent: {
-          findMany: vi.fn().mockResolvedValue([
-            { eventId: "ev-1", attestations: [{ attestationId: "att-1", ledgerSequence: 10 }] },
-          ]),
+          findMany: vi
+            .fn()
+            .mockResolvedValue([
+              { eventId: "ev-1", attestations: [{ attestationId: "att-1", ledgerSequence: 10 }] },
+            ]),
         },
       } as unknown as PrismaClient;
 
