@@ -17,6 +17,16 @@ production for real financial data without a professional security review.
 - **Server-side secrets**: `DATABASE_URL` and `BETTER_AUTH_SECRET` are
   never exposed to browser code. Only `NEXT_PUBLIC_*` values are client-accessible.
 
+- **`BETTER_AUTH_SECRET` entropy validation**: `packages/config/src/schema.ts`
+  requires the value to match `/^[0-9a-fA-F]{64,}$/` (>= 64 hex characters,
+  i.e. >= 32 bytes of entropy) via a Zod `.refine()`, not just a minimum
+  length. A human-typed passphrase padded out to some minimum length (the
+  previous rule was `.min(32)`) carries far less real entropy per character
+  than random hex does, so length alone let a weak value slip through as
+  long as it was long enough. `getServerEnv()` still calls `process.exit(1)`
+  with a descriptive table on any failure, so the app refuses to start with
+  a weak secret. Generate a compliant value with `openssl rand -hex 32`.
+
 - **Input validation**: All API inputs are validated with Zod. No user-provided
   data bypasses validation.
 
@@ -146,6 +156,74 @@ production for real financial data without a professional security review.
   comment in `prisma/schema.prisma` for why the encrypted column keeps that
   name). It is never persisted, logged, or returned unencrypted except in
   the single API response path described below.
+
+## HTTP security headers & Content Security Policy
+
+`apps/web/middleware.ts` sets the following on every response it returns —
+pages, redirects, and `/api/*` responses alike, since a header set only on
+the happy path isn't really a guarantee:
+
+- `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+  (production only — HSTS on a plain-HTTP `localhost` dev server would be
+  actively wrong).
+- `X-Frame-Options: DENY` and a matching `frame-ancestors 'none'` in the CSP
+  below, so the app can't be framed for a clickjacking overlay.
+- `X-Content-Type-Options: nosniff`.
+- `Referrer-Policy: strict-origin-when-cross-origin`.
+- `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
+  — this app doesn't use any of those browser features; requesting them
+  from an embedded/compromised iframe context is denied outright.
+- `Content-Security-Policy`, detailed below.
+
+**CSP nonce strategy.** `script-src` is `'self' 'nonce-<random>' 'strict-dynamic'`,
+a fresh cryptographically random nonce generated per request
+(`crypto.getRandomValues`, base64-encoded). `'strict-dynamic'` tells browsers
+that support it to trust scripts loaded _by_ an already-nonced script (Next's
+own webpack runtime dynamically injecting chunk scripts) without listing
+every chunk URL individually; browsers that don't support it fall back to the
+explicit nonce match. The nonce is carried on both the outgoing response
+header (so the browser enforces it) and the incoming request's headers
+(`x-nonce` and a mirrored `Content-Security-Policy` header) — Next.js reads
+the CSP off the request to automatically attach the same nonce to the
+`<script>` tags it injects itself (the RSC payload, the webpack runtime).
+There are no hand-written inline `<script>` tags anywhere in `apps/web`, so
+nothing beyond Next's own injected scripts needs to carry it manually.
+
+**Known relaxation: `style-src 'self' 'unsafe-inline'`.** CSP has no nonce
+mechanism for inline `style="..."` _attributes_ (only `<style>` elements
+support `'nonce-'`), and `style={{ ... }}` is used throughout `apps/web`'s
+components. Dropping `'unsafe-inline'` from `style-src` would break the UI
+outright without a much larger refactor to move every inline style into a
+CSS class. This is accepted as a materially smaller exposure than the same
+relaxation in `script-src` would be — CSS-only injection can exfiltrate data
+via attribute selectors in constrained scenarios but cannot execute
+arbitrary JavaScript — and is tracked as a follow-up, not treated as
+equivalent to an unrestricted `script-src`.
+
+**`connect-src`** is `'self'` plus the origin parsed out of
+`NEXT_PUBLIC_STELLAR_RPC_URL` (the only Stellar endpoint the browser ever
+calls directly — Horizon and the indexer are server-only, see
+`apps/web/lib/stellar/network.ts`). A missing or unparseable RPC URL is
+dropped rather than widening the policy. In development only, `script-src`
+also allows `'unsafe-eval'` (Fast Refresh) and `connect-src` allows `ws:`/
+`wss:` (the HMR client) — both absent from `NODE_ENV=production` builds.
+
+**Freighter wallet extension**: `@stellar/freighter-api` is an ordinary npm
+dependency bundled into the app's own first-party JS (see
+`apps/web/components/wallet/wallet-connect.tsx`) — it is not loaded from an
+external URL, and it talks to the browser extension via `window` message
+passing, not a script tag the CSP would need to allow. No `script-src` entry
+is needed for it.
+
+**Verifying the header set**: `apps/web/__tests__/middleware.test.ts`
+asserts every header above is present (with a fresh nonce per request) on
+page, redirect, API, and CORS-preflight responses, and separately asserts
+the production-only additions (HSTS, `upgrade-insecure-requests`, no dev
+relaxations) via a fresh module import with `NODE_ENV=production`. An
+external scan (Mozilla Observatory / Lighthouse) against a deployed instance
+is the intended final check per the originating issue's acceptance
+criteria, but wasn't run as part of this change — this sandbox has no route
+to the public internet to submit a URL to either service.
 
 ## Dispute reason encryption scheme
 

@@ -37,7 +37,7 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
       SHADOW_DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_shadow
-      BETTER_AUTH_SECRET: ci-test-secret-must-be-at-least-32-chars-long
+      BETTER_AUTH_SECRET: 05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78
       RESEND_API_KEY: re_ci_test_key_not_a_real_key
       EMAIL_FROM: "HerLedger <onboarding@resend.dev>"
       APP_URL: http://localhost:3000

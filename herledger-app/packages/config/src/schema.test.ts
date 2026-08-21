@@ -15,7 +15,7 @@ const VALID_SERVER_ENV = {
   NODE_ENV: "development",
   APP_URL: "http://localhost:3000",
   DATABASE_URL: "postgres://user:pass@localhost:5432/db",
-  BETTER_AUTH_SECRET: "12345678901234567890123456789012",
+  BETTER_AUTH_SECRET: "05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78",
   STELLAR_NETWORK: "testnet",
   STELLAR_RPC_URL: "http://localhost:8000",
   STELLAR_HORIZON_URL: "http://localhost:8000",
@@ -93,6 +93,52 @@ describe("Environment Schema", () => {
         expect(issues.length).toBe(1);
         expect(issues[0]!.Variable).toBe("APP_URL");
       }
+    });
+
+    describe("BETTER_AUTH_SECRET entropy", () => {
+      it("rejects a short passphrase padded to the old 32-char minimum", () => {
+        const result = serverEnvSchema.safeParse({
+          ...VALID_SERVER_ENV,
+          BETTER_AUTH_SECRET: "dev-secret-must-be-at-least-32c", // 32 chars, not hex
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+          const issues = formatZodError(result.error);
+          expect(issues.some((i) => i.Variable === "BETTER_AUTH_SECRET")).toBe(true);
+        }
+      });
+
+      it("rejects a 64-char value that isn't hex", () => {
+        const result = serverEnvSchema.safeParse({
+          ...VALID_SERVER_ENV,
+          BETTER_AUTH_SECRET: "not-hex-".repeat(8), // 64 chars, contains '-'
+        });
+        expect(result.success).toBe(false);
+      });
+
+      it("rejects a hex string shorter than 64 characters", () => {
+        const result = serverEnvSchema.safeParse({
+          ...VALID_SERVER_ENV,
+          BETTER_AUTH_SECRET: "ab".repeat(31), // 62 hex chars
+        });
+        expect(result.success).toBe(false);
+      });
+
+      it("accepts a 64-character hex string", () => {
+        const result = serverEnvSchema.safeParse({
+          ...VALID_SERVER_ENV,
+          BETTER_AUTH_SECRET: "ab".repeat(32), // 64 hex chars
+        });
+        expect(result.success).toBe(true);
+      });
+
+      it("accepts a hex string longer than 64 characters", () => {
+        const result = serverEnvSchema.safeParse({
+          ...VALID_SERVER_ENV,
+          BETTER_AUTH_SECRET: "ab".repeat(40), // 80 hex chars
+        });
+        expect(result.success).toBe(true);
+      });
     });
   });
 

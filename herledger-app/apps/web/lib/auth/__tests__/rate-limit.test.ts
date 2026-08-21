@@ -18,7 +18,7 @@ beforeAll(async () => {
     DATABASE_URL:
       process.env["DATABASE_URL"] ??
       "postgresql://herledger:herledger@localhost:5432/herledger_test",
-    BETTER_AUTH_SECRET: "test-secret-must-be-at-least-32-characters-long",
+    BETTER_AUTH_SECRET: "05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78",
     RESEND_API_KEY: "test-resend-key",
     EMAIL_FROM: "HerLedger <test@herledger.test>",
     STELLAR_NETWORK: "testnet",

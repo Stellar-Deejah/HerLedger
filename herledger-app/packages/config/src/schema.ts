@@ -32,6 +32,20 @@ const commaSeparatedUrls = z
     }
   );
 
+/**
+ * Requires >= 64 hexadecimal characters (32 bytes) of entropy. A hex charset
+ * check is a cheap, reliable proxy for "was this actually generated with
+ * something like `openssl rand -hex 32`" rather than typed by hand -- a
+ * human-chosen passphrase of the same length ("secret-must-be-at-least...")
+ * has far less real entropy per character than random hex does, so length
+ * alone (the previous `.min(32)`) wasn't enough to keep a weak value like
+ * `"secret"` padded out to 32 chars from passing.
+ */
+const authSecretEntropy = z.string().refine((val) => /^[0-9a-fA-F]{64,}$/.test(val), {
+  message:
+    "Must be at least 64 hexadecimal characters (32 bytes) of entropy. Generate one with: openssl rand -hex 32",
+});
+
 export const serverEnvSchema = z
   .object({
     NODE_ENV: z
@@ -40,7 +54,9 @@ export const serverEnvSchema = z
       .describe("Node environment"),
     APP_URL: z.string().url().describe("The canonical URL of the web application"),
     DATABASE_URL: z.string().min(1).describe("PostgreSQL connection string"),
-    BETTER_AUTH_SECRET: z.string().min(32).describe("Secret key for auth session encryption"),
+    BETTER_AUTH_SECRET: authSecretEntropy.describe(
+      "Secret key for auth session encryption (>= 64 hex chars / 32 bytes)"
+    ),
     STELLAR_NETWORK: z.enum(["testnet", "mainnet"]).describe("Stellar network selection"),
     STELLAR_RPC_URL: z
       .string()
