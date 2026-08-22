@@ -1,6 +1,7 @@
 "use client";
 
-import { connectWallet, getConnectedAddress, WalletError } from "@herledger/sdk";
+import { connectWallet, getConnectedAddress } from "@herledger/sdk/wallet";
+import { WalletError } from "@herledger/sdk/errors";
 import { useState, useEffect, useRef } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";

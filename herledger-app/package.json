@@ -18,6 +18,7 @@
     "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
     "env:validate": "pnpm --filter '@herledger/config' exec tsx --conditions react-server src/validate.ts",
+    "changeset": "changeset",
     "postinstall": "node scripts/patch-typescript-eslint-ts-peer.mjs",
     "prepare": "cd .. && husky herledger-app/.husky"
   },

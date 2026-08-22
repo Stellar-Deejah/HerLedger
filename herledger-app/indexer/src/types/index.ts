@@ -1,4 +1,4 @@
-export type { EventType, EventStatus, AttestationStatus } from "@herledger/sdk";
+export type { EventType, EventStatus, AttestationStatus } from "@herledger/sdk/types";
 
 export class DatabaseError extends Error {
   readonly kind = "DatabaseError" as const;

@@ -75,6 +75,20 @@ async function simulateRead(
 // Reads
 // ---------------------------------------------------------------------------
 
+/**
+ * Read `get_attestation(attestation_id)` from the AttestationRegistry contract.
+ *
+ * @param attestationId - Hex-encoded on-chain attestation ID (32 bytes).
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The `Attestation`, or `null` if none exists for the ID.
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const attestation = await getAttestation(id, config, contracts);
+ * ```
+ */
 export async function getAttestation(
   attestationId: string,
   config: StellarNetworkConfig,
@@ -98,6 +112,21 @@ export async function getAttestation(
   return decodeAttestation(retval);
 }
 
+/**
+ * Read `is_valid_attestation(attestation_id)` from the AttestationRegistry
+ * contract.
+ *
+ * @param attestationId - Hex-encoded on-chain attestation ID (32 bytes).
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns `true` if the attestation is currently valid/active.
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const valid = await isValidAttestation(id, config, contracts);
+ * ```
+ */
 export async function isValidAttestation(
   attestationId: string,
   config: StellarNetworkConfig,
@@ -125,6 +154,25 @@ export async function isValidAttestation(
 // Writes
 // ---------------------------------------------------------------------------
 
+/**
+ * Write `register_attester(attester, metadata_hash)`, signing with the `admin`
+ * account via Freighter.
+ *
+ * @param params - Registration fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await registerAttester(
+ *   { attester, metadataHash, admin, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function registerAttester(
   params: {
     attester: string;
@@ -159,6 +207,25 @@ export async function registerAttester(
   return submitAndWait(signedXdr, config);
 }
 
+/**
+ * Write `deactivate_attester(attester)`, signing with the `admin` account via
+ * Freighter.
+ *
+ * @param params - Deactivation fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await deactivateAttester(
+ *   { attester, admin, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function deactivateAttester(
   params: {
     attester: string;
@@ -187,13 +254,29 @@ export async function deactivateAttester(
 }
 
 /**
- * Write: create_attestation(attestation_id, event_id, attester, claim_hash)
+ * Write `create_attestation(attestation_id, event_id, attester, claim_hash)`,
+ * signing with the `attester` account via Freighter.
  *
  * NOTE: the contract signature includes `attester: Address` as an explicit
  * positional argument (used for `attester.require_auth()` and the
  * `InvalidAttester` / `InactiveAttester` lookups) — a prior version of this
  * function omitted it from the `.call()` args entirely, sending only 3 of
  * the 4 required arguments. Fixed as part of #59's ABI audit.
+ *
+ * @param params - Attestation fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await createAttestation(
+ *   { attestationId, eventId, claimHash, attester, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
  */
 export async function createAttestation(
   params: {
@@ -232,6 +315,25 @@ export async function createAttestation(
   return submitAndWait(signedXdr, config);
 }
 
+/**
+ * Write `revoke_attestation(attestation_id, reason_hash)`, signing with the
+ * `attester` account via Freighter.
+ *
+ * @param params - Revocation fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await revokeAttestation(
+ *   { attestationId, reasonHash, attester, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function revokeAttestation(
   params: {
     attestationId: string;

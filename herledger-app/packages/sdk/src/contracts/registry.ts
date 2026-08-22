@@ -43,6 +43,18 @@ export type ContractAddressRegistry = Record<ContractName, ContractAddressRegist
  * whichever network `STELLAR_NETWORK` / `NEXT_PUBLIC_STELLAR_NETWORK` is
  * currently set to. Register the address under the *actual* current network
  * — see `registerCurrentNetworkAddresses` below for the common case.
+ *
+ * @param input - Per-contract address entries for each network.
+ * @returns A registry keyed by contract name.
+ *
+ * @example
+ * ```ts
+ * const registry = createContractAddressRegistry({
+ *   businessRegistry: { testnet: "C…" },
+ *   financialLedger: { testnet: "C…" },
+ *   attestationRegistry: { testnet: "C…" },
+ * });
+ * ```
  */
 export function createContractAddressRegistry(input: {
   businessRegistry: ContractAddressRegistryEntry;
@@ -61,6 +73,19 @@ export function createContractAddressRegistry(input: {
  * that apply to whichever network is currently configured (there's no
  * separate `*_CONTRACT_ID_MAINNET` env var today — see `.env.example`).
  * Registers each address under `network`'s key rather than assuming testnet.
+ *
+ * @param network - The network the addresses belong to.
+ * @param addresses - The raw contract ID strings for all three contracts.
+ * @returns A registry with each address registered under `network`.
+ *
+ * @example
+ * ```ts
+ * const registry = registerCurrentNetworkAddresses("testnet", {
+ *   businessRegistryId: env.BUSINESS_REGISTRY_CONTRACT_ID,
+ *   financialLedgerId: env.FINANCIAL_LEDGER_CONTRACT_ID,
+ *   attestationRegistryId: env.ATTESTATION_REGISTRY_CONTRACT_ID,
+ * });
+ * ```
  */
 export function registerCurrentNetworkAddresses(
   network: NetworkId,
@@ -96,8 +121,18 @@ function looksLikeContractAddress(value: string): boolean {
  * through here cannot be used (short of an explicit `as` type assertion,
  * which contributors should never need to reach for).
  *
+ * @param name - The contract the address is expected to belong to.
+ * @param address - The raw address string to validate.
+ * @param network - The network to look the address up for.
+ * @param registry - The registry to check the address against.
+ * @returns The validated address branded as a `ContractAddress`.
  * @throws {ValidationError} if `address` is malformed, missing from the
- * registry for `network`, or does not match the registered value.
+ *   registry for `network`, or does not match the registered value.
+ *
+ * @example
+ * ```ts
+ * const id = toContractAddress("BusinessRegistry", rawId, "testnet", registry);
+ * ```
  */
 export function toContractAddress(
   name: ContractName,
@@ -135,6 +170,17 @@ export function toContractAddress(
  * return a ready-to-use `ContractConfig`. Prefer this over calling
  * `toContractAddress` three times by hand at your app's composition root
  * (e.g. `apps/web/lib/stellar/network.ts`).
+ *
+ * @param registry - The registry to validate against.
+ * @param network - The network the addresses belong to.
+ * @param addresses - The raw contract ID strings for all three contracts.
+ * @returns A `ContractConfig` with branded `ContractAddress` fields.
+ * @throws {ValidationError} if any address is malformed or mismatched.
+ *
+ * @example
+ * ```ts
+ * const config = buildContractConfig(registry, "testnet", rawIds);
+ * ```
  */
 export function buildContractConfig(
   registry: ContractAddressRegistry,

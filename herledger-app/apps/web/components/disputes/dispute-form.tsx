@@ -1,8 +1,9 @@
 "use client";
 
 import { getPublicEnv } from "@herledger/config";
-import { disputeFinancialEvent, getConnectedAddress } from "@herledger/sdk";
-import type { StellarNetworkConfig } from "@herledger/sdk";
+import { disputeFinancialEvent } from "@herledger/sdk/contracts";
+import { getConnectedAddress } from "@herledger/sdk/wallet";
+import type { StellarNetworkConfig } from "@herledger/sdk/types";
 import { Account } from "@stellar/stellar-sdk";
 import { useEffect, useRef, useState } from "react";
 

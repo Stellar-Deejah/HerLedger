@@ -1,6 +1,6 @@
 import { rpc as StellarRpc, Horizon } from "@stellar/stellar-sdk";
-import { getSorobanRpcServer } from "@herledger/sdk";
-import type { StellarNetworkConfig } from "@herledger/sdk";
+import { getSorobanRpcServer } from "@herledger/sdk/rpc";
+import type { StellarNetworkConfig } from "@herledger/sdk/types";
 import { IndexerError } from "../types/index.js";
 import { rpcRequestDurationSeconds } from "../observability/index.js";
 

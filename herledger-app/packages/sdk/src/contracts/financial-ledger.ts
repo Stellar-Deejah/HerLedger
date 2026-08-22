@@ -104,6 +104,20 @@ async function simulateRead(
 // Reads
 // ---------------------------------------------------------------------------
 
+/**
+ * Read `get_event(event_id)` from the FinancialLedger contract.
+ *
+ * @param eventId - Hex-encoded on-chain event ID (32 bytes).
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The `FinancialEvent`, or `null` if none exists for the ID.
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const event = await getFinancialEvent(id, config, contracts);
+ * ```
+ */
 export async function getFinancialEvent(
   eventId: string,
   config: StellarNetworkConfig,
@@ -127,6 +141,23 @@ export async function getFinancialEvent(
   return decodeFinancialEvent(retval);
 }
 
+/**
+ * Read a page of `get_business_events(business_id, offset, limit)` from the
+ * FinancialLedger contract.
+ *
+ * @param businessId - Hex-encoded on-chain business ID (32 bytes).
+ * @param offset - Zero-based page offset.
+ * @param limit - Maximum number of events to return.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The events for the page (empty array if none).
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const events = await getBusinessEvents(id, 0, 20, config, contracts);
+ * ```
+ */
 export async function getBusinessEvents(
   businessId: string,
   offset: number,
@@ -162,6 +193,20 @@ export async function getBusinessEvents(
   return vec.map(decodeFinancialEvent);
 }
 
+/**
+ * Read `is_supported_asset(asset)` from the FinancialLedger contract.
+ *
+ * @param assetAddress - Stellar asset contract address to check.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns `true` if the asset is supported for indexing.
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const supported = await isSupportedAsset(asset, config, contracts);
+ * ```
+ */
 export async function isSupportedAsset(
   assetAddress: string,
   config: StellarNetworkConfig,
@@ -189,6 +234,26 @@ export async function isSupportedAsset(
 // Writes
 // ---------------------------------------------------------------------------
 
+/**
+ * Write `record_event(...)` to create a financial event on-chain, signing
+ * with the `submitter` account via Freighter.
+ *
+ * @param params - Event fields plus the `sourceAccount` used to build the
+ *   transaction.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await recordFinancialEvent(
+ *   { eventId, businessId, eventType, asset, amount, stellarReference, metadataHash, submitter, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function recordFinancialEvent(
   params: {
     eventId: string;
@@ -234,13 +299,30 @@ export async function recordFinancialEvent(
 }
 
 /**
- * Write: dispute_event(event_id, business_owner, reason_hash)
+ * Write `dispute_event(event_id, business_owner, reason_hash)`, signing with
+ * the `owner` account via Freighter.
  *
  * NOTE: the contract requires `business_owner: Address` as an explicit
  * argument (it calls `business_owner.require_auth()` directly rather than
  * loading the owner from storage) — a prior version of this function
  * omitted it, which would have failed at the RPC layer with an argument
  * count mismatch. Fixed as part of #59's ABI audit.
+ *
+ * @param params - Dispute fields (event ID, owner, reason hash) plus the
+ *   `sourceAccount` used to build the transaction.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await disputeFinancialEvent(
+ *   { eventId, reasonHash, owner, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
  */
 export async function disputeFinancialEvent(
   params: {
@@ -277,6 +359,25 @@ export async function disputeFinancialEvent(
   return submitAndWait(signedXdr, config);
 }
 
+/**
+ * Write `verify_event(event_id)`, signing with the `submitter` account via
+ * Freighter.
+ *
+ * @param params - Verification fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await verifyFinancialEvent(
+ *   { eventId, submitter, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function verifyFinancialEvent(
   params: {
     eventId: string;
@@ -304,6 +405,25 @@ export async function verifyFinancialEvent(
   return submitAndWait(signedXdr, config);
 }
 
+/**
+ * Write `resolve_dispute(event_id, valid, resolution_hash)`, signing with the
+ * `submitter` account via Freighter.
+ *
+ * @param params - Resolution fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await resolveFinancialEvent(
+ *   { eventId, valid, resolutionHash, submitter, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function resolveFinancialEvent(
   params: {
     eventId: string;
@@ -340,6 +460,25 @@ export async function resolveFinancialEvent(
   return submitAndWait(signedXdr, config);
 }
 
+/**
+ * Write `revoke_event(event_id, reason_hash)`, signing with the `submitter`
+ * account via Freighter.
+ *
+ * @param params - Revocation fields plus the `sourceAccount`.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await revokeFinancialEvent(
+ *   { eventId, reasonHash, submitter, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
+ */
 export async function revokeFinancialEvent(
   params: {
     eventId: string;

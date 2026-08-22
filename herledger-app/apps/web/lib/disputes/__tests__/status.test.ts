@@ -1,4 +1,4 @@
-import type { EventStatus } from "@herledger/sdk";
+import type { EventStatus } from "@herledger/sdk/types";
 import { describe, it, expect } from "vitest";
 
 import {

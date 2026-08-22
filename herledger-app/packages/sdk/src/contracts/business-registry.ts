@@ -70,7 +70,18 @@ async function simulateRead(
 // ---------------------------------------------------------------------------
 
 /**
- * Read: get_business(business_id) -> Option<Business>
+ * Read `get_business(business_id)` from the BusinessRegistry contract.
+ *
+ * @param businessId - Hex-encoded on-chain business ID (32 bytes).
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The `Business`, or `null` if none is registered for the ID.
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const business = await getBusiness(id, config, contracts);
+ * ```
  */
 export async function getBusiness(
   businessId: string,
@@ -97,7 +108,18 @@ export async function getBusiness(
 }
 
 /**
- * Read: get_business_by_wallet(wallet) -> Option<Business>
+ * Read `get_business_by_wallet(wallet)` from the BusinessRegistry contract.
+ *
+ * @param wallet - Stellar wallet address to look up.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The `Business`, or `null` if no business is registered for the wallet.
+ * @throws {RpcError} if simulation fails; {ContractError} on a simulation error.
+ *
+ * @example
+ * ```ts
+ * const business = await getBusinessByWallet(wallet, config, contracts);
+ * ```
  */
 export async function getBusinessByWallet(
   wallet: string,
@@ -174,7 +196,24 @@ export async function registerBusiness(
 }
 
 /**
- * Write: update_metadata(business_id, metadata_hash)
+ * Write `update_metadata(business_id, metadata_hash)` to change a business's
+ * metadata hash, signing with the `owner` account via Freighter.
+ *
+ * @param params - Update fields plus the `sourceAccount` used to build the
+ *   transaction.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await updateBusinessMetadata(
+ *   { businessId, metadataHash, owner, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
  */
 export async function updateBusinessMetadata(
   params: {
@@ -211,7 +250,24 @@ export async function updateBusinessMetadata(
 }
 
 /**
- * Write: deactivate_business(business_id)
+ * Write `deactivate_business(business_id)`, signing with the `owner` account
+ * via Freighter.
+ *
+ * @param params - Deactivation fields plus the `sourceAccount` used to build
+ *   the transaction.
+ * @param config - Stellar network configuration.
+ * @param contracts - Validated contract addresses.
+ * @returns The confirmed transaction result.
+ * @throws {RpcError} / {ContractError} / {WalletError} on failure.
+ *
+ * @example
+ * ```ts
+ * const result = await deactivateBusiness(
+ *   { businessId, owner, sourceAccount },
+ *   config,
+ *   contracts
+ * );
+ * ```
  */
 export async function deactivateBusiness(
   params: {
