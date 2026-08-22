@@ -1,17 +1,18 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Link, useRouter } from "@/i18n/navigation";
 import { signIn } from "@/lib/auth/client";
 import { EMAIL_NOT_VERIFIED_ERROR, normalizeSignInError } from "@/lib/auth/messages";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignInForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,7 +37,7 @@ export function SignInForm() {
           router.push("/dashboard");
         }
       } catch {
-        setError("An unexpected error occurred. Please try again.");
+        setError(t("unexpectedError"));
       } finally {
         setLoading(false);
       }
@@ -49,7 +50,7 @@ export function SignInForm() {
 
       <FormField
         id="email"
-        label="Email"
+        label={t("email")}
         type="email"
         value={email}
         onChange={setEmail}
@@ -58,7 +59,7 @@ export function SignInForm() {
       />
       <FormField
         id="password"
-        label="Password"
+        label={t("password")}
         type="password"
         value={password}
         onChange={setPassword}
@@ -69,12 +70,12 @@ export function SignInForm() {
       {error === EMAIL_NOT_VERIFIED_ERROR && (
         <p style={{ fontSize: "0.875rem", marginBottom: "1rem" }}>
           <Link href={`/auth/verify-email?email=${encodeURIComponent(email)}`}>
-            Resend verification email
+            {t("resendVerification")}
           </Link>
         </p>
       )}
 
-      <SubmitButton loading={loading}>Sign in</SubmitButton>
+      <SubmitButton loading={loading}>{t("signIn")}</SubmitButton>
 
       <p
         style={{
@@ -84,7 +85,7 @@ export function SignInForm() {
           color: "var(--muted)",
         }}
       >
-        No account? <Link href="/auth/sign-up">Create one</Link>
+        {t("noAccount")} <Link href="/auth/sign-up">{t("createOne")}</Link>
       </p>
     </form>
   );

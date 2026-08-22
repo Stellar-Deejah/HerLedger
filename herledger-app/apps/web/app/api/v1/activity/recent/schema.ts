@@ -17,6 +17,7 @@ export const FinancialEventSchema = z.object({
   status: z.enum(["Pending", "Verified", "Disputed", "Revoked"]),
   stellarReference: z.string(),
   ledgerSequence: z.number(),
+  createdAt: z.string(), // ISO 8601 timestamp of when the event was indexed
 });
 export type FinancialEventDto = z.infer<typeof FinancialEventSchema>;
 

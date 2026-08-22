@@ -1,12 +1,32 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const push = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
-}));
+// The form imports Link/useRouter from @/i18n/navigation, which pulls in
+// next-intl's navigation wrapper (and, transitively, next/navigation).
+// Mocking the wrapper directly keeps these tests focused on the form's
+// behavior and avoids resolving next's subpath modules inside vitest.
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("@/i18n/navigation", async () => {
+  const React = await import("react");
+  return {
+    Link: ({
+      href,
+      children,
+      ...props
+    }: {
+      href: string | { pathname: string; query?: Record<string, string> };
+      children: React.ReactNode;
+    }) =>
+      React.createElement(
+        "a",
+        { href: typeof href === "string" ? href : href.pathname, ...props },
+        children
+      ),
+    useRouter: () => ({ push }),
+  };
+});
 
 const signInEmail = vi.fn();
 vi.mock("@/lib/auth/client", () => ({
@@ -14,6 +34,8 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 import { SignInForm } from "../sign-in-form";
+
+import { WithIntl } from "./intl-test-utils";
 
 async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText(/email/i), "jane@example.com");
@@ -33,7 +55,11 @@ describe("SignInForm", () => {
       data: null,
       error: { code: "EMAIL_NOT_VERIFIED", message: "Email not verified", status: 403 },
     });
-    render(<SignInForm />);
+    render(
+      <WithIntl>
+        <SignInForm />
+      </WithIntl>
+    );
 
     await fillAndSubmit(user);
 
@@ -52,7 +78,11 @@ describe("SignInForm", () => {
         status: 401,
       },
     });
-    render(<SignInForm />);
+    render(
+      <WithIntl>
+        <SignInForm />
+      </WithIntl>
+    );
 
     await fillAndSubmit(user);
 
@@ -65,7 +95,11 @@ describe("SignInForm", () => {
   it("redirects to the dashboard on a successful sign-in", async () => {
     const user = userEvent.setup();
     signInEmail.mockResolvedValue({ data: { user: {} }, error: null });
-    render(<SignInForm />);
+    render(
+      <WithIntl>
+        <SignInForm />
+      </WithIntl>
+    );
 
     await fillAndSubmit(user);
 

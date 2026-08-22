@@ -1,23 +1,25 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import { useEventStream } from "@/hooks/use-event-stream";
+import { Link, usePathname } from "@/i18n/navigation";
 import { signOut } from "@/lib/auth/client";
 import { formatAmount } from "@/lib/utils/format";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/activity", label: "Activity" },
-  { href: "/dashboard/business", label: "Business" },
-  { href: "/dashboard/attestations", label: "Attestations" },
-  { href: "/dashboard/disputes", label: "Disputes" },
-  { href: "/dashboard/settings", label: "Settings" },
+  { href: "/dashboard", key: "overview" },
+  { href: "/dashboard/activity", key: "activity" },
+  { href: "/dashboard/business", key: "business" },
+  { href: "/dashboard/attestations", key: "attestations" },
+  { href: "/dashboard/disputes", key: "disputes" },
+  { href: "/dashboard/settings", key: "settings" },
 ] as const;
 
 export function DashboardNav() {
+  const t = useTranslations("nav");
+  const locale = useLocale();
   const pathname = usePathname();
   const { newEvents, clearNewEvents } = useEventStream();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -33,7 +35,7 @@ export function DashboardNav() {
 
   return (
     <nav
-      aria-label="Dashboard navigation"
+      aria-label={t("aria")}
       style={{
         width: "220px",
         minHeight: "100vh",
@@ -74,7 +76,7 @@ export function DashboardNav() {
             position: "relative",
             padding: "0.25rem",
           }}
-          aria-label="Notifications"
+          aria-label={t("notifications")}
         >
           <svg
             width="20"
@@ -135,7 +137,7 @@ export function DashboardNav() {
                 fontSize: "0.875rem",
               }}
             >
-              Recent Notifications
+              {t("recentNotifications")}
             </div>
             {newEvents.length === 0 ? (
               <div
@@ -146,7 +148,7 @@ export function DashboardNav() {
                   color: "var(--muted)",
                 }}
               >
-                No new notifications
+                {t("noNewNotifications")}
               </div>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -161,7 +163,7 @@ export function DashboardNav() {
                   >
                     <div style={{ fontWeight: 500 }}>{event.eventType}</div>
                     <div style={{ fontFamily: "monospace", marginTop: "0.25rem" }}>
-                      {formatAmount(BigInt(event.amount))}
+                      {formatAmount(BigInt(event.amount), locale)}
                     </div>
                   </li>
                 ))}
@@ -172,7 +174,7 @@ export function DashboardNav() {
       </div>
 
       <ul style={{ listStyle: "none", padding: 0, margin: 0, flex: 1 }}>
-        {NAV_ITEMS.map(({ href, label }) => {
+        {NAV_ITEMS.map(({ href, key }) => {
           const isActive =
             href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
           return (
@@ -191,7 +193,7 @@ export function DashboardNav() {
                   fontSize: "0.9375rem",
                 }}
               >
-                {label}
+                {t(key)}
               </Link>
             </li>
           );
@@ -213,7 +215,7 @@ export function DashboardNav() {
         }}
         type="button"
       >
-        Sign out
+        {t("signOut")}
       </button>
     </nav>
   );

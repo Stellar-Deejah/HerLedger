@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { PasswordStrengthMeter } from "@/components/auth/password-strength-meter";
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Link, useRouter } from "@/i18n/navigation";
 import { signUp } from "@/lib/auth/client";
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignUpForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,7 +31,7 @@ export function SignUpForm() {
     setError(null);
 
     if (password.length < MIN_PASSWORD_LENGTH) {
-      setError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      setError(t("passwordTooShort", { count: MIN_PASSWORD_LENGTH }));
       return;
     }
 
@@ -44,7 +45,7 @@ export function SignUpForm() {
           callbackURL: "/auth/verify-email?verified=true",
         });
         if (result.error) {
-          setError(result.error.message ?? "Account creation failed.");
+          setError(result.error.message ?? t("accountCreationFailed"));
         } else {
           // requireEmailVerification means this response carries no session
           // (see lib/auth/server.ts) — there's no dashboard to redirect to
@@ -52,7 +53,7 @@ export function SignUpForm() {
           router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
         }
       } catch {
-        setError("An unexpected error occurred. Please try again.");
+        setError(t("unexpectedError"));
       } finally {
         setLoading(false);
       }
@@ -65,7 +66,7 @@ export function SignUpForm() {
 
       <FormField
         id="name"
-        label="Your name"
+        label={t("name")}
         type="text"
         value={name}
         onChange={setName}
@@ -74,7 +75,7 @@ export function SignUpForm() {
       />
       <FormField
         id="email"
-        label="Email"
+        label={t("email")}
         type="email"
         value={email}
         onChange={setEmail}
@@ -83,17 +84,17 @@ export function SignUpForm() {
       />
       <FormField
         id="password"
-        label="Password"
+        label={t("password")}
         type="password"
         value={password}
         onChange={setPassword}
         required
         autoComplete="new-password"
-        description={`Minimum ${MIN_PASSWORD_LENGTH} characters`}
+        description={t("minPassword", { count: MIN_PASSWORD_LENGTH })}
       />
       <PasswordStrengthMeter password={password} userInputs={[name, email]} />
 
-      <SubmitButton loading={loading}>Create account</SubmitButton>
+      <SubmitButton loading={loading}>{t("signUp")}</SubmitButton>
 
       <p
         style={{
@@ -103,7 +104,7 @@ export function SignUpForm() {
           color: "var(--muted)",
         }}
       >
-        Already have an account? <Link href="/auth/sign-in">Sign in</Link>
+        {t("haveAccount")} <Link href="/auth/sign-in">{t("signIn")}</Link>
       </p>
     </form>
   );

@@ -1,44 +1,60 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import createMiddleware from "next-intl/middleware";
 
+import { routing } from "@/i18n/routing";
 import { auth } from "@/lib/auth/server";
 import { validateCallbackUrl } from "@/lib/auth/validate-callback-url";
 
 // ---------------------------------------------------------------------------
-// Route protection middleware
-// Redirect unauthenticated users away from dashboard routes.
+// Route protection middleware (composed with next-intl locale routing)
 //
-// Session validation architecture (see SECURITY.md for the full writeup):
+// Order of operations:
+//  1. /api/* requests are handled entirely here (CORS preflight +
+//     deprecation headers) and never reach the intl middleware.
+//  2. Auth checks run against the locale-*stripped* pathname so a single
+//     set of protected/auth route prefixes covers both `/dashboard` (en,
+//     unprefixed under `localePrefix: "as-needed"`) and `/es/dashboard`.
+//  3. next-intl's middleware runs last: it detects the locale, redirects
+//     when the prefix is missing/redundant, and stamps the resolved locale
+//     onto the request for the [locale] segment.
 //
-// - `auth.api.getSession()` is called on every protected request. This is a
-//   cryptographic + DB-backed check (Better Auth verifies the session
-//   cookie's signature and, on a cache miss, looks the session up in
-//   Postgres) — not a bare cookie-presence check. A forged or tampered
-//   cookie fails signature verification and is treated as unauthenticated.
+// Session validation architecture: see SECURITY.md. `auth.api.getSession()`
+// is a cryptographic + DB-backed check (Better Auth verifies the session
+// cookie signature and, on cache miss, looks the session up in Postgres) —
+// not a bare cookie-presence check. A forged or tampered cookie fails
+// signature verification and is treated as unauthenticated.
 //
-// - Next.js 16 runs this file's request handler on the Node.js runtime by
-//   default (Proxy — the successor to Middleware — defaults to Node.js as of
-//   v16; see node_modules/next/dist/docs/01-app/03-api-reference/
-//   03-file-conventions/proxy.md, "Runtime" + "Version history" sections).
-//   That means the Prisma-backed Better Auth adapter configured in
-//   lib/auth/server.ts works here unmodified — there is no Edge runtime
-//   restriction to design around, and no separate edge-compatible auth
-//   client or route-handler proxy is needed.
-//
-// - Better Auth's `cookieCache` (lib/auth/server.ts) is the "short-lived
-//   session cache" called for by the hardening plan: a short-TTL signed,
-//   encrypted cookie holding session + user data, checked before Postgres is
-//   queried. This bounds DB round-trips to roughly one per TTL window
-//   instead of one per request, keeping this middleware's added latency
-//   low. The trade-off: a session revoked directly in the DB (not via
-//   Better Auth's own sign-out/revoke API, which also clears the cache
-//   cookie) can remain accepted at the edge for up to the cache TTL. The
-//   TTL was deliberately shortened from 7 days to 30 seconds so that window
-//   is small rather than eliminated — see the comment in lib/auth/server.ts.
+// Next.js 16 runs this file's request handler on the Node.js runtime by
+// default (Proxy — the successor to Middleware — defaults to Node.js as of
+// v16), so the Prisma-backed Better Auth adapter configured in
+// lib/auth/server.ts works here unmodified. Better Auth's `cookieCache`
+// bounds DB round-trips to roughly one per 30s TTL window (see the comment
+// in lib/auth/server.ts).
 // ---------------------------------------------------------------------------
+
+const intlMiddleware = createMiddleware(routing);
 
 const PROTECTED_PREFIXES = ["/dashboard"];
 const AUTH_ROUTES = ["/auth/sign-in", "/auth/sign-up"];
+
+/**
+ * Returns the locale-independent pathname and the active locale for a
+ * request. Under `localePrefix: "as-needed"` only non-default locales carry
+ * a `/es`-style prefix, so an unprefixed path is always the default locale.
+ */
+function localeAwarePath(pathname: string): { path: string; locale: string } {
+  const [, firstSegment] = pathname.split("/");
+  if (
+    firstSegment &&
+    firstSegment !== routing.defaultLocale &&
+    routing.locales.includes(firstSegment as never)
+  ) {
+    const rest = pathname.slice(firstSegment.length + 1);
+    return { path: rest.length === 0 ? "/" : rest, locale: firstSegment };
+  }
+  return { path: pathname, locale: routing.defaultLocale };
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -71,20 +87,28 @@ export async function middleware(request: NextRequest) {
   }
 
   const allowedOrigins = [request.nextUrl.origin];
+  const { path, locale } = localeAwarePath(pathname);
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => path.startsWith(prefix));
+  const isAuthRoute = AUTH_ROUTES.includes(path);
 
   // Only pay for a session lookup when the route actually cares about auth
   // state — public routes skip it entirely.
   if (!isProtected && !isAuthRoute) {
-    return NextResponse.next();
+    return intlMiddleware(request);
   }
 
   const session = await auth.api.getSession({ headers: request.headers });
 
+  // Locale-prefixed redirect target, e.g. "/auth/sign-in" (en) or
+  // "/es/auth/sign-in" (es). Keep the original (locale-prefixed) pathname as
+  // the callback target so a non-default-locale user lands back in their
+  // locale after signing in.
+  const localizedPath = (href: string) =>
+    locale === routing.defaultLocale ? href : `/${locale}${href}`;
+
   if (isProtected && !session) {
-    const signIn = new URL("/auth/sign-in", request.url);
+    const signIn = new URL(localizedPath("/auth/sign-in"), request.url);
     const callbackTarget = `${pathname}${request.nextUrl.search}`;
     const safeCallback = validateCallbackUrl(callbackTarget, allowedOrigins);
     signIn.searchParams.set("callbackUrl", safeCallback ?? "/dashboard");
@@ -94,10 +118,10 @@ export async function middleware(request: NextRequest) {
   if (isAuthRoute && session) {
     const requestedCallback = request.nextUrl.searchParams.get("callbackUrl");
     const safeCallback = validateCallbackUrl(requestedCallback, allowedOrigins);
-    return NextResponse.redirect(new URL(safeCallback ?? "/dashboard", request.url));
+    return NextResponse.redirect(new URL(safeCallback ?? localizedPath("/dashboard"), request.url));
   }
 
-  return NextResponse.next();
+  return intlMiddleware(request);
 }
 
 export const config = {

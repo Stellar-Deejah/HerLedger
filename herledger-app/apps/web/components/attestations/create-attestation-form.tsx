@@ -3,7 +3,6 @@
 import { getPublicEnv } from "@herledger/config";
 import { createAttestation } from "@herledger/sdk";
 import { Account } from "@stellar/stellar-sdk";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
@@ -13,6 +12,7 @@ import { FormField } from "@/components/ui/form-field";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { WalletConnect } from "@/components/wallet/wallet-connect";
+import { useRouter } from "@/i18n/navigation";
 import { getContractConfig, getStellarConfig } from "@/lib/stellar/network";
 
 // ---------------------------------------------------------------------------

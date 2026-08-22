@@ -1,15 +1,14 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
+
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe } from "vitest-axe";
 import { useEffect } from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from "vitest-axe";
 
 // Must be imported (and vi.mock() registered) before "../business-registration-form"
 // — see use-registration-flow.test.tsx for why import order matters here.
 import { mockPublicEnv } from "@/tests/utils/mock-public-env";
-import { TEST_WALLET_ADDRESS, mockWalletConnectionState } from "@/tests/utils/mock-wallet";
-
 vi.mock("@herledger/config", () => ({
   getPublicEnv: mockPublicEnv,
 }));
@@ -23,8 +22,7 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
       if (mockWalletConnectionState.connected) {
         onConnected(TEST_WALLET_ADDRESS);
       }
-       
-    }, []);
+    }, [onConnected]);
 
     if (mockWalletConnectionState.connected) {
       return <p>Connected wallet: {TEST_WALLET_ADDRESS}</p>;
@@ -44,9 +42,12 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
   },
 }));
 
-import { BusinessRegistrationForm } from "../business-registration-form";
 import { MockSdkProvider, mockRegisterBusinessThrows } from "@/tests/utils/mock-sdk-provider";
+import { TEST_WALLET_ADDRESS, mockWalletConnectionState } from "@/tests/utils/mock-wallet";
 import { resetMockWalletConnectionState } from "@/tests/utils/mock-wallet";
+import { WithIntl } from "@/tests/utils/with-intl";
+
+import { BusinessRegistrationForm } from "../business-registration-form";
 
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
@@ -68,9 +69,11 @@ const AXE_OPTIONS = { rules: { "color-contrast": { enabled: false } } };
 describe("BusinessRegistrationForm accessibility", () => {
   it("has no axe violations on the initial wallet step", async () => {
     const { container } = render(
-      <MockSdkProvider>
-        <BusinessRegistrationForm />
-      </MockSdkProvider>
+      <WithIntl>
+        <MockSdkProvider>
+          <BusinessRegistrationForm />
+        </MockSdkProvider>
+      </WithIntl>
     );
     expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
   });
@@ -78,9 +81,11 @@ describe("BusinessRegistrationForm accessibility", () => {
   it("marks exactly the active step with aria-current='step'", async () => {
     const user = userEvent.setup();
     render(
-      <MockSdkProvider>
-        <BusinessRegistrationForm />
-      </MockSdkProvider>
+      <WithIntl>
+        <MockSdkProvider>
+          <BusinessRegistrationForm />
+        </MockSdkProvider>
+      </WithIntl>
     );
 
     await user.click(screen.getByRole("button", { name: /connect freighter wallet/i }));
@@ -100,9 +105,11 @@ describe("BusinessRegistrationForm accessibility", () => {
   it("moves focus to the new step's heading on each forward transition", async () => {
     const user = userEvent.setup();
     render(
-      <MockSdkProvider>
-        <BusinessRegistrationForm />
-      </MockSdkProvider>
+      <WithIntl>
+        <MockSdkProvider>
+          <BusinessRegistrationForm />
+        </MockSdkProvider>
+      </WithIntl>
     );
 
     await user.click(screen.getByRole("button", { name: /connect freighter wallet/i }));
@@ -115,9 +122,13 @@ describe("BusinessRegistrationForm accessibility", () => {
   it("announces the error via role=alert and has no axe violations on the error step", async () => {
     const user = userEvent.setup();
     const { container } = render(
-      <MockSdkProvider overrides={{ registerBusiness: mockRegisterBusinessThrows("Simulated failure") }}>
-        <BusinessRegistrationForm />
-      </MockSdkProvider>
+      <WithIntl>
+        <MockSdkProvider
+          overrides={{ registerBusiness: mockRegisterBusinessThrows("Simulated failure") }}
+        >
+          <BusinessRegistrationForm />
+        </MockSdkProvider>
+      </WithIntl>
     );
 
     await user.click(screen.getByRole("button", { name: /connect freighter wallet/i }));
@@ -137,13 +148,15 @@ describe("BusinessRegistrationForm accessibility", () => {
   it("has no axe violations on the confirmation step", async () => {
     const user = userEvent.setup();
     const { container } = render(
-      <MockSdkProvider
-        overrides={{
-          registerBusiness: async () => ({ hash: "tx-a11y", success: true, ledger: 1 }),
-        }}
-      >
-        <BusinessRegistrationForm />
-      </MockSdkProvider>
+      <WithIntl>
+        <MockSdkProvider
+          overrides={{
+            registerBusiness: async () => ({ hash: "tx-a11y", success: true, ledger: 1 }),
+          }}
+        >
+          <BusinessRegistrationForm />
+        </MockSdkProvider>
+      </WithIntl>
     );
 
     await user.click(screen.getByRole("button", { name: /connect freighter wallet/i }));
