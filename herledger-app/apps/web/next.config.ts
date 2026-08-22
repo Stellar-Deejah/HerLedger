@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from "next-intl/plugin";
 
 const appUrl = process.env.APP_URL || "http://localhost:3000";
 
-const nextConfig: NextConfig = {
+// Loads the next-intl request configuration (locale detection + message
+// resolution) from i18n/request.ts for every [locale] route.
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
+const nextConfig: NextConfig = withNextIntl({
   reactStrictMode: true,
   transpilePackages: ["@herledger/sdk", "@herledger/config", "@herledger/db"],
   experimental: {
@@ -80,6 +85,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-};
+});
 
 export default nextConfig;

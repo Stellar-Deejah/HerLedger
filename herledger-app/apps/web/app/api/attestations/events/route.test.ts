@@ -1,8 +1,8 @@
+import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 
 import { GET } from "./route";
 
@@ -92,7 +92,11 @@ describe("GET /api/attestations/events", () => {
           findRecentByBusiness: vi.fn(),
           findById: vi.fn(),
           findUpdatedAfter: vi.fn(),
-          findAttestableEvents: vi.fn().mockResolvedValue([{ eventId: "ev_1" }]),
+          findAttestableEvents: vi
+            .fn()
+            .mockResolvedValue([
+              { eventId: "ev_1", createdAt: new Date("2026-08-22T10:00:00.000Z") },
+            ]),
         },
       })
     );

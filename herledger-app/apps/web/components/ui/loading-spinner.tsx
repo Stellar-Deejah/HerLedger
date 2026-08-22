@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 export interface LoadingSpinnerProps {
   /** Screen reader accessible label describing what is loading */
   label?: string;
@@ -5,12 +9,16 @@ export interface LoadingSpinnerProps {
 
 /**
  * LoadingSpinner renders an accessible CSS-animated spinning indicator using brand tokens.
+ * Defaults to the active locale's "Loading…" message when no label is provided.
  */
-export function LoadingSpinner({ label = "Loading…" }: LoadingSpinnerProps) {
+export function LoadingSpinner({ label }: LoadingSpinnerProps) {
+  const t = useTranslations("ui");
+  const resolvedLabel = label ?? t("loading");
+
   return (
     <div
       role="status"
-      aria-label={label}
+      aria-label={resolvedLabel}
       style={{ display: "flex", justifyContent: "center", padding: "var(--spacing-2xl)" }}
     >
       <span
@@ -25,7 +33,7 @@ export function LoadingSpinner({ label = "Loading…" }: LoadingSpinnerProps) {
         }}
       />
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <span className="sr-only">{label}</span>
+      <span className="sr-only">{resolvedLabel}</span>
     </div>
   );
 }

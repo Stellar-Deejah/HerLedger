@@ -51,7 +51,8 @@ export async function GET(req: NextRequest) {
 
   return typedJson<ActivityRecentResponse>({
     data: {
-      events,
+      // `createdAt` travels as an ISO string over JSON (see schema.ts).
+      events: events.map((event) => ({ ...event, createdAt: event.createdAt.toISOString() })),
       pagination: {
         offset: parsed.data.offset,
         limit: parsed.data.limit,

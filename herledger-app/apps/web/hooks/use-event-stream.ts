@@ -11,6 +11,7 @@ export interface FinancialEventSummary {
   status: string;
   stellarReference: string;
   ledgerSequence: number;
+  createdAt: string;
 }
 
 interface EventStreamState {

@@ -1,3 +1,7 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
 export interface SubmitButtonProps {
   /** Button label or nested elements */
   children: React.ReactNode;
@@ -12,6 +16,7 @@ export interface SubmitButtonProps {
  * and accessible ARIA busy attributes.
  */
 export function SubmitButton({ children, loading, disabled }: SubmitButtonProps) {
+  const t = useTranslations("ui");
   const isInactive = loading || disabled;
 
   return (
@@ -32,7 +37,7 @@ export function SubmitButton({ children, loading, disabled }: SubmitButtonProps)
         marginTop: "var(--spacing-sm)",
       }}
     >
-      {loading ? "Please wait…" : children}
+      {loading ? t("pleaseWait") : children}
     </button>
   );
 }

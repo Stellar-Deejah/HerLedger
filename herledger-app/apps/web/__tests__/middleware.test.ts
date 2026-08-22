@@ -13,6 +13,13 @@ vi.mock("@/lib/auth/server", () => ({
     },
   },
 }));
+// The locale passthrough (next-intl's createMiddleware) is exercised
+// end-to-end by the running app; here it's replaced with a pass-through so
+// these tests stay focused on the auth-protection logic, and to avoid
+// resolving next's subpath modules inside vitest.
+vi.mock("next-intl/middleware", () => ({
+  default: () => () => new Response(null, { status: 200 }),
+}));
 
 const ORIGIN = "https://app.herledger.example";
 
@@ -109,7 +116,7 @@ describe("middleware", () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce(MOCK_SESSION);
 
     const response = await middleware(
-      requestFor("/auth/sign-in?callbackUrl=%2Fdashboard%2Factivity", "valid-session"),
+      requestFor("/auth/sign-in?callbackUrl=%2Fdashboard%2Factivity", "valid-session")
     );
 
     const location = new URL(response.headers.get("location")!);
@@ -146,12 +153,12 @@ describe("middleware", () => {
       vi.mocked(auth.api.getSession).mockResolvedValueOnce(MOCK_SESSION);
 
       const response = await middleware(
-        requestFor(`/auth/sign-in?callbackUrl=${encodeURIComponent(payload)}`, "valid-session"),
+        requestFor(`/auth/sign-in?callbackUrl=${encodeURIComponent(payload)}`, "valid-session")
       );
 
       const location = new URL(response.headers.get("location")!);
       expect(location.origin).toBe(ORIGIN);
       expect(location.pathname).toBe("/dashboard");
-    },
+    }
   );
 });

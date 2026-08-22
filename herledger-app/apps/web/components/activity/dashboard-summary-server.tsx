@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { getRecentActivity } from "@/lib/data/activity";
 import { getActiveAttestationCount } from "@/lib/data/attestations";
 
@@ -16,6 +18,7 @@ interface OverviewPanelProps {
  * before either of these queries can run.
  */
 export async function OverviewPanel({ businessId, businessProfile }: OverviewPanelProps) {
+  const t = await getTranslations("activity");
   let result: [Awaited<ReturnType<typeof getRecentActivity>>, number] | null = null;
   try {
     result = await Promise.all([
@@ -29,7 +32,7 @@ export async function OverviewPanel({ businessId, businessProfile }: OverviewPan
   if (!result) {
     return (
       <div role="alert" style={{ color: "var(--danger)", fontSize: "0.9375rem" }}>
-        Could not load recent activity. Please try again.
+        {t("loadRecentError")}
       </div>
     );
   }
