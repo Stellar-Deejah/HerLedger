@@ -81,7 +81,7 @@ export const auth = betterAuth({
     // two" while still avoiding a DB round trip on every single navigation.
     cookieCache: {
       enabled: true,
-      maxAge: 30, // 30 seconds
+      maxAge: 30, // 30 seconds short-lived Edge cache window
     },
   },
   trustedOrigins: [env.APP_URL],

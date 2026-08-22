@@ -70,7 +70,7 @@ describe("useRegistrationFlow: happy path", () => {
       .mocked(fetch)
       .mock.calls.filter(([url]) => url === "/api/business/register");
     expect(posts).toHaveLength(1);
-    expect(posts[0][1]).toMatchObject({
+    expect(posts[0]![1]).toMatchObject({
       method: "POST",
       body: JSON.stringify({
         businessName: "Acme Traders",

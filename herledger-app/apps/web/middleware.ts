@@ -86,7 +86,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const allowedOrigins = [request.nextUrl.origin];
+  const allowedOrigins = [appUrl, request.nextUrl.origin];
   const { path, locale } = localeAwarePath(pathname);
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => path.startsWith(prefix));
@@ -119,6 +119,20 @@ export async function middleware(request: NextRequest) {
     const requestedCallback = request.nextUrl.searchParams.get("callbackUrl");
     const safeCallback = validateCallbackUrl(requestedCallback, allowedOrigins);
     return NextResponse.redirect(new URL(safeCallback ?? localizedPath("/dashboard"), request.url));
+  }
+
+  // On auth routes when not logged in, drop malicious callbackUrl parameter
+  // if present — a malformed/open-redirect payload on the sign-in page is
+  // stripped by redirecting to the clean, locale-aware auth URL.
+  if (isAuthRoute && !session) {
+    const requestedCallback = request.nextUrl.searchParams.get("callbackUrl");
+    if (requestedCallback !== null) {
+      const safeCallback = validateCallbackUrl(requestedCallback, allowedOrigins);
+      if (!safeCallback) {
+        const cleanAuthUrl = new URL(localizedPath(path), request.url);
+        return NextResponse.redirect(cleanAuthUrl);
+      }
+    }
   }
 
   return intlMiddleware(request);

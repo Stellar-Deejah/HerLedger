@@ -41,6 +41,12 @@ export const serverEnvSchema = z
     APP_URL: z.string().url().describe("The canonical URL of the web application"),
     DATABASE_URL: z.string().min(1).describe("PostgreSQL connection string"),
     BETTER_AUTH_SECRET: z.string().min(32).describe("Secret key for auth session encryption"),
+    RESEND_API_KEY: z.string().optional().describe("Resend API key for transactional emails"),
+    EMAIL_FROM: z
+      .string()
+      .optional()
+      .default("HerLedger <onboarding@resend.dev>")
+      .describe("Default sender address for emails"),
     STELLAR_NETWORK: z.enum(["testnet", "mainnet"]).describe("Stellar network selection"),
     STELLAR_RPC_URL: z
       .string()

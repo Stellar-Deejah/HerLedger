@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { xdr, nativeToScVal } from "@stellar/stellar-sdk";
+import { nativeToScVal } from "@stellar/stellar-sdk";
 import {
   toHexString32,
   encodeBytes32,

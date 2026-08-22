@@ -1,7 +1,6 @@
 import {
   rpc as StellarRpc,
   Transaction,
-  FeeBumpTransaction,
   TransactionBuilder,
 } from "@stellar/stellar-sdk";
 import type { StellarNetworkConfig, TransactionResult } from "../types/index.js";
@@ -11,17 +10,8 @@ import { signTransactionWithFreighter } from "../wallet/freighter.js";
 
 // ---------------------------------------------------------------------------
 // Transaction lifecycle helpers: simulate, prepare, submit, and poll.
-//
-// The submission path implements the reliability guidance from the Stellar
-// docs (https://developers.stellar.org/docs/build/guides/basics/submit-transaction):
-//   - `TRY_AGAIN_LATER` is retried with exponential back-off instead of being
-//     surfaced as a hard failure or polled at a fixed rate.
-//   - a rejected `tx_insufficient_fee` transaction can be recovered via a
-//     fee-bump envelope (`submitWithFeeBump`).
 // ---------------------------------------------------------------------------
 
-const BASE_BACKOFF_MS = 1_000; // 1s
-const MAX_BACKOFF_MS = 8_000; // 8s cap on the exponential schedule
 const DEFAULT_MAX_WAIT_MS = 60_000; // 60s default total wait budget
 const DEFAULT_POLL_INTERVAL_MS = 2_000; // ~ one Stellar ledger close
 
@@ -70,12 +60,6 @@ export interface SubmitAndWaitOptions {
  *   simulation error result (e.g. a contract invocation failed, or contract
  *   state changed between simulation and submission). The error `cause` holds
  *   the simulation error detail.
- *
- * @example
- * ```ts
- * const prepared = await simulateAndPrepare(tx, config);
- * const signed = await signTransactionWithFreighter(prepared.toXDR(), config.networkPassphrase);
- * ```
  */
 export async function simulateAndPrepare(
   tx: Transaction,
@@ -89,9 +73,6 @@ export async function simulateAndPrepare(
     throw new RpcError("Transaction simulation failed", cause, "SIMULATION_FAILED");
   }
 
-  // Validate the simulation result before preparing: a simulation that errored
-  // (e.g. the contract rejected the call, or state changed since the last
-  // ledger) must not be silently assembled and submitted as if it succeeded.
   if (StellarRpc.Api.isSimulationError(simResult)) {
     throw new RpcError(
       `Transaction simulation failed: ${simResult.error}`,
@@ -106,21 +87,23 @@ export async function simulateAndPrepare(
 
 /**
  * Poll a submitted transaction hash until it confirms, fails, or the
- * polling budget is exhausted. Split out from `submitAndWait` so a caller
- * that persisted a hash before an earlier poll was interrupted (e.g. a
- * browser tab closed mid-`submitAndWait`) can resume polling that same
- * hash on its own, without resubmitting or re-signing the transaction.
+ * polling budget is exhausted.
  */
 export async function pollTransactionStatus(
   hash: string,
-  config: StellarNetworkConfig
+  config: StellarNetworkConfig,
+  options?: SubmitAndWaitOptions
 ): Promise<TransactionResult> {
+  assertNotAborted(options?.signal);
   const server = getSorobanRpcServer(config);
-  const maxWaitMs = options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;
-  const pollIntervalMs = options.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+  const maxWaitMs = options?.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;
+  const pollIntervalMs = options?.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+  const maxPolls = Math.max(1, Math.ceil(maxWaitMs / Math.max(1, pollIntervalMs)));
 
-  for (let i = 0; i < MAX_POLLS; i++) {
-    await sleep(POLL_INTERVAL_MS);
+  for (let i = 0; i < maxPolls; i++) {
+    assertNotAborted(options?.signal);
+    await sleep(pollIntervalMs);
+    assertNotAborted(options?.signal);
     let getResult: StellarRpc.Api.GetTransactionResponse;
     try {
       getResult = await server.getTransaction(hash);
@@ -134,9 +117,13 @@ export async function pollTransactionStatus(
     if (getResult.status === StellarRpc.Api.GetTransactionStatus.FAILED) {
       throw new ContractError(`Transaction ${hash} failed on-chain`, getResult.status);
     }
-    // NOT_FOUND (and any future congestion status) = still pending; keep polling
-    // until the deadline. The deadline above guarantees termination.
   }
+
+  throw new RpcError(
+    `Timed out waiting for transaction ${hash} after ${maxWaitMs}ms`,
+    undefined,
+    "TIMEOUT"
+  );
 }
 
 function assertNotAborted(signal?: AbortSignal): void {
@@ -148,21 +135,19 @@ function assertNotAborted(signal?: AbortSignal): void {
 /**
  * Submit a signed transaction XDR and poll until confirmed or failed.
  *
- * `onSubmitted`, when given, fires with the transaction hash right after
- * the network accepts the submission but before polling starts -- the
- * earliest point a caller can durably persist "this transaction is in
- * flight" (e.g. to localStorage) so a resumed session can pick up polling
- * via `pollTransactionStatus` instead of losing track of an on-chain
- * submission that outlived the page that made it.
+ * `onSubmitted`, when given as a function or via options object, handles options.
  */
 export async function submitAndWait(
   signedXdr: string,
   config: StellarNetworkConfig,
-  onSubmitted?: (hash: string) => void
+  optionsOrOnSubmitted?: ((hash: string) => void) | SubmitAndWaitOptions
 ): Promise<TransactionResult> {
+  const onSubmitted = typeof optionsOrOnSubmitted === "function" ? optionsOrOnSubmitted : undefined;
+  const options = typeof optionsOrOnSubmitted === "object" && optionsOrOnSubmitted !== null ? optionsOrOnSubmitted : undefined;
+
+  assertNotAborted(options?.signal);
   const server = getSorobanRpcServer(config);
 
-  // Parse the XDR back into a transaction object for submission
   const txObj = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
 
   let sendResult: StellarRpc.Api.SendTransactionResponse;
@@ -180,7 +165,33 @@ export async function submitAndWait(
   const hash = sendResult.hash;
   onSubmitted?.(hash);
 
-  return pollTransactionStatus(hash, config);
+  return pollTransactionStatus(hash, config, options);
+}
+
+/**
+ * Wraps an inner transaction in a FeeBumpTransaction signed by `feeSource` and submits it.
+ */
+export async function submitWithFeeBump(
+  innerTx: Transaction,
+  feeSource: string,
+  fee: string | number,
+  config: StellarNetworkConfig,
+  options?: SubmitAndWaitOptions
+): Promise<TransactionResult> {
+  const feeBumpTx = TransactionBuilder.buildFeeBumpTransaction(
+    feeSource,
+    String(fee),
+    innerTx,
+    config.networkPassphrase
+  );
+
+  const signedXdr = await signTransactionWithFreighter(
+    feeBumpTx.toXDR(),
+    config.networkPassphrase,
+    feeSource
+  );
+
+  return submitAndWait(signedXdr, config, options);
 }
 
 function sleep(ms: number): Promise<void> {

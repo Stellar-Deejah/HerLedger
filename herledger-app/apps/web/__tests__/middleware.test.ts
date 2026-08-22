@@ -2,10 +2,10 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
-
 import { middleware } from "../middleware";
 
 vi.mock("server-only", () => ({}));
+
 vi.mock("@/lib/auth/server", () => ({
   auth: {
     api: {
@@ -75,25 +75,15 @@ describe("middleware", () => {
   });
 
   it("rejects a request carrying a forged/tampered session cookie (fails cryptographic validation)", async () => {
-    // A forged cookie fails Better Auth's signature verification, so
-    // getSession() resolves to null even though a cookie is present on the
-    // request — this is what distinguishes cryptographic validation from a
-    // bare cookie-presence check.
     vi.mocked(auth.api.getSession).mockResolvedValueOnce(null);
 
     const response = await middleware(requestFor("/dashboard", "forged.cookie.value"));
 
-    // NextResponse.redirect() defaults to a 307 (Temporary Redirect), which
-    // is what every other sign-in redirect in this middleware uses too — see
-    // the note in SECURITY.md on why this app doesn't override it to 302.
     expect(response.status).toBe(307);
     expect(new URL(response.headers.get("location")!).pathname).toBe("/auth/sign-in");
   });
 
   it("rejects a request carrying a session token that was revoked in the DB", async () => {
-    // The cookie is present and well-formed, but the session it names no
-    // longer exists / is revoked server-side — getSession() resolves to
-    // null on that DB-backed check.
     vi.mocked(auth.api.getSession).mockResolvedValueOnce(null);
 
     const response = await middleware(requestFor("/dashboard", "revoked-session-token"));
@@ -148,8 +138,6 @@ describe("middleware", () => {
     expect(auth.api.getSession).not.toHaveBeenCalled();
   });
 
-  // Open-redirect payload matrix: a malicious callbackUrl on the sign-in
-  // page must never be honored — it falls back to /dashboard instead.
   const maliciousCallbackUrls: Array<[label: string, payload: string]> = [
     ["protocol-relative URL", "//evil.com"],
     ["absolute URL to a foreign origin", "https://evil.com"],

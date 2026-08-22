@@ -1,5 +1,5 @@
 import { xdr, Address, nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
-import { ContractError, ValidationError } from "../errors/index.js";
+import { ValidationError } from "../errors/index.js";
 import type { HexString32 } from "../types/branded.js";
 
 // ---------------------------------------------------------------------------

@@ -1,19 +1,23 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Link, useRouter } from "@/i18n/navigation";
+import { validateCallbackUrl } from "@/lib/auth/callback-url";
 import { signIn } from "@/lib/auth/client";
 import { EMAIL_NOT_VERIFIED_ERROR, normalizeSignInError } from "@/lib/auth/messages";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignInForm() {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +38,17 @@ export function SignInForm() {
         if (result.error) {
           setError(normalizeSignInError(result.error));
         } else {
-          router.push("/dashboard");
+          const rawCallback = searchParams?.get("callbackUrl");
+          const validated = validateCallbackUrl(rawCallback);
+          // The middleware stores the caller's original (locale-prefixed)
+          // pathname as the callback; strip the active locale prefix so the
+          // locale-aware router doesn't prefix it a second time.
+          const prefix = `/${locale}`;
+          const targetUrl =
+            validated && validated.startsWith(`${prefix}/`)
+              ? validated.slice(prefix.length)
+              : validated;
+          router.push(targetUrl || "/dashboard");
         }
       } catch {
         setError(t("unexpectedError"));
