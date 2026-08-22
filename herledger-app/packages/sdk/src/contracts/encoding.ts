@@ -1,5 +1,5 @@
 import { xdr, Address, nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
-import { ValidationError } from "../errors/index.js";
+import { ValidationError, ValidationErrorCode } from "../errors/index.js";
 import type { HexString32 } from "../types/branded.js";
 
 // ---------------------------------------------------------------------------
@@ -19,7 +19,9 @@ const HEX32_PATTERN = /^[0-9a-fA-F]{64}$/;
 export function toHexString32(input: string): HexString32 {
   if (!HEX32_PATTERN.test(input)) {
     throw new ValidationError(
-      `Expected a 64-character hexadecimal string (32 bytes), got ${JSON.stringify(input)} (length ${input.length})`
+      ValidationErrorCode.MALFORMED_INPUT,
+      `Expected a 64-character hexadecimal string (32 bytes), got ${JSON.stringify(input)} (length ${input.length})`,
+      { context: { value: input } }
     );
   }
   return input as HexString32;
@@ -33,7 +35,11 @@ export function toHexString32(input: string): HexString32 {
 export function encodeBytes32(hex: HexString32): xdr.ScVal {
   const bytes = hexToBytes(hex);
   if (bytes.length !== 32) {
-    throw new ValidationError(`Expected 32-byte hex string, got ${bytes.length} bytes`);
+    throw new ValidationError(
+      ValidationErrorCode.MALFORMED_INPUT,
+      `Expected 32-byte hex string, got ${bytes.length} bytes`,
+      { context: { value: hex } }
+    );
   }
   return xdr.ScVal.scvBytes(Buffer.from(bytes));
 }
@@ -120,14 +126,20 @@ export function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
   if (clean.length % 2 !== 0) {
     throw new ValidationError(
-      `Invalid hex string: odd number of characters (${clean.length}). Expected an even-length hex string.`
+      ValidationErrorCode.MALFORMED_INPUT,
+      `Invalid hex string: odd number of characters (${clean.length}). Expected an even-length hex string.`,
+      { context: { value: hex } }
     );
   }
   const bytes = new Uint8Array(clean.length / 2);
   for (let i = 0; i < clean.length; i += 2) {
     const byte = parseInt(clean.slice(i, i + 2), 16);
     if (isNaN(byte)) {
-      throw new ValidationError(`Invalid hex string: non-hex character at position ${i}.`);
+      throw new ValidationError(
+        ValidationErrorCode.MALFORMED_INPUT,
+        `Invalid hex string: non-hex character at position ${i}.`,
+        { context: { value: hex } }
+      );
     }
     bytes[i / 2] = byte;
   }

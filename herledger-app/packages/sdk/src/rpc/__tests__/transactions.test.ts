@@ -7,7 +7,7 @@ import {
   rpc as StellarRpc,
 } from "@stellar/stellar-sdk";
 import type { StellarNetworkConfig } from "../../types/index.js";
-import { RpcError, ContractError } from "../../errors/index.js";
+import { ContractError } from "../../errors/index.js";
 
 const { mockSimulate, mockSend, mockGetTransaction, mockSign } = vi.hoisted(() => ({
   mockSimulate: vi.fn(),
@@ -89,7 +89,7 @@ beforeEach(() => {
 });
 
 describe("simulateAndPrepare", () => {
-  it("throws RpcError with code SIMULATION_FAILED when the RPC returns a simulation error", async () => {
+  it("throws ContractError with code SIMULATION_ERROR when the RPC returns a simulation error", async () => {
     mockSimulate.mockResolvedValue({
       id: "req-1",
       latestLedger: 100,
@@ -103,21 +103,21 @@ describe("simulateAndPrepare", () => {
     const promise = simulateAndPrepare(tx, config);
 
     await expect(promise).rejects.toMatchObject({
-      kind: "RpcError",
-      code: "SIMULATION_FAILED",
+      kind: "ContractError",
+      code: "SIMULATION_ERROR",
     });
     await expect(promise).rejects.toSatisfy(
       (err: unknown) =>
-        err instanceof RpcError && err.message.includes("tx_insufficient_fee")
+        err instanceof ContractError && err.message.includes("tx_insufficient_fee")
     );
   });
 
-  it("surfaces a thrown RPC error with code SIMULATION_FAILED", async () => {
+  it("wraps a thrown RPC error in RpcError with code REQUEST_FAILED", async () => {
     mockSimulate.mockRejectedValue(new Error("rpc down"));
 
     await expect(simulateAndPrepare(buildInnerTransaction(), config)).rejects.toMatchObject({
       kind: "RpcError",
-      code: "SIMULATION_FAILED",
+      code: "REQUEST_FAILED",
     });
   });
 });
