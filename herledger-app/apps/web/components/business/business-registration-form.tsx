@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { WalletConnect } from "@/components/wallet/wallet-connect";
-import { FormField } from "@/components/ui/form-field";
-import { SubmitButton } from "@/components/ui/submit-button";
+
 import { ErrorMessage } from "@/components/ui/error-message";
+import { FormField } from "@/components/ui/form-field";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { WalletConnect } from "@/components/wallet/wallet-connect";
 import { useRegistrationFlow, type RegistrationStep } from "@/hooks/use-registration-flow";
 
 // ---------------------------------------------------------------------------
@@ -141,7 +142,11 @@ export function BusinessRegistrationForm() {
         <div style={{ marginBottom: "1rem" }}>
           <StatusBadge status="Verified" />
         </div>
-        <h3 ref={confirmedHeadingRef} tabIndex={-1} style={{ fontWeight: 500, marginBottom: "0.5rem" }}>
+        <h3
+          ref={confirmedHeadingRef}
+          tabIndex={-1}
+          style={{ fontWeight: 500, marginBottom: "0.5rem" }}
+        >
           Business registered on Stellar
         </h3>
         <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>
@@ -158,7 +163,11 @@ export function BusinessRegistrationForm() {
     content = (
       <div>
         <StepIndicator step={step} />
-        <h3 ref={submittingHeadingRef} tabIndex={-1} style={{ fontSize: "0.9375rem", fontWeight: 500 }}>
+        <h3
+          ref={submittingHeadingRef}
+          tabIndex={-1}
+          style={{ fontSize: "0.9375rem", fontWeight: 500 }}
+        >
           Submitting registration
         </h3>
         <p aria-live="polite" style={{ color: "var(--muted)" }}>

@@ -1,9 +1,10 @@
 "use client";
 
-import { connectWallet, getConnectedAddress, WalletError } from "@herledger/sdk";
-import { useState, useEffect, useRef } from "react";
+import { connectWallet, WalletError } from "@herledger/sdk";
+import { useEffect, useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
+import { useWallet } from "@/components/wallet/wallet-provider";
 import { truncateAddress } from "@/lib/utils/format";
 
 interface WalletConnectProps {
@@ -11,33 +12,28 @@ interface WalletConnectProps {
 }
 
 export function WalletConnect({ onConnected }: WalletConnectProps) {
-  const [address, setAddress] = useState<string | null>(null);
+  const { connectedAddress, isChecking, connect, clearWalletState } = useWallet();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
   // Text for the persistent live region below — announces async wallet state
   // changes to screen readers even though the visual UI is swapped, not just
   // updated in place.
   const [statusMessage, setStatusMessage] = useState("");
 
-  // Effect must run only once on mount; capture the latest `onConnected` via
-  // a ref instead of a dependency so it can't fire from a stale closure.
+  // Capture the latest `onConnected` via a ref so the effect below can't fire
+  // from a stale closure when the parent re-renders.
   const onConnectedRef = useRef(onConnected);
   useEffect(() => {
     onConnectedRef.current = onConnected;
   });
 
+  // Notify the parent when the context reports a connected address (on mount
+  // or after the user connects).
   useEffect(() => {
-    void (async () => {
-      const existing = await getConnectedAddress();
-      if (existing) {
-        setAddress(existing);
-        setStatusMessage("Wallet already connected.");
-        onConnectedRef.current(existing);
-      }
-      setChecking(false);
-    })();
-  }, []);
+    if (connectedAddress) {
+      onConnectedRef.current(connectedAddress);
+    }
+  }, [connectedAddress]);
 
   async function handleConnect() {
     setError(null);
@@ -45,7 +41,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
     setStatusMessage("Connecting to Freighter wallet…");
     try {
       const { publicKey } = await connectWallet();
-      setAddress(publicKey);
+      connect(publicKey);
       setStatusMessage("Wallet connected.");
       onConnected(publicKey);
     } catch (err) {
@@ -59,7 +55,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
   }
 
   function handleDisconnect() {
-    setAddress(null);
+    clearWalletState();
     setError(null);
     setStatusMessage("Wallet disconnected.");
   }
@@ -74,7 +70,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
         {statusMessage}
       </div>
 
-      {checking ? null : address ? (
+      {isChecking ? null : connectedAddress ? (
         <div
           style={{
             padding: "1rem",
@@ -92,10 +88,10 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
               wordBreak: "break-all",
               marginBottom: "0.75rem",
             }}
-            aria-label={`Connected Stellar address ${address}`}
-            title={address}
+            aria-label={`Connected Stellar address ${connectedAddress}`}
+            title={connectedAddress}
           >
-            {truncateAddress(address)}
+            {truncateAddress(connectedAddress)}
           </p>
           <button
             onClick={handleDisconnect}
