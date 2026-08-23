@@ -20,6 +20,20 @@ export async function findDisputeByEventId(
   }
 }
 
+export async function findAllDisputesByEventId(
+  prisma: PrismaClient,
+  eventId: string
+): Promise<Dispute[]> {
+  try {
+    return await prisma.dispute.findMany({
+      where: { eventId },
+      orderBy: { submittedAt: "desc" },
+    });
+  } catch (cause) {
+    throw new DatabaseError(`Failed to find disputes for event ${eventId}`, cause);
+  }
+}
+
 export async function createDispute(
   prisma: PrismaClient,
   data: CreateDisputeInput
@@ -42,6 +56,7 @@ export async function createDispute(
 export function createDisputesRepository(prisma: PrismaClient): DisputesRepository {
   return {
     findByEventId: (eventId) => findDisputeByEventId(prisma, eventId),
+    findAllByEventId: (eventId) => findAllDisputesByEventId(prisma, eventId),
     create: (data) => createDispute(prisma, data),
   };
 }

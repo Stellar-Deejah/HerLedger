@@ -1,6 +1,7 @@
 import { getRecentActivity } from "@/lib/data/activity";
 
-import { ActivityList, PAGE_SIZE } from "./activity-list";
+import { ActivityList } from "./activity-list";
+import { PAGE_SIZE } from "./constants";
 
 interface ActivityListServerProps {
   businessId: string | null;

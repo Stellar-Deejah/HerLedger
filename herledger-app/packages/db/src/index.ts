@@ -68,6 +68,7 @@ export {
 
 export {
   upsertStellarTransaction,
+  findStellarTransactionByHash,
   createStellarTransactionsRepository,
 } from "./repositories/stellar-transactions.js";
 
@@ -79,6 +80,7 @@ export {
 
 export {
   findDisputeByEventId,
+  findAllDisputesByEventId,
   createDispute,
   createDisputesRepository,
 } from "./repositories/disputes.js";
