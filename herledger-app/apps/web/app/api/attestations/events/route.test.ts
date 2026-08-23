@@ -92,7 +92,7 @@ describe("GET /api/attestations/events", () => {
           findRecentByBusiness: vi.fn(),
           findById: vi.fn(),
           findUpdatedAfter: vi.fn(),
-          findAttestableEvents: vi.fn().mockResolvedValue([{ eventId: "ev_1" }]),
+          findAttestableEvents: vi.fn().mockResolvedValue([{ eventId: "ev_1", createdAt: new Date() }]),
         },
       })
     );
