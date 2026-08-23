@@ -1,19 +1,10 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 
 import { CtaSection } from "@/components/marketing/CtaSection";
 import { FeaturesSection } from "@/components/marketing/FeaturesSection";
 import { HeroSection } from "@/components/marketing/HeroSection";
 import { TestimonialsSection } from "@/components/marketing/TestimonialsSection";
-import { TrustSimulatorSkeleton } from "@/components/marketing/TrustSimulatorSkeleton";
-
-const TrustSimulator = dynamic(
-  () => import("@/components/marketing/TrustSimulator").then((mod) => mod.TrustSimulator),
-  {
-    ssr: false,
-    loading: () => <TrustSimulatorSkeleton />,
-  }
-);
+import { TrustSimulator } from "@/components/marketing/TrustSimulatorLoader";
 
 export const metadata: Metadata = {
   title: "HerLedger — Verifiable Financial History for Women-Owned Businesses",

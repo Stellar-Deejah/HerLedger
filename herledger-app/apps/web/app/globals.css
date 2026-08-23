@@ -163,3 +163,13 @@ a:hover {
   white-space: nowrap;
   border: 0;
 }
+
+/* Responsive table columns: secondary columns (e.g. Ledger, Stellar ref in
+   ActivityList) are hidden below this width rather than wrapped in a
+   horizontal-scroll container, so narrow viewports lose no keyboard-focusable
+   content to an off-screen scroll area. */
+@media (max-width: 768px) {
+  .activity-col-secondary {
+    display: none;
+  }
+}

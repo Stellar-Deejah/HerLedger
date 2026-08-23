@@ -51,7 +51,17 @@ export async function GET(req: NextRequest) {
 
   return typedJson<ActivityRecentResponse>({
     data: {
-      events,
+      events: events.map((e) => ({
+        id: e.id,
+        eventId: e.eventId,
+        eventType: e.eventType,
+        assetAddress: e.assetAddress,
+        amount: e.amount,
+        status: e.status,
+        stellarReference: e.stellarReference,
+        ledgerSequence: e.ledgerSequence,
+        createdAt: e.createdAt.toISOString(),
+      })),
       pagination: {
         offset: parsed.data.offset,
         limit: parsed.data.limit,

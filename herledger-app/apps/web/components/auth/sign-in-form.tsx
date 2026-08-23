@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
@@ -36,7 +37,9 @@ export function SignInForm() {
           setError(normalizeSignInError(result.error));
         } else {
           const rawCallback = searchParams?.get("callbackUrl");
-          const targetUrl = validateCallbackUrl(rawCallback) || "/dashboard";
+          // Cast needed: typedRoutes can't statically validate a
+          // runtime-computed (validated) callback URL, only literal routes.
+          const targetUrl = (validateCallbackUrl(rawCallback) || "/dashboard") as Route;
           router.push(targetUrl);
         }
       } catch {

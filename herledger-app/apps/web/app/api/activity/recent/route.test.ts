@@ -1,8 +1,8 @@
+import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 
 import { GET } from "./route";
 
@@ -91,7 +91,7 @@ describe("GET /api/activity/recent", () => {
         updateStatus: vi.fn(),
         findByBusiness: vi.fn(),
         findRecentByBusiness: vi.fn().mockResolvedValue([
-          { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100 },
+          { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100, createdAt: new Date() },
         ] as never),
         findById: vi.fn(),
         findUpdatedAfter: vi.fn(),

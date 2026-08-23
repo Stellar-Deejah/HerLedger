@@ -1,5 +1,8 @@
 "use client";
 
+import type { Route } from "next";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
@@ -10,7 +13,7 @@ import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { formatAmount } from "@/lib/utils/format";
 
-export const PAGE_SIZE = 20;
+import { PAGE_SIZE } from "./constants";
 
 interface ActivityListProps {
   /** Page 0, fetched server-side (see ActivityListServer) so it's available on first paint. */
@@ -19,6 +22,7 @@ interface ActivityListProps {
 }
 
 export function ActivityList({ initialEvents, initialHasMore }: ActivityListProps) {
+  const router = useRouter();
   const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const { newEvents } = useEventStream();
   const [offset, setOffset] = useState(0);
@@ -109,46 +113,76 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
       >
         <thead>
           <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Date</th>
             <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Type</th>
             <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Amount</th>
             <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Status</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Ledger</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Stellar ref</th>
+            <th className="activity-col-secondary" style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>
+              Ledger
+            </th>
+            <th className="activity-col-secondary" style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>
+              Stellar ref
+            </th>
           </tr>
         </thead>
         <tbody>
-          {displayedEvents.map((event) => (
-            <tr key={event.id} style={{ borderBottom: "1px solid var(--border)" }}>
-              <td style={{ padding: "0.75rem" }}>{formatEventType(event.eventType)}</td>
-              <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
-                {formatAmount(BigInt(event.amount))}
-              </td>
-              <td style={{ padding: "0.75rem" }}>
-                <StatusBadge status={event.status} />
-              </td>
-              <td style={{ padding: "0.75rem", color: "var(--muted)" }}>{event.ledgerSequence}</td>
-              <td
-                style={{
-                  padding: "0.75rem",
-                  fontFamily: "monospace",
-                  fontSize: "0.8125rem",
-                  maxWidth: "200px",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
+          {displayedEvents.map((event) => {
+            // Cast needed: typedRoutes can't statically validate a dynamic
+            // segment built from a runtime value, only literal route strings.
+            const detailHref = `/dashboard/activity/${event.eventId}` as Route;
+            return (
+              // Mouse-only convenience: keyboard/screen-reader access to the
+              // detail page goes through the real <Link> in the Type cell
+              // below, not this row.
+              <tr
+                key={event.id}
+                data-testid={`activity-row-${event.eventId}`}
+                onClick={() => router.push(detailHref)}
+                style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}
               >
-                <a
-                  href={`https://stellar.expert/explorer/testnet/tx/${event.stellarReference}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`View transaction ${event.stellarReference} on Stellar Expert`}
+                <td style={{ padding: "0.75rem", color: "var(--muted)" }}>
+                  {formatDate(event.createdAt)}
+                </td>
+                <td style={{ padding: "0.75rem" }}>
+                  <Link href={detailHref}>{formatEventType(event.eventType)}</Link>
+                </td>
+                <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
+                  {formatAmount(BigInt(event.amount))}
+                </td>
+                <td style={{ padding: "0.75rem" }}>
+                  <StatusBadge status={event.status} />
+                </td>
+                <td
+                  className="activity-col-secondary"
+                  style={{ padding: "0.75rem", color: "var(--muted)" }}
                 >
-                  {event.stellarReference.slice(0, 12)}…
-                </a>
-              </td>
-            </tr>
-          ))}
+                  {event.ledgerSequence}
+                </td>
+                <td
+                  className="activity-col-secondary"
+                  style={{
+                    padding: "0.75rem",
+                    fontFamily: "monospace",
+                    fontSize: "0.8125rem",
+                    maxWidth: "200px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${event.stellarReference}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`View transaction ${event.stellarReference} on Stellar Expert`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {event.stellarReference.slice(0, 12)}…
+                  </a>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
@@ -205,4 +239,8 @@ function formatEventType(type: string): string {
     CommitmentFulfilled: "Commitment fulfilled",
   };
   return labels[type] ?? type;
+}
+
+function formatDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString();
 }

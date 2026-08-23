@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface FinancialEventSummary {
   id: string;
@@ -11,6 +11,7 @@ export interface FinancialEventSummary {
   status: string;
   stellarReference: string;
   ledgerSequence: number;
+  createdAt: string;
 }
 
 interface EventStreamState {
@@ -168,10 +169,10 @@ export function useEventStream() {
     return undefined;
   }, []);
 
-  const clearNewEvents = () => {
+  const clearNewEvents = useCallback(() => {
     globalNewEvents = [];
     notifySubscribers();
-  };
+  }, []);
 
   return { ...state, clearNewEvents };
 }

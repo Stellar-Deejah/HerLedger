@@ -37,6 +37,15 @@ import { validateCallbackUrl } from "@/lib/auth/validate-callback-url";
 //   is small rather than eliminated — see the comment in lib/auth/server.ts.
 // ---------------------------------------------------------------------------
 
+// Forces Node.js runtime explicitly rather than relying on whatever Next.js
+// defaults to for this file -- the comment above claims v16 defaults here
+// to Node already (citing a doc path that doesn't exist in this
+// node_modules), but this repo's actual dev server compiles this file for
+// the Edge runtime, which can't resolve the workspace packages' .ts source
+// files the way the Node bundle can. See @herledger/config's Prisma-backed
+// auth.api.getSession() call below, which needs Node.js regardless.
+export const runtime = "nodejs";
+
 const PROTECTED_PREFIXES = ["/dashboard"];
 const AUTH_ROUTES = ["/auth/sign-in", "/auth/sign-up"];
 

@@ -1,10 +1,10 @@
+import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getDbClient } from "@herledger/db";
 
 import { RequestSchema, type AttestableEventsResponse } from "./schema";
 
@@ -60,7 +60,17 @@ export async function GET(req: NextRequest) {
 
   return typedJson<AttestableEventsResponse>({
     data: {
-      events,
+      events: events.map((e) => ({
+        id: e.id,
+        eventId: e.eventId,
+        eventType: e.eventType,
+        assetAddress: e.assetAddress,
+        amount: e.amount,
+        status: e.status,
+        stellarReference: e.stellarReference,
+        ledgerSequence: e.ledgerSequence,
+        createdAt: e.createdAt.toISOString(),
+      })),
       pagination: {
         offset: parsed.data.offset,
         limit: parsed.data.limit,

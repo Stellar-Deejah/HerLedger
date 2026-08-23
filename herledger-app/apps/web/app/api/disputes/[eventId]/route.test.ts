@@ -149,6 +149,7 @@ describe("GET /api/disputes/[eventId]", () => {
             resolvedAt: null,
             resolutionTxHash: null,
           }),
+          findAllByEventId: vi.fn().mockResolvedValue([]),
           create: vi.fn(),
         },
         prisma: { dispute: { update: vi.fn() } } as never,
@@ -199,6 +200,7 @@ describe("GET /api/disputes/[eventId]", () => {
             resolvedAt: null,
             resolutionTxHash: null,
           }),
+          findAllByEventId: vi.fn().mockResolvedValue([]),
           create: vi.fn(),
         },
       })

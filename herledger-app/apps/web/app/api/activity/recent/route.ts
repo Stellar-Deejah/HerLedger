@@ -1,10 +1,10 @@
+import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getRecentActivity } from "@/lib/data/activity";
-import { getDbClient } from "@herledger/db";
 
 import { RequestSchema, type ActivityRecentResponse } from "./schema";
 

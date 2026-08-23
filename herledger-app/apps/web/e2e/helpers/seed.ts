@@ -4,6 +4,8 @@ import type { BrowserContext } from "@playwright/test";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
+import { encryptDisputeReason } from "../../lib/crypto/dispute-encryption";
+
 // ---------------------------------------------------------------------------
 // Real-data seeding for e2e specs that exercise a page's server-rendered
 // (RSC) data path.
@@ -152,11 +154,38 @@ export async function seedAttestation(
   return { attestationId };
 }
 
+export async function seedDispute(
+  eventId: string,
+  userId: string,
+  overrides: Partial<{
+    reason: string;
+    status: "Submitted" | "Investigating" | "Resolved" | "Revoked";
+  }> = {}
+): Promise<{ disputeId: string }> {
+  const secret = process.env["BETTER_AUTH_SECRET"];
+  if (!secret) {
+    throw new Error("BETTER_AUTH_SECRET is not set — required to seed an encrypted dispute reason.");
+  }
+  const reason = overrides.reason ?? "Amount does not match the invoice.";
+  const dispute = await prisma.dispute.create({
+    data: {
+      eventId,
+      userId,
+      reasonPlaintext: encryptDisputeReason(reason, secret),
+      reasonHash: hex(32),
+      status: overrides.status ?? "Submitted",
+    },
+  });
+  return { disputeId: dispute.id };
+}
+
 /**
  * Deletes a seeded user's rows in FK-safe order. `BusinessProfile`/
  * `FinancialEvent` use `onDelete: Restrict` against `User`/`BusinessProfile`
  * respectively, so those must be deleted before the user — only `Session`
- * cascades automatically.
+ * cascades automatically. `Dispute.eventId` is also `onDelete: Restrict`
+ * against `FinancialEvent`, so any seeded disputes must go before the events
+ * they reference.
  */
 export async function cleanupSeed(userId: string): Promise<void> {
   const business = await prisma.businessProfile.findUnique({
@@ -165,6 +194,9 @@ export async function cleanupSeed(userId: string): Promise<void> {
   });
 
   if (business) {
+    await prisma.dispute.deleteMany({
+      where: { event: { businessId: business.businessId } },
+    });
     await prisma.attestation.deleteMany({
       where: { event: { businessId: business.businessId } },
     });

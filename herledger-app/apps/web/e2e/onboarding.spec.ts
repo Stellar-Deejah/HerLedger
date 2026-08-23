@@ -1,11 +1,11 @@
 import { expect } from "@playwright/test";
+
 import { test } from "./fixtures/auth";
 import { mockFreighter } from "./helpers/mock-wallet";
-import { DashboardPage } from "./page-objects/DashboardPage";
 import { BusinessPage } from "./page-objects/BusinessPage";
 
 test.describe("Business Onboarding Flow", () => {
-  test("completes the full onboarding journey successfully", async ({ page, loggedInPage, db }) => {
+  test("completes the full onboarding journey successfully", async ({ page, loggedInPage: _loggedInPage, db }) => {
     // Inject mock Freighter wallet before navigation
     await mockFreighter(page, {
       isConnected: true,
@@ -38,7 +38,6 @@ test.describe("Business Onboarding Flow", () => {
     // Wait for URL to be the dashboard
     await page.waitForURL("**/dashboard*");
 
-    const dashboardPage = new DashboardPage(page);
     await expect(page.getByText(/My Playwright Test Business/i)).toBeVisible({ timeout: 15000 });
 
     // Assert that the business was saved in the DB (Step 11)
@@ -46,6 +45,6 @@ test.describe("Business Onboarding Flow", () => {
       where: { walletAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }
     });
     expect(userBusiness).toBeDefined();
-    expect(userBusiness?.name).toBe("My Playwright Test Business");
+    expect(userBusiness?.displayName).toBe("My Playwright Test Business");
   });
 });

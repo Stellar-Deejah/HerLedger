@@ -1,7 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test as base, expect, type Page } from "@playwright/test";
 
-import { addSessionCookie, cleanupSeed, disconnectSeedClient, seedAuthenticatedUser } from "./helpers/seed";
+import {
+  addSessionCookie,
+  cleanupSeed,
+  disconnectSeedClient,
+  seedAuthenticatedUser,
+  seedBusinessProfile,
+  seedFinancialEvent,
+} from "./helpers/seed";
 
 const test = base;
 
@@ -232,4 +239,16 @@ rscTest.describe("Dashboard accessibility (axe-core) — RSC routes", () => {
     await expect(page.getByRole("heading", { name: "Attestations" })).toBeVisible();
     await runAxe(page);
   });
+
+  rscTest(
+    "financial event detail has no critical/serious violations",
+    async ({ page, seededUser }) => {
+      const { businessId } = await seedBusinessProfile(seededUser.userId);
+      const { eventId } = await seedFinancialEvent(businessId);
+
+      await page.goto(`/dashboard/activity/${eventId}`);
+      await expect(page.getByRole("link", { name: "View on Stellar Expert" })).toBeVisible();
+      await runAxe(page);
+    }
+  );
 });
