@@ -1,7 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { z } from "zod";
 import { StrKey } from "@stellar/stellar-sdk";
-import { validateNetworkConsistency } from "../env.js";
+
+vi.mock("server-only", () => ({}));
+
+import { validateNetworkConsistency } from "../server.js";
 
 const MAINNET_PASSPHRASE = "Public Global Stellar Network ; September 2015";
 const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
@@ -9,77 +12,49 @@ const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
 // A real, valid-format testnet contract address for testing the regex/checksum path.
 const VALID_CONTRACT_ID = StrKey.encodeContract(Buffer.alloc(32));
 
-const stellarContractId = z
-  .string()
-  .refine((val) => StrKey.isValidContract(val), {
-    message: "Must be a valid Stellar contract address (56-char C... strkey)",
-  });
+const stellarContractId = z.string().refine((val) => StrKey.isValidContract(val), {
+  message: "Must be a valid Stellar contract address (56-char C... strkey)",
+});
 
 describe("validateNetworkConsistency", () => {
   it("passes for valid mainnet combination", () => {
     expect(() =>
-      validateNetworkConsistency(
-        "mainnet",
-        "https://mainnet.rpc.example.com",
-        MAINNET_PASSPHRASE
-      )
+      validateNetworkConsistency("mainnet", "https://mainnet.rpc.example.com", MAINNET_PASSPHRASE)
     ).not.toThrow();
   });
 
   it("passes for valid testnet combination", () => {
     expect(() =>
-      validateNetworkConsistency(
-        "testnet",
-        "https://testnet.rpc.example.com",
-        TESTNET_PASSPHRASE
-      )
+      validateNetworkConsistency("testnet", "https://testnet.rpc.example.com", TESTNET_PASSPHRASE)
     ).not.toThrow();
   });
 
   it("throws when mainnet network has testnet passphrase", () => {
     expect(() =>
-      validateNetworkConsistency(
-        "mainnet",
-        "https://mainnet.rpc.example.com",
-        TESTNET_PASSPHRASE
-      )
+      validateNetworkConsistency("mainnet", "https://mainnet.rpc.example.com", TESTNET_PASSPHRASE)
     ).toThrow(/Network consistency check failed/);
   });
 
   it("throws when testnet network has mainnet passphrase", () => {
     expect(() =>
-      validateNetworkConsistency(
-        "testnet",
-        "https://testnet.rpc.example.com",
-        MAINNET_PASSPHRASE
-      )
+      validateNetworkConsistency("testnet", "https://testnet.rpc.example.com", MAINNET_PASSPHRASE)
     ).toThrow(/Network consistency check failed/);
   });
 
   it("throws when mainnet network points at a testnet-labelled RPC URL", () => {
     expect(() =>
-      validateNetworkConsistency(
-        "mainnet",
-        "https://testnet.rpc.example.com",
-        MAINNET_PASSPHRASE
-      )
+      validateNetworkConsistency("mainnet", "https://testnet.rpc.example.com", MAINNET_PASSPHRASE)
     ).toThrow(/looks like a testnet URL/);
   });
 
   it("throws when testnet network points at a mainnet-labelled RPC URL", () => {
     expect(() =>
-      validateNetworkConsistency(
-        "testnet",
-        "https://mainnet.rpc.example.com",
-        TESTNET_PASSPHRASE
-      )
+      validateNetworkConsistency("testnet", "https://mainnet.rpc.example.com", TESTNET_PASSPHRASE)
     ).toThrow(/looks like a mainnet URL/);
   });
 
   it("rejects an empty passphrase", () => {
-    expect(() =>
-      validateNetworkConsistency("mainnet", "https://rpc.example.com", "")
-    ).toThrow();
+    expect(() => validateNetworkConsistency("mainnet", "https://rpc.example.com", "")).toThrow();
   });
 });
 

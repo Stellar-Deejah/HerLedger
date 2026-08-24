@@ -9,7 +9,7 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint src --max-warnings 0",
     "test": "vitest run",
     "generate:abi": "node scripts/generate-abi-types.mjs",
     "generate:abi:check": "node scripts/generate-abi-types.mjs --check",

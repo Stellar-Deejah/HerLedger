@@ -376,6 +376,60 @@ Full deployment configuration is in [`herledger-app/README.md`](herledger-app/RE
 
 ---
 
+## Observability & Metrics
+
+The indexer service is instrumented with structured JSON logging (Pino), request tracing correlation IDs, and a Prometheus `/metrics` endpoint.
+
+### Structured Logging (Pino)
+
+All logging in the indexer outputs machine-parseable JSON with standardized fields:
+- `level`: Log level (`info`, `warn`, `error`, `debug`).
+- `time`: ISO 8601 timestamp (`YYYY-MM-DDTHH:mm:ss.sssZ`).
+- `service`: `"indexer"`.
+- `environment`: `process.env.NODE_ENV` (`development`, `test`, `production`).
+- `correlationId`: Distributed trace ID associated with the request or sync batch.
+
+**Configuration:**
+- `LOG_LEVEL`: Controls minimum log severity (`debug`, `info`, `warn`, `error`, default: `info`).
+
+**Example Log Output:**
+```json
+{
+  "level": "info",
+  "time": "2026-08-19T00:30:00.123Z",
+  "service": "indexer",
+  "environment": "production",
+  "correlationId": "4f932e6a-1234-4b5c-8901-abcdef123456",
+  "job": "sync-ledger",
+  "event": "cycle-begin",
+  "lastCheckpoint": 124500,
+  "latestLedger": 124510,
+  "syncLag": 10,
+  "msg": "Beginning ledger sync cycle"
+}
+```
+
+### Request Correlation IDs
+
+Fastify requests are automatically tagged with a correlation ID:
+- If the incoming request includes `x-correlation-id` or `x-request-id`, that ID is preserved.
+- Otherwise, a UUID v4 correlation ID is automatically generated.
+- The ID is set in the `x-correlation-id` response header, attached to child loggers, and propagated across async execution chains using `AsyncLocalStorage`.
+
+### Prometheus Metrics Endpoint (`GET /metrics`)
+
+The indexer exposes Prometheus-compatible metrics on `/metrics`:
+
+| Metric Name | Type | Description | Labels |
+|---|---|---|---|
+| `events_indexed_total` | Counter | Total financial events successfully indexed | `event_type`, `status` |
+| `sync_lag_ledgers` | Gauge | Ledger lag between Stellar network tip and indexer checkpoint | — |
+| `rpc_request_duration_seconds` | Histogram | Latency of Stellar Horizon / Soroban RPC calls in seconds | `operation`, `status` |
+| `db_query_duration_seconds` | Histogram | Database query execution duration in seconds | `operation` |
+| `herledger_indexer_nodejs_*` | Gauge / Counter | Process and Node.js runtime metrics (memory, event loop, GC) | — |
+
+---
+
 ## Security and Privacy
 
 - **No private keys are stored.** All transaction signing is performed by the

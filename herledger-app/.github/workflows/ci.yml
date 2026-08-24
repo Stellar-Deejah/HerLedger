@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    # Nightly testnet smoke run — catches contract upgrades that changed
+    # Nightly testnet smoke run â€” catches contract upgrades that changed
     # behaviour without changing the WASM's declared interface shape enough
     # to show up in abi-check (or that landed between PRs).
     - cron: "17 3 * * *"
@@ -36,7 +36,10 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
-      BETTER_AUTH_SECRET: ci-test-secret-must-be-at-least-32-chars-long
+      SHADOW_DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_shadow
+      BETTER_AUTH_SECRET: 05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78
+      RESEND_API_KEY: re_ci_test_key_not_a_real_key
+      EMAIL_FROM: "HerLedger <onboarding@resend.dev>"
       APP_URL: http://localhost:3000
       STELLAR_NETWORK: testnet
       STELLAR_RPC_URL: https://soroban-testnet.stellar.org
@@ -46,6 +49,9 @@ jobs:
       FINANCIAL_LEDGER_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
       ATTESTATION_REGISTRY_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
       INDEXER_API_URL: http://localhost:4000
+      ADMIN_API_TOKEN: ci-test-admin-token
+      RECONCILIATION_CRON_SCHEDULE: "0 2 * * *"
+      RECONCILIATION_SAMPLE_SIZE: "50"
       NEXT_PUBLIC_STELLAR_NETWORK: testnet
       NEXT_PUBLIC_STELLAR_RPC_URL: https://soroban-testnet.stellar.org
       NEXT_PUBLIC_BUSINESS_REGISTRY_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
@@ -81,12 +87,27 @@ jobs:
         run: pnpm lint
         working-directory: herledger-app
 
+      - name: OpenAPI spec drift check
+        run: pnpm openapi:check
+        working-directory: herledger-app
+
+      - name: Validate .env.example
+        run: cp .env.example .env.local && pnpm env:validate
+        working-directory: herledger-app
+
       - name: Prisma validate
         run: pnpm prisma validate --schema prisma/schema.prisma
         working-directory: herledger-app
 
+      - name: Create shadow database
+        run: PGPASSWORD=herledger createdb -h localhost -U herledger herledger_shadow
+
       - name: Prisma generate
         run: pnpm db:generate
+        working-directory: herledger-app
+
+      - name: Validate database migrations
+        run: pnpm exec tsx scripts/validate-migrations.ts
         working-directory: herledger-app
 
       - name: Prisma migrate
@@ -101,11 +122,28 @@ jobs:
         run: pnpm build
         working-directory: herledger-app
 
+      - name: Check CSS bundle size budget
+        run: pnpm check:css-budget
+        working-directory: herledger-app/apps/web
+        env:
+          CSS_BUDGET_KB: "50"
+
+      - name: Build Storybook
+        run: pnpm --filter web build-storybook
+        working-directory: herledger-app
+
+      - name: Upload Storybook Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: herledger-app/apps/web/storybook-static
+          retention-days: 7
+
   abi-check:
     name: Contract ABI codegen diff
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    # Skip on the nightly schedule trigger — that run is for testnet-smoke only.
+    # Skip on the nightly schedule trigger â€” that run is for testnet-smoke only.
     if: github.event_name != 'schedule'
 
     steps:
@@ -163,8 +201,8 @@ jobs:
       STELLAR_RPC_URL: https://soroban-testnet.stellar.org
       STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
       STELLAR_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
-      # Deployed testnet contract IDs — repo secrets, not committed.
-      # Configure under Settings → Secrets and variables → Actions.
+      # Deployed testnet contract IDs â€” repo secrets, not committed.
+      # Configure under Settings â†’ Secrets and variables â†’ Actions.
       BUSINESS_REGISTRY_CONTRACT_ID: ${{ secrets.TESTNET_BUSINESS_REGISTRY_CONTRACT_ID }}
       FINANCIAL_LEDGER_CONTRACT_ID: ${{ secrets.TESTNET_FINANCIAL_LEDGER_CONTRACT_ID }}
       ATTESTATION_REGISTRY_CONTRACT_ID: ${{ secrets.TESTNET_ATTESTATION_REGISTRY_CONTRACT_ID }}

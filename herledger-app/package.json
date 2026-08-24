@@ -4,23 +4,45 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter '@herledger/*' build && pnpm --filter web build",
+    "build": "pnpm --filter web build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
     "test": "pnpm -r test",
     "test:e2e": "pnpm --filter web test:e2e",
+    "openapi:generate": "tsx scripts/generate-openapi.ts",
+    "openapi:check": "tsx scripts/check-openapi-drift.ts",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
-    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
-    "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma"
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma && tsx prisma/data-migrations/runner.ts",
+    "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
+    "db:seed": "tsx prisma/seed.ts",
+    "env:validate": "pnpm --filter '@herledger/config' exec tsx --conditions react-server src/validate.ts",
+    "postinstall": "node scripts/patch-typescript-eslint-ts-peer.mjs",
+    "prepare": "cd .. && husky herledger-app/.husky"
   },
   "devDependencies": {
+    "@prisma/adapter-pg": "7.9.1",
+    "@prisma/client": "7.9.1",
+    "@types/pg": "8.23.1",
+    "dotenv": "^17.4.2",
+    "eslint": "9.18.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.3.0",
     "prettier": "3.4.2",
-    "typescript": "7.0.2"
+    "prisma": "7.9.1",
+    "tsx": "4.19.2",
+    "typescript": "7.0.2",
+    "typescript-eslint": "8.67.0",
+    "typescript-eslint-ts6-compat": "npm:typescript@5.9.3"
   },
   "engines": {
     "node": ">=20.9.0",
     "pnpm": ">=9"
-  }
+  },
+  "dependencies": {
+    "@prisma/client": "7.9.1",
+    "pg": "8.23.0"
+  },
+  "packageManager": "pnpm@9.15.5+sha512.845196026aab1cc3f098a0474b64dfbab2afe7a1b4e91dd86895d8e4aa32a7a6d03049e2d0ad770bbe4de023a7122fb68c1a1d6e0d033c7076085f9d5d4800d4"
 }

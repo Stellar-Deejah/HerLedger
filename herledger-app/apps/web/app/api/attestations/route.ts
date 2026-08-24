@@ -2,13 +2,37 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/server";
 import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
+import { NextRequest } from "next/server";
+
+import { projectFields } from "@/lib/api/projection";
+import { typedJson } from "@/lib/api/route-handler";
+import { auth } from "@/lib/auth/server";
+import { getAttestations } from "@/lib/data/attestations";
+import { getPrismaClient } from "@/lib/db/client";
 
 export async function GET() {
+import { RequestSchema } from "./schema";
+import type { AttestationsResponse, AttestationDto } from "./schema";
+
+const prisma = getPrismaClient();
+
+export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
-    return NextResponse.json(
+    return typedJson<AttestationsResponse>(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
       { status: 401 }
+    );
+  }
+
+  const { searchParams } = new URL(req.url);
+  const parsed = RequestSchema.safeParse({
+    includeRevoked: searchParams.get("includeRevoked") ?? undefined,
+  });
+  if (!parsed.success) {
+    return typedJson<AttestationsResponse>(
+      { data: null, error: { code: "INVALID_PARAMS", message: "Invalid query params" } },
+      { status: 400 }
     );
   }
 
@@ -16,27 +40,34 @@ export async function GET() {
     where: { userId: session.user.id },
     select: { businessId: true },
   });
-  if (!profile) {
-    return NextResponse.json({ data: { attestations: [] }, error: null });
-  }
 
-  // Single round-trip: fetch this business's events together with their
-  // attestations via the FinancialEvent -> Attestation relation, instead of
-  // a separate findMany per event. Reduces this endpoint to 2 DB calls total
-  // (profile lookup + this query) regardless of event count.
-  const events = await prisma.financialEvent.findMany({
-    where: { businessId: profile.businessId },
-    select: {
-      eventId: true,
-      attestations: {
-        orderBy: { ledgerSequence: "desc" },
-      },
-    },
-  });
+  const isOwner = Boolean(profile?.businessId);
+  const data = await getAttestations(profile?.businessId ?? null, parsed.data.includeRevoked);
 
-  const attestations = events
-    .flatMap((event) => event.attestations)
-    .sort((a, b) => b.ledgerSequence - a.ledgerSequence);
+  const allowedFields: (keyof AttestationDto)[] = isOwner
+    ? [
+        "id",
+        "attestationId",
+        "eventId",
+        "attesterAddress",
+        "claimHash",
+        "claimDescription",
+        "status",
+        "ledgerSequence",
+      ]
+    : [
+        "id",
+        "attestationId",
+        "eventId",
+        "attesterAddress",
+        "claimDescription",
+        "status",
+        "ledgerSequence",
+      ];
 
-  return NextResponse.json({ data: { attestations }, error: null });
+  const projectedAttestations = data.attestations.map((att) =>
+    projectFields(att, allowedFields)
+  ) as AttestationDto[];
+
+  return typedJson<AttestationsResponse>({ data: { attestations: projectedAttestations }, error: null });
 }

@@ -1,6 +1,6 @@
 import type { ContractAddress } from "../types/branded.js";
 import type { NetworkId } from "../types/index.js";
-import { ValidationError } from "../errors/index.js";
+import { ValidationError, ValidationErrorCode } from "../errors/index.js";
 
 // ---------------------------------------------------------------------------
 // Contract address registry.
@@ -107,23 +107,29 @@ export function toContractAddress(
 ): ContractAddress {
   if (!looksLikeContractAddress(address)) {
     throw new ValidationError(
-      `${name}: "${address}" is not a well-formed Stellar contract address`
+      ValidationErrorCode.MALFORMED_INPUT,
+      `${name}: "${address}" is not a well-formed Stellar contract address`,
+      { context: { field: name, value: address } }
     );
   }
 
   const expected = registry[name][network];
   if (!expected) {
     throw new ValidationError(
+      ValidationErrorCode.ADDRESS_NOT_REGISTERED,
       `${name}: no registered address for network "${network}". ` +
-        `Populate CONTRACT_ADDRESSES (or the env vars that feed it) before use.`
+        `Populate CONTRACT_ADDRESSES (or the env vars that feed it) before use.`,
+      { context: { field: name, value: address } }
     );
   }
 
   if (expected !== address) {
     throw new ValidationError(
+      ValidationErrorCode.ADDRESS_MISMATCH,
       `${name}: address "${address}" does not match the registered ${network} ` +
         `address "${expected}". Refusing to call — this usually means the wrong ` +
-        `contract ID was passed (e.g. a swapped env var).`
+        `contract ID was passed (e.g. a swapped env var).`,
+      { context: { field: name, value: address } }
     );
   }
 
@@ -170,4 +176,3 @@ export function buildContractConfig(
     ),
   };
 }
-

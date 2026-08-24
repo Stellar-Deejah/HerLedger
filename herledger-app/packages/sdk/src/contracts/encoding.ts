@@ -1,18 +1,45 @@
 import { xdr, Address, nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
-import { ContractError } from "../errors/index.js";
+import { ValidationError, ValidationErrorCode } from "../errors/index.js";
+import type { HexString32 } from "../types/branded.js";
 
 // ---------------------------------------------------------------------------
 // Centralized XDR encoding/decoding utilities for Soroban contract calls.
 // Never construct raw XDR strings manually.
 // ---------------------------------------------------------------------------
 
+const HEX32_PATTERN = /^[0-9a-fA-F]{64}$/;
+
+/**
+ * Validate that a string is a 64-character hex string (32 bytes) and return
+ * it branded as `HexString32`. Throws `ValidationError` for non-hex or
+ * wrong-length input so the failure surfaces at the call site with a clear
+ * message instead of silently truncating or erroring deep inside the XDR
+ * library.
+ */
+export function toHexString32(input: string): HexString32 {
+  if (!HEX32_PATTERN.test(input)) {
+    throw new ValidationError(
+      ValidationErrorCode.MALFORMED_INPUT,
+      `Expected a 64-character hexadecimal string (32 bytes), got ${JSON.stringify(input)} (length ${input.length})`,
+      { context: { value: input } }
+    );
+  }
+  return input as HexString32;
+}
+
 /**
  * Encode a hex string (32 bytes) as a Soroban Bytes ScVal.
+ * Accepts only a validated `HexString32` — plain `string` is a compile error,
+ * preventing silent truncation or zero-padding of non-32-byte inputs.
  */
-export function encodeBytes32(hex: string): xdr.ScVal {
+export function encodeBytes32(hex: HexString32): xdr.ScVal {
   const bytes = hexToBytes(hex);
   if (bytes.length !== 32) {
-    throw new ContractError(`Expected 32-byte hex string, got ${bytes.length} bytes`);
+    throw new ValidationError(
+      ValidationErrorCode.MALFORMED_INPUT,
+      `Expected 32-byte hex string, got ${bytes.length} bytes`,
+      { context: { value: hex } }
+    );
   }
   return xdr.ScVal.scvBytes(Buffer.from(bytes));
 }
@@ -90,16 +117,29 @@ export function decodeBool(val: xdr.ScVal): boolean {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Convert a hex string to bytes. Throws `ValidationError` with a descriptive
+ * message for odd-length or non-hex input before delegating to the XDR
+ * library, so callers never hit an opaque runtime error deep inside Soroban.
+ */
 export function hexToBytes(hex: string): Uint8Array {
   const clean = hex.startsWith("0x") ? hex.slice(2) : hex;
   if (clean.length % 2 !== 0) {
-    throw new ContractError(`Invalid hex string length: ${clean.length}`);
+    throw new ValidationError(
+      ValidationErrorCode.MALFORMED_INPUT,
+      `Invalid hex string: odd number of characters (${clean.length}). Expected an even-length hex string.`,
+      { context: { value: hex } }
+    );
   }
   const bytes = new Uint8Array(clean.length / 2);
   for (let i = 0; i < clean.length; i += 2) {
     const byte = parseInt(clean.slice(i, i + 2), 16);
     if (isNaN(byte)) {
-      throw new ContractError(`Invalid hex character at position ${i}`);
+      throw new ValidationError(
+        ValidationErrorCode.MALFORMED_INPUT,
+        `Invalid hex string: non-hex character at position ${i}.`,
+        { context: { value: hex } }
+      );
     }
     bytes[i / 2] = byte;
   }

@@ -1,10 +1,7 @@
 // AUTO-GENERATED barrel — regenerated alongside the files it re-exports.
 // See individual *.abi.ts files for provenance notes.
 
-export type {
-  BusinessRegistryAbi,
-  BusinessRegistryBusinessAbi,
-} from "./business-registry.abi.js";
+export type { BusinessRegistryAbi, BusinessRegistryBusinessAbi } from "./business-registry.abi.js";
 export { BUSINESS_REGISTRY_METHODS } from "./business-registry.abi.js";
 
 export type {

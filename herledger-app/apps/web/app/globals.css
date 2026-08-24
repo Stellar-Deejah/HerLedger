@@ -1,28 +1,118 @@
-@import "tailwindcss";
-
 :root {
+  /* Surface & Base */
   --background: #fafaf9;
   --foreground: #1c1917;
-  --muted: #78716c;
-  --muted-bg: #f5f5f4;
   --border: #e7e5e4;
-  --primary: #1c4ed8;
-  --primary-hover: #1d4ed8;
-  --success: #16a34a;
-  --warning: #d97706;
-  --danger: #dc2626;
-  --radius: 6px;
+
+  /* Brand / Primary */
+  --color-brand: #1c4ed8;
+  --color-brand-hover: #1d4ed8;
+
+  /* Semantic - Success */
+  --color-success: #16a34a;
+  --color-success-bg: #dcfce7;
+  --color-success-text: #166534;
+
+  /* Semantic - Warning */
+  --color-warning: #d97706;
+  --color-warning-bg: #fef9c3;
+  --color-warning-text: #854d0e;
+
+  /* Semantic - Error / Destructive (Shared by ErrorMessage and StatusBadge) */
+  --color-error: #dc2626;
+  --color-error-bg: #fee2e2;
+  --color-error-border: #fecaca;
+  --color-error-text: #991b1b;
+
+  /* Semantic - Disputed */
+  --color-disputed-bg: #ffedd5;
+  --color-disputed-text: #9a3412;
+
+  /* Semantic - Muted / Neutral */
+  --color-muted-bg: #f5f5f4;
+  /* #78716c measured ~4.48:1 on --background, just under the WCAG AA 4.5:1
+     floor for normal text; darkened one step to clear it with margin. */
+  --color-muted-text: #57534e;
+  --color-muted-border: #e7e5e4;
+
+  /* Spacing Scale */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 0.75rem;
+  --spacing-lg: 1rem;
+  --spacing-xl: 1.5rem;
+  --spacing-2xl: 2rem;
+  --spacing-3xl: 3rem;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Typography */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Backwards-compatible Aliases */
+  --primary: var(--color-brand);
+  --primary-hover: var(--color-brand-hover);
+  --success: var(--color-success);
+  --warning: var(--color-warning);
+  --danger: var(--color-error);
+  /* --error/--destructive*: several dashboard components (business-profile,
+     business-deactivation-flow, settings-panel) reference these names but
+     they were never defined, so `var(--error, #ef4444)` etc. silently fell
+     back to a literal that fails WCAG AA against --background (~3.6:1). */
+  --error: var(--color-error);
+  --destructive: var(--color-error);
+  --destructive-foreground: var(--color-error-bg);
+  --muted: var(--color-muted-text);
+  --muted-bg: var(--color-muted-bg);
+  --radius: var(--radius-md);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Surface & Base */
     --background: #0c0a09;
     --foreground: #fafaf9;
-    --muted: #a8a29e;
-    --muted-bg: #1c1917;
     --border: #292524;
-    --primary: #3b82f6;
-    --primary-hover: #60a5fa;
+
+    /* Brand / Primary */
+    --color-brand: #3b82f6;
+    --color-brand-hover: #60a5fa;
+
+    /* Semantic - Success */
+    --color-success: #22c55e;
+    --color-success-bg: #14532d;
+    --color-success-text: #86efac;
+
+    /* Semantic - Warning */
+    --color-warning: #f59e0b;
+    --color-warning-bg: #713f12;
+    --color-warning-text: #fef08a;
+
+    /* Semantic - Error / Destructive */
+    --color-error: #ef4444;
+    --color-error-bg: #7f1d1d;
+    --color-error-border: #991b1b;
+    --color-error-text: #fca5a5;
+
+    /* Semantic - Disputed */
+    --color-disputed-bg: #7c2d12;
+    --color-disputed-text: #fed7aa;
+
+    /* Semantic - Muted / Neutral */
+    --color-muted-bg: #1c1917;
+    --color-muted-text: #a8a29e;
+    --color-muted-border: #292524;
   }
 }
 
@@ -39,23 +129,118 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 16px;
+  font-family:
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  font-size: var(--font-size-base);
   line-height: 1.5;
   margin: 0;
 }
 
 /* Accessible focus styles */
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--color-brand);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-sm);
 }
 
 a {
-  color: var(--primary);
+  color: var(--color-brand);
 }
 
 a:hover {
-  color: var(--primary-hover);
+  color: var(--color-brand-hover);
+}
+
+/* Visually hides content while keeping it in the accessibility tree —
+   used for ARIA live-region announcements that shouldn't render inline. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Dashboard navigation responsive shell
+   Desktop (>= 768px): persistent sidebar. Mobile (< 768px): top bar + drawer.
+--------------------------------------------------------------------------- */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.nav-sidebar {
+  width: 220px;
+  min-height: 100vh;
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.nav-mobile-bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .dashboard-layout {
+    display: block;
+  }
+
+  .nav-sidebar {
+    display: none;
+  }
+
+  .nav-mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    background: var(--background);
+  }
+}
+
+.nav-mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  max-width: 85vw;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+  z-index: 100;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-mobile-drawer--open {
+  transform: translateX(0);
+}
+
+.nav-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 90;
 }

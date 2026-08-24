@@ -1,7 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk";
 import { getBusiness } from "@herledger/sdk";
-import { IndexerError } from "../types/index.js";
 
 // ---------------------------------------------------------------------------
 // Business indexing — sync on-chain business state to local database

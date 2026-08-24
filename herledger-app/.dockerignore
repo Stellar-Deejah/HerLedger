@@ -1,0 +1,19 @@
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+**/dist
+storybook-static
+**/storybook-static
+coverage
+**/coverage
+.git
+.turbo
+*.log
+
+# Keep the template; exclude every real env file (host secrets should
+# never end up baked into an image layer).
+.env
+.env.*
+!.env.example

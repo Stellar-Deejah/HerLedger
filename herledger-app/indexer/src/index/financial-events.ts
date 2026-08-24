@@ -4,9 +4,8 @@ import { isSupportedAsset } from "@herledger/sdk";
 import { upsertFinancialEvent } from "../db/schema/financial-events.js";
 import { upsertStellarTransaction } from "../db/schema/stellar-transactions.js";
 import { findBusinessByWallet } from "../db/schema/businesses.js";
-import { parseAmount } from "../stellar/transactions.js";
 import type { ParsedPayment } from "../types/index.js";
-import { IndexerError } from "../types/index.js";
+import { eventsIndexedTotal, logger } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Financial event indexing logic
@@ -21,6 +20,12 @@ import { IndexerError } from "../types/index.js";
  * 2. Verify the asset is supported.
  * 3. Determine direction (RECEIVED or SENT) relative to registered wallets.
  * 4. Upsert idempotently.
+ *
+ * Transaction boundary: the raw Stellar transaction and any financial events
+ * derived from it are written inside a single `prisma.$transaction(...)` so
+ * the payment's index is atomic — a failure while writing either the
+ * transaction or one of its events rolls back the whole payment, keeping the
+ * ledger and the derived events consistent with each other.
  */
 export async function indexPayment(
   prisma: PrismaClient,
@@ -32,60 +37,81 @@ export async function indexPayment(
   if (!payment.successful) return;
 
   // Verify asset support
-  const supported = await isSupportedAsset(
-    payment.assetAddress,
-    config,
-    contracts
-  );
+  const supported = await isSupportedAsset(payment.assetAddress, config, contracts);
   if (!supported) return;
 
-  // Always record the raw transaction first (idempotent)
-  await upsertStellarTransaction(prisma, {
-    hash: payment.transactionHash,
-    ledgerSequence: payment.ledgerSequence,
-    successful: payment.successful,
-    sourceAddress: payment.sourceAddress,
-  });
-
   // Check if the recipient is a registered HerLedger business wallet
-  const recipientBusiness = await findBusinessByWallet(
-    prisma,
-    payment.destinationAddress
-  );
-  if (recipientBusiness) {
-    const eventId = deriveEventId(payment.transactionHash, "recv");
-    await upsertFinancialEvent(prisma, {
-      businessId: recipientBusiness.businessId,
-      eventId,
-      eventType: "PaymentReceived",
-      assetAddress: payment.assetAddress,
-      amount: payment.amount,
-      stellarReference: payment.transactionHash,
-      metadataHash: "0".repeat(64), // off-chain metadata committed separately
-      status: "Pending",
-      ledgerSequence: payment.ledgerSequence,
-    });
-  }
+  const recipientBusiness = await findBusinessByWallet(prisma, payment.destinationAddress);
 
   // Check if the sender is a registered HerLedger business wallet
-  const senderBusiness = await findBusinessByWallet(
-    prisma,
-    payment.sourceAddress
-  );
-  if (senderBusiness) {
-    const eventId = deriveEventId(payment.transactionHash, "sent");
-    await upsertFinancialEvent(prisma, {
-      businessId: senderBusiness.businessId,
-      eventId,
-      eventType: "PaymentSent",
-      assetAddress: payment.assetAddress,
-      amount: payment.amount,
-      stellarReference: payment.transactionHash,
-      metadataHash: "0".repeat(64),
-      status: "Pending",
+  const senderBusiness = await findBusinessByWallet(prisma, payment.sourceAddress);
+
+  // Write the raw transaction and its derived events atomically.
+  await prisma.$transaction(async (tx) => {
+    // Always record the raw transaction first (idempotent)
+    await upsertStellarTransaction(tx, {
+      hash: payment.transactionHash,
       ledgerSequence: payment.ledgerSequence,
+      successful: payment.successful,
+      sourceAddress: payment.sourceAddress,
     });
-  }
+
+    if (recipientBusiness) {
+      const eventId = deriveEventId(payment.transactionHash, "recv");
+      await upsertFinancialEvent(tx, {
+        businessId: recipientBusiness.businessId,
+        eventId,
+        eventType: "PaymentReceived",
+        assetAddress: payment.assetAddress,
+        amount: payment.amount,
+        stellarReference: payment.transactionHash,
+        metadataHash: "0".repeat(64), // off-chain metadata committed separately
+        status: "Pending",
+        ledgerSequence: payment.ledgerSequence,
+      });
+      eventsIndexedTotal.inc({ event_type: "PaymentReceived", status: "Pending" });
+      logger.info(
+        {
+          event: "financial_event_indexed",
+          eventType: "PaymentReceived",
+          businessId: recipientBusiness.businessId,
+          eventId,
+          amount: payment.amount.toString(),
+          walletAddress: payment.destinationAddress,
+          stellarReference: payment.transactionHash,
+        },
+        "Financial event indexed"
+      );
+    }
+
+    if (senderBusiness) {
+      const eventId = deriveEventId(payment.transactionHash, "sent");
+      await upsertFinancialEvent(tx, {
+        businessId: senderBusiness.businessId,
+        eventId,
+        eventType: "PaymentSent",
+        assetAddress: payment.assetAddress,
+        amount: payment.amount,
+        stellarReference: payment.transactionHash,
+        metadataHash: "0".repeat(64),
+        status: "Pending",
+        ledgerSequence: payment.ledgerSequence,
+      });
+      eventsIndexedTotal.inc({ event_type: "PaymentSent", status: "Pending" });
+      logger.info(
+        {
+          event: "financial_event_indexed",
+          eventType: "PaymentSent",
+          businessId: senderBusiness.businessId,
+          eventId,
+          amount: payment.amount.toString(),
+          walletAddress: payment.sourceAddress,
+          stellarReference: payment.transactionHash,
+        },
+        "Financial event indexed"
+      );
+    }
+  });
 }
 
 /**

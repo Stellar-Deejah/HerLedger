@@ -1,10 +1,14 @@
 import { buildServer } from "./api/server.js";
 import { runSyncJob } from "./jobs/sync-ledger.js";
 import { connectWithRetry, disconnectPrisma } from "./db/client.js";
+import { scheduleReconciliation } from "./jobs/reconciliation.js";
+import { disconnectPrisma } from "./db/client.js";
+import { logger } from "./observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Indexer entry point
-// Starts the HTTP API server and the ledger sync job concurrently.
+// Starts the HTTP API server, the ledger sync job, and the reconciliation
+// scheduler concurrently.
 // ---------------------------------------------------------------------------
 
 const PORT = Number(process.env["PORT"] ?? 4000);
@@ -69,6 +73,7 @@ async function main(): Promise<void> {
     }
 
     // Close HTTP server (Fastify drains open requests internally).
+    logger.info({ event: "shutdown", signal }, "Shutting down indexer");
     await app.close();
 
     // Disconnect Prisma connection pool.
@@ -84,9 +89,9 @@ async function main(): Promise<void> {
   // --- Start HTTP server ---
   try {
     await app.listen({ port: PORT, host: HOST });
-    console.log({ event: "api-ready", port: PORT });
+    logger.info({ event: "api-ready", port: PORT }, "Indexer API server listening");
   } catch (err) {
-    console.error({ event: "startup-error", error: err });
+    logger.error({ event: "startup-error", error: err }, "Failed to start API server");
     process.exit(1);
   }
 
@@ -96,8 +101,13 @@ async function main(): Promise<void> {
   // so the orchestrator will restart.
   void runSyncJob(shutdownController.signal).catch((err) => {
     console.error({ event: "sync-job-fatal", error: err });
+  // Start sync job in the background -- errors are caught inside the job loop
+  void runSyncJob().catch((err) => {
+    logger.error({ event: "sync-job-fatal", error: err }, "Fatal error in sync job");
     process.exit(1);
   });
+
+  scheduleReconciliation();
 }
 
 void main();

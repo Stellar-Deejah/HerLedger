@@ -1,4 +1,6 @@
+import type { PrismaClient } from "@prisma/client";
 import { describe, it, expect, vi } from "vitest";
+
 import { findAllActiveBusinessWallets } from "../businesses.js";
 
 // A fake in-memory set of active business profiles, used to simulate
@@ -11,20 +13,26 @@ function makeFakeWallets(count: number) {
   }));
 }
 
-function makeFakePrisma(allWallets: ReturnType<typeof makeFakeWallets>) {
+interface FakeFindManyArgs {
+  cursor?: { id: string };
+  skip?: number;
+  take: number;
+}
+
+function makeFakePrisma(allWallets: ReturnType<typeof makeFakeWallets>): PrismaClient {
   return {
     businessProfile: {
-      findMany: vi.fn(async (args: any) => {
+      findMany: vi.fn(async (args: FakeFindManyArgs) => {
         const sorted = [...allWallets].sort((a, b) => (a.id > b.id ? 1 : -1));
         let startIndex = 0;
         if (args.cursor?.id) {
-          const cursorIndex = sorted.findIndex((w) => w.id === args.cursor.id);
+          const cursorIndex = sorted.findIndex((w) => w.id === args.cursor?.id);
           startIndex = cursorIndex + (args.skip ?? 0);
         }
         return sorted.slice(startIndex, startIndex + args.take);
       }),
     },
-  } as any;
+  } as unknown as PrismaClient;
 }
 
 describe("findAllActiveBusinessWallets cursor pagination", () => {
@@ -45,7 +53,10 @@ describe("findAllActiveBusinessWallets cursor pagination", () => {
     let cursor: string | undefined;
 
     while (true) {
-      const page = await findAllActiveBusinessWallets(prisma, { cursor, pageSize });
+      const page = await findAllActiveBusinessWallets(prisma, {
+        ...(cursor !== undefined && { cursor }),
+        pageSize,
+      });
       seen.push(...page.wallets.map((w) => w.id));
       if (!page.nextCursor) break;
       cursor = page.nextCursor;

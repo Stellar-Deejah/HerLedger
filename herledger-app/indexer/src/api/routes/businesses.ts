@@ -19,39 +19,36 @@ const paginationSchema = z.object({
 
 export async function businessRoutes(app: FastifyInstance): Promise<void> {
   // GET /businesses/:businessId
-  app.get<{ Params: { businessId: string } }>(
-    "/:businessId",
-    async (req, reply) => {
-      const params = businessIdSchema.safeParse(req.params);
-      if (!params.success) {
-        return reply.status(400).send({
-          data: null,
-          error: { code: "INVALID_PARAMS", message: "Invalid business ID" },
-        });
-      }
-
-      const business = await getPrismaClient().businessProfile.findUnique({
-        where: { businessId: params.data.businessId },
-        select: {
-          businessId: true,
-          walletAddress: true,
-          displayName: true,
-          metadataHash: true,
-          active: true,
-          createdAt: true,
-        },
+  app.get<{ Params: { businessId: string } }>("/:businessId", async (req, reply) => {
+    const params = businessIdSchema.safeParse(req.params);
+    if (!params.success) {
+      return reply.status(400).send({
+        data: null,
+        error: { code: "INVALID_PARAMS", message: "Invalid business ID" },
       });
-
-      if (!business) {
-        return reply.status(404).send({
-          data: null,
-          error: { code: "BUSINESS_NOT_FOUND", message: "Business not found" },
-        });
-      }
-
-      return reply.send({ data: business, error: null });
     }
-  );
+
+    const business = await getPrismaClient().businessProfile.findUnique({
+      where: { businessId: params.data.businessId },
+      select: {
+        businessId: true,
+        walletAddress: true,
+        displayName: true,
+        metadataHash: true,
+        active: true,
+        createdAt: true,
+      },
+    });
+
+    if (!business) {
+      return reply.status(404).send({
+        data: null,
+        error: { code: "BUSINESS_NOT_FOUND", message: "Business not found" },
+      });
+    }
+
+    return reply.send({ data: business, error: null });
+  });
 
   // GET /businesses/:businessId/events
   app.get<{
@@ -95,31 +92,28 @@ export async function businessRoutes(app: FastifyInstance): Promise<void> {
   });
 
   // GET /businesses/:businessId/attestations
-  app.get<{ Params: { businessId: string } }>(
-    "/:businessId/attestations",
-    async (req, reply) => {
-      const params = businessIdSchema.safeParse(req.params);
-      if (!params.success) {
-        return reply.status(400).send({
-          data: null,
-          error: { code: "INVALID_PARAMS", message: "Invalid business ID" },
-        });
-      }
-
-      // Get all event IDs for this business, then fetch attestations
-      const events = await getPrismaClient().financialEvent.findMany({
-        where: { businessId: params.data.businessId },
-        select: { eventId: true },
+  app.get<{ Params: { businessId: string } }>("/:businessId/attestations", async (req, reply) => {
+    const params = businessIdSchema.safeParse(req.params);
+    if (!params.success) {
+      return reply.status(400).send({
+        data: null,
+        error: { code: "INVALID_PARAMS", message: "Invalid business ID" },
       });
-
-      const attestationsByEvent = await Promise.all(
-        events.map(({ eventId }) =>
-          findAttestationsByEvent(getPrismaClient(), eventId)
-        )
-      );
-
-      const attestations = attestationsByEvent.flat();
-      return reply.send({ data: { attestations }, error: null });
     }
-  );
+
+    // Get all event IDs for this business, then fetch attestations
+    const events = await getPrismaClient().financialEvent.findMany({
+      where: { businessId: params.data.businessId },
+      select: { eventId: true },
+    });
+
+    const attestationsByEvent = await Promise.all(
+      events.map(({ eventId }: { eventId: string }) =>
+        findAttestationsByEvent(getPrismaClient(), eventId)
+      )
+    );
+
+    const attestations = attestationsByEvent.flat();
+    return reply.send({ data: { attestations }, error: null });
+  });
 }
