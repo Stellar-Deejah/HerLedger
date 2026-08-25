@@ -65,9 +65,23 @@ export const auth = betterAuth({
     },
   },
   session: {
+    // The cookie cache is a short-TTL signed & encrypted cookie holding the
+    // session/user payload, checked by `auth.api.getSession()` before it
+    // falls back to a Postgres lookup. It's what keeps `middleware.ts`'s
+    // per-request session check cheap (see the middleware's own comment for
+    // the full picture).
+    //
+    // The TTL is the direct trade-off between latency and revocation
+    // freshness: a session revoked out-of-band (directly in the DB, not via
+    // Better Auth's own revoke/sign-out endpoints, which also clear this
+    // cookie) stays valid at the edge for up to `maxAge` after the cache was
+    // last populated. 7 days — the previous value — made that window
+    // unacceptably large for a security boundary. 30 seconds keeps
+    // out-of-band revocation propagating in effectively "the next request or
+    // two" while still avoiding a DB round trip on every single navigation.
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 30, // 30 seconds short-lived Edge cache window
     },
   },
   trustedOrigins: [env.APP_URL],

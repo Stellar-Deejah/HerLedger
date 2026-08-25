@@ -1,13 +1,14 @@
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
+import { projectFields } from "@/lib/api/projection";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getAttestations } from "@/lib/data/attestations";
 import { getPrismaClient } from "@/lib/db/client";
 
 import { RequestSchema } from "./schema";
-import type { AttestationsResponse } from "./schema";
+import type { AttestationsResponse, AttestationDto } from "./schema";
 
 const prisma = getPrismaClient();
 
@@ -36,7 +37,33 @@ export async function GET(req: NextRequest) {
     select: { businessId: true },
   });
 
+  const isOwner = Boolean(profile?.businessId);
   const data = await getAttestations(profile?.businessId ?? null, parsed.data.includeRevoked);
 
-  return typedJson<AttestationsResponse>({ data, error: null });
+  const allowedFields: (keyof AttestationDto)[] = isOwner
+    ? [
+        "id",
+        "attestationId",
+        "eventId",
+        "attesterAddress",
+        "claimHash",
+        "claimDescription",
+        "status",
+        "ledgerSequence",
+      ]
+    : [
+        "id",
+        "attestationId",
+        "eventId",
+        "attesterAddress",
+        "claimDescription",
+        "status",
+        "ledgerSequence",
+      ];
+
+  const projectedAttestations = data.attestations.map((att) =>
+    projectFields(att, allowedFields)
+  ) as AttestationDto[];
+
+  return typedJson<AttestationsResponse>({ data: { attestations: projectedAttestations }, error: null });
 }

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const appUrl = process.env.APP_URL || "http://localhost:3000";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@herledger/sdk", "@herledger/config", "@herledger/db"],
@@ -25,6 +27,66 @@ const nextConfig: NextConfig = {
       ".jsx": [".tsx", ".jsx"],
     };
     return config;
+  },
+  async headers() {
+    return [
+      {
+        source: "/api/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: appUrl },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, PUT, DELETE, OPTIONS" },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization, X-Requested-With, x-admin-token",
+          },
+          { key: "Access-Control-Allow-Credentials", value: "true" },
+        ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/api/health",
+        destination: "/api/v1/health",
+      },
+      {
+        source: "/api/activity/recent",
+        destination: "/api/v1/activity/recent",
+      },
+      {
+        source: "/api/activity/summary",
+        destination: "/api/v1/activity/summary",
+      },
+      {
+        source: "/api/activity/export",
+        destination: "/api/v1/activity/export",
+      },
+      {
+        source: "/api/attestations",
+        destination: "/api/v1/attestations",
+      },
+      {
+        source: "/api/attestations/:path*",
+        destination: "/api/v1/attestations/:path*",
+      },
+      {
+        source: "/api/business/register",
+        destination: "/api/v1/business/register",
+      },
+      {
+        source: "/api/disputes",
+        destination: "/api/v1/disputes",
+      },
+      {
+        source: "/api/disputes/:path*",
+        destination: "/api/v1/disputes/:path*",
+      },
+      {
+        source: "/api/events/stream",
+        destination: "/api/v1/events/stream",
+      },
+    ];
   },
 };
 

@@ -1,7 +1,43 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
 import { MarketingFooter } from "@/components/marketing/MarketingFooter";
+import { SITE_URL } from "@/lib/seo/site";
+
+const TITLE = "HerLedger — Verifiable Financial History for Women-Owned Businesses";
+const DESCRIPTION =
+  "Build an immutable, portable, and verifiable financial reputation on Stellar without sharing unnecessary private information.";
+
+export const metadata: Metadata = {
+  title: TITLE,
+  description: DESCRIPTION,
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "HerLedger",
+    images: [
+      {
+        url: "/images/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "HerLedger — Verifiable Financial History for Women-Owned Businesses",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/images/og-image.png"],
+  },
+};
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (

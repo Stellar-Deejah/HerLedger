@@ -13,10 +13,11 @@ import type {
   TransactionResult,
   TransactionSigner,
 } from "../types/index.js";
-import { RpcError, ContractError } from "../errors/index.js";
+import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
 import { getSorobanRpcServer } from "../rpc/client.js";
 import { simulateAndPrepare, submitAndWait } from "../rpc/transactions.js";
 import { signTransactionWithFreighter } from "../wallet/freighter.js";
+import { defaultQueryCache, buildCacheKey, type QueryCacheOptions } from "../cache/query-cache.js";
 import {
   encodeBytes32,
   encodeAddress,
@@ -40,12 +41,13 @@ function decodeAttestationStatus(val: xdr.ScVal): AttestationStatus {
   const name = val.value()?.toString() ?? "";
   if (name === "Active") return "Active";
   if (name === "Revoked") return "Revoked";
-  throw new ContractError(`Unknown AttestationStatus: ${name}`);
+  throw new ContractError(ContractErrorCode.UNKNOWN_VARIANT, `Unknown AttestationStatus: ${name}`);
 }
 
 function decodeAttestation(val: xdr.ScVal): Attestation {
   const map = val.map();
-  if (!map) throw new ContractError("Expected struct map for Attestation");
+  if (!map)
+    throw new ContractError(ContractErrorCode.DECODE_ERROR, "Expected struct map for Attestation");
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
     fields[entry.key().sym().toString()] = entry.val();
@@ -68,7 +70,7 @@ async function simulateRead(
   try {
     return await server.simulateTransaction(tx);
   } catch (cause) {
-    throw new RpcError("Contract simulation failed", cause);
+    throw new RpcError(RpcErrorCode.REQUEST_FAILED, "Contract simulation failed", { cause });
   }
 }
 
@@ -76,50 +78,87 @@ async function simulateRead(
 // Reads
 // ---------------------------------------------------------------------------
 
+/**
+ * Results are cached (in-memory, TTL default 30s, keyed by contract id +
+ * method + args) and concurrent identical calls are de-duplicated into a
+ * single RPC request. Pass `cacheOptions: { bypassCache: true }` to force a
+ * fresh read, or `{ ttlMs }` to override the TTL for this call.
+ */
 export async function getAttestation(
   attestationId: string,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<Attestation | null> {
-  const contract = new Contract(contracts.attestationRegistryId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call("get_attestation", encodeBytes32(toHexString32(attestationId))))
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.attestationRegistryId, "get_attestation", [
+    attestationId,
+  ]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.attestationRegistryId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(contract.call("get_attestation", encodeBytes32(toHexString32(attestationId))))
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`get_attestation error: ${sim.error}`);
-  }
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return null;
-  return decodeAttestation(retval);
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `get_attestation error: ${sim.error}`,
+          { context: { contractCode: sim.error, method: "get_attestation" } }
+        );
+      }
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return null;
+      return decodeAttestation(retval);
+    },
+    cacheOptions
+  );
 }
 
+/** See `getAttestation` for cache behavior. */
 export async function isValidAttestation(
   attestationId: string,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<boolean> {
-  const contract = new Contract(contracts.attestationRegistryId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call("is_valid_attestation", encodeBytes32(toHexString32(attestationId))))
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.attestationRegistryId, "is_valid_attestation", [
+    attestationId,
+  ]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.attestationRegistryId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(
+          contract.call("is_valid_attestation", encodeBytes32(toHexString32(attestationId)))
+        )
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`is_valid_attestation error: ${sim.error}`);
-  }
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return false;
-  return retval.b();
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `is_valid_attestation error: ${sim.error}`,
+          { context: { contractCode: sim.error, method: "is_valid_attestation" } }
+        );
+      }
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return false;
+      return retval.b();
+    },
+    cacheOptions
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -236,7 +275,14 @@ export async function createAttestation(
     config.networkPassphrase,
     params.attester
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.attestationRegistryId, "get_attestation", [params.attestationId])
+  );
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.attestationRegistryId, "is_valid_attestation", [params.attestationId])
+  );
+  return result;
 }
 
 export async function revokeAttestation(
@@ -272,5 +318,12 @@ export async function revokeAttestation(
     config.networkPassphrase,
     params.attester
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.attestationRegistryId, "get_attestation", [params.attestationId])
+  );
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.attestationRegistryId, "is_valid_attestation", [params.attestationId])
+  );
+  return result;
 }

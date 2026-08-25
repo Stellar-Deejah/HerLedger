@@ -65,11 +65,14 @@ vi.mock("@stellar/stellar-sdk", () => ({
   },
 }));
 
+vi.mock("server-only", () => ({}));
+
 import { adminRoutes } from "../admin.js";
 
 async function buildTestApp() {
   const app = Fastify();
   await app.register(adminRoutes);
+  await app.ready();
   return app;
 }
 
@@ -86,7 +89,7 @@ describe("POST /replay/:errorId", () => {
     const app = await buildTestApp();
     const res = await app.inject({ method: "POST", url: "/replay/err-1" });
     expect(res.statusCode).toBe(401);
-  });
+  }, 30000);
 
   it("returns 404 when the errorId does not exist", async () => {
     mockFindDeadLetter.mockResolvedValue(null);

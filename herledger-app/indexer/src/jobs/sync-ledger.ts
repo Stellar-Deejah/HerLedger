@@ -32,7 +32,7 @@ import {
 
 // ---------------------------------------------------------------------------
 // Main ledger sync job
-// Restartable, idempotent, checkpoint-driven.
+// Restartable, idempotent, per-ledger checkpoint-driven.
 // ---------------------------------------------------------------------------
 
 const SYNC_INTERVAL_MS = 30_000; // 30 seconds between sync cycles
@@ -51,7 +51,10 @@ export async function runSyncJob(): Promise<void> {
     stellarConfig.networkPassphrase
   );
 
-  logger.info({ job: "sync-ledger", event: "start", network: stellarConfig.network }, "Starting sync ledger job");
+  logger.info(
+    { job: "sync-ledger", event: "start", network: stellarConfig.network },
+    "Starting sync ledger job"
+  );
 
   while (true) {
     const correlationId = generateCorrelationId();
@@ -99,6 +102,7 @@ async function syncCycle(
 
   let maxProcessedLedger = lastCheckpoint;
   let anyWallets = false;
+  const processedLedgers = new Set<number>();
 
   // Iterate active business wallets in cursor pages -- never load the full
   // set into memory at once. Each page is fetched only after the previous
@@ -133,6 +137,8 @@ async function syncCycle(
 
           if (!isSuccessfulTransaction(tx)) continue;
 
+          let transactionProcessedSuccessfully = false;
+
           try {
             const outcome = await processTransactionForWallet(
               tx,
@@ -146,9 +152,12 @@ async function syncCycle(
             } else {
               recordSkipped();
             }
+            transactionProcessedSuccessfully = true;
           } catch (err) {
             recordFailed();
             recordDeadLettered();
+
+            let deadLetterWriteSucceeded = false;
             try {
               await writeDeadLetter(prisma, {
                 rawXdr: tx.envelope_xdr,
@@ -156,6 +165,7 @@ async function syncCycle(
                 message: err instanceof Error ? err.message : String(err),
                 context: { walletAddress, ledgerSequence: ledger },
               });
+              deadLetterWriteSucceeded = true;
             } catch (dlErr) {
               // If we can't even write the dead-letter row, at minimum log it
               // loudly -- this event's failure would otherwise be silently lost.
@@ -170,19 +180,31 @@ async function syncCycle(
                 "Failed to write dead letter row"
               );
             }
+
             logger.error(
               {
                 job: "sync-ledger",
                 event: "transaction-failed",
                 transactionHash: tx.hash,
                 error: err instanceof Error ? err.message : String(err),
+                deadLetterWriteSucceeded,
               },
               "Transaction processing failed"
             );
+
+            // Only mark the ledger as processed if we successfully wrote the dead letter.
+            // If dead-letter write failed, don't add to processedLedgers so the
+            // ledger gets retried on the next cycle instead of being silently dropped.
+            if (deadLetterWriteSucceeded) {
+              transactionProcessedSuccessfully = true;
+            }
           }
 
-          if (ledger > maxProcessedLedger) {
+          // Only add to processedLedgers if both processing and error tracking succeeded.
+          // This prevents silent loss of events when the DB is temporarily unavailable.
+          if (transactionProcessedSuccessfully && ledger > maxProcessedLedger) {
             maxProcessedLedger = ledger;
+            processedLedgers.add(ledger);
           }
         }
 
@@ -203,17 +225,38 @@ async function syncCycle(
     return;
   }
 
-  // Persist checkpoint only after successful processing
-  if (maxProcessedLedger > lastCheckpoint) {
-    await saveCheckpoint(prisma, MAIN_STREAM, maxProcessedLedger);
+  // Persist per-ledger checkpoints for each successfully processed ledger.
+  // This ensures that on restart, we only re-process ledgers that haven't
+  // been fully committed yet. Ledgers are processed in ascending order
+  // within each wallet's transaction page.
+  if (processedLedgers.size > 0) {
+    const sortedLedgers = Array.from(processedLedgers).sort((a, b) => a - b);
+    for (const ledger of sortedLedgers) {
+      if (ledger > lastCheckpoint) {
+        await saveCheckpoint(prisma, MAIN_STREAM, ledger);
+      }
+    }
+
+    logger.info(
+      {
+        job: "sync-ledger",
+        event: "per-ledger-checkpoints-saved",
+        firstLedger: sortedLedgers[0],
+        lastLedger: sortedLedgers[sortedLedgers.length - 1],
+        count: sortedLedgers.length,
+      },
+      `Saved per-ledger checkpoints for ${sortedLedgers.length} ledgers`
+    );
+
     syncLagLedgers.set(Math.max(0, latestLedger - maxProcessedLedger));
     logger.info(
       {
         job: "sync-ledger",
-        event: "checkpoint-saved",
-        ledger: maxProcessedLedger,
+        event: "cycle-complete",
+        maxProcessedLedger,
+        currentLag: Math.max(0, latestLedger - maxProcessedLedger),
       },
-      "Checkpoint saved successfully"
+      "Sync cycle complete"
     );
   }
 }

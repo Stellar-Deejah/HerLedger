@@ -1,20 +1,15 @@
-import { getAttestation } from "@herledger/sdk";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth/server";
 import { attestationsTag } from "@/lib/data/attestations";
-import { getPrismaClient } from "@/lib/db/client";
 import { getServerStellarConfig, getServerContractConfig } from "@/lib/stellar/server-config";
-
-import { auth } from "@/lib/auth/server";
-import { getServerContractConfig, getServerStellarConfig } from "@/lib/stellar/server-config";
 import { getDbClient } from "@herledger/db";
 import { getAttestation } from "@herledger/sdk";
 
 export async function POST(
-  req: NextRequest,
+  _req: NextRequest,
   context: { params: Promise<{ attestationId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -59,7 +54,7 @@ export async function POST(
     );
   }
 
-  await db.attestations.upsert({
+  const updated = await db.attestations.upsert({
     attestationId,
     eventId: existing.eventId,
     attesterAddress: existing.attesterAddress,

@@ -23,7 +23,7 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
       if (mockWalletConnectionState.connected) {
         onConnected(TEST_WALLET_ADDRESS);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+       
     }, []);
 
     if (mockWalletConnectionState.connected) {
@@ -150,7 +150,7 @@ describe("BusinessRegistrationForm accessibility", () => {
     await user.type(screen.getByLabelText(/business name/i), "Acme Traders");
     await user.click(screen.getByRole("button", { name: /register on stellar/i }));
 
-    await screen.findByText(/business registered on stellar/i);
+    await screen.findByRole("heading", { name: /business registered on stellar/i });
     expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
   });
 });

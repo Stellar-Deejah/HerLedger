@@ -1,12 +1,12 @@
-import { getServerEnv, validateNetworkConsistency } from "@herledger/config/server";
+import { getStellarNetworkConfig, validateNetworkConsistency } from "@herledger/config/server";
 
 export async function register(): Promise<void> {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const env = getServerEnv();
+    const config = getStellarNetworkConfig();
     validateNetworkConsistency(
-      env.STELLAR_NETWORK,
-      env.STELLAR_RPC_URL,
-      env.STELLAR_NETWORK_PASSPHRASE
+      config.network,
+      config.rpcUrl,
+      config.networkPassphrase
     );
   }
 }

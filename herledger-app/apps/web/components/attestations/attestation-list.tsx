@@ -139,12 +139,12 @@ export function AttestationList({ initialAttestations }: AttestationListProps) {
             <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
               <dt style={{ fontWeight: 500, minWidth: "80px" }}>Claim</dt>
               <dd style={att.claimDescription ? undefined : { fontFamily: "monospace" }}>
-                {att.claimDescription ?? `${att.claimHash.slice(0, 16)}…`}
+                {att.claimDescription ?? (att.claimHash ? `${att.claimHash.slice(0, 16)}…` : "—")}
               </dd>
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
               <dt style={{ fontWeight: 500, minWidth: "80px" }}>Attester</dt>
-              <dd style={{ fontFamily: "monospace", wordBreak: "break-all" }}>
+              <dd style={{ fontFamily: "monospace", wordBreak: "break-all" }} title={att.attesterAddress}>
                 {resolveAttesterName(att.attesterAddress)}
               </dd>
             </div>

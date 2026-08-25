@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 const push = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 const signInEmail = vi.fn();

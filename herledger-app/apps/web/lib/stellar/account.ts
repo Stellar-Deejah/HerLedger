@@ -1,4 +1,5 @@
 import { Account, Horizon } from "@stellar/stellar-sdk";
+
 import { getServerStellarConfig } from "./server-config";
 
 export async function getAccount(address: string): Promise<Account> {

@@ -71,11 +71,7 @@ export {
   createStellarTransactionsRepository,
 } from "./repositories/stellar-transactions.js";
 
-export {
-  findUserById,
-  deleteUserAccount,
-  createUsersRepository,
-} from "./repositories/users.js";
+export { findUserById, deleteUserAccount, createUsersRepository } from "./repositories/users.js";
 
 export {
   findDisputeByEventId,
@@ -109,6 +105,8 @@ export type {
   UpsertStellarTransactionInput,
   CreateDisputeInput,
   PaginationOptions,
+  ActivityQueryOptions,
+  FinancialEventsSummary,
   PaginatedResult,
   BusinessesRepository,
   FinancialEventsRepository,

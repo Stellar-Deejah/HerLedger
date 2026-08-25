@@ -72,7 +72,8 @@ for (const entry of readdirSync(pnpmStore)) {
     rmSync(typescriptLink, { recursive: true, force: true });
   }
 
-  symlinkSync(desiredTarget, typescriptLink, "dir");
+  const symlinkType = process.platform === "win32" ? "junction" : "dir";
+  symlinkSync(desiredTarget, typescriptLink, symlinkType);
   patched += 1;
 }
 

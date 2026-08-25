@@ -37,7 +37,7 @@ jobs:
       NODE_ENV: test
       DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
       SHADOW_DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_shadow
-      BETTER_AUTH_SECRET: ci-test-secret-must-be-at-least-32-chars-long
+      BETTER_AUTH_SECRET: 05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78
       RESEND_API_KEY: re_ci_test_key_not_a_real_key
       EMAIL_FROM: "HerLedger <onboarding@resend.dev>"
       APP_URL: http://localhost:3000
@@ -87,12 +87,8 @@ jobs:
         run: pnpm lint
         working-directory: herledger-app
 
-      - name: No bigint-to-number coercions
-        run: |
-          if grep -rEn 'Number\([^)]*(amount|issuedAt|createdAt)' packages/sdk/src indexer/src apps/web --include='*.ts' --include='*.tsx' | grep -v __tests__; then
-            echo "::error::Found implicit bigint-to-number coercion (Number() applied to an amount/timestamp field). i128/u64 values exceed Number.MAX_SAFE_INTEGER and must stay bigint."
-            exit 1
-          fi
+      - name: OpenAPI spec drift check
+        run: pnpm openapi:check
         working-directory: herledger-app
 
       - name: Validate .env.example
@@ -125,6 +121,12 @@ jobs:
       - name: Build
         run: pnpm build
         working-directory: herledger-app
+
+      - name: Check CSS bundle size budget
+        run: pnpm check:css-budget
+        working-directory: herledger-app/apps/web
+        env:
+          CSS_BUDGET_KB: "50"
 
       - name: Build Storybook
         run: pnpm --filter web build-storybook

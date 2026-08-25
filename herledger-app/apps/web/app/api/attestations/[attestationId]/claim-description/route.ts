@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { attestationsTag } from "@/lib/data/attestations";
-import { getPrismaClient } from "@/lib/db/client";
+import { getDbClient } from "@herledger/db";
 
 import { RequestSchema, type ClaimDescriptionResponse } from "./schema";
 
@@ -65,10 +65,7 @@ export async function POST(
       ledgerSequence,
     });
 
-    const event = await prisma.financialEvent.findUnique({
-      where: { eventId },
-      select: { businessId: true },
-    });
+    const event = await db.financialEvents.findById(eventId);
     if (event) {
       revalidateTag(attestationsTag(event.businessId), "max");
     }

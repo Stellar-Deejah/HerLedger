@@ -1,6 +1,6 @@
 import { rpc as StellarRpc } from "@stellar/stellar-sdk";
 import type { StellarNetworkConfig } from "../types/index.js";
-import { RpcError } from "../errors/index.js";
+import { RpcError, RpcErrorCode } from "../errors/index.js";
 import { CircuitBreaker } from "./circuit-breaker.js";
 import type { CircuitBreakerOptions, CircuitState } from "./circuit-breaker.js";
 
@@ -71,7 +71,10 @@ function ensureInitialised(config: StellarNetworkConfig): void {
 
   const urls = parseRpcUrls(config);
   if (urls.length === 0) {
-    throw new RpcError("No RPC URLs configured — check STELLAR_RPC_URLS");
+    throw new RpcError(
+      RpcErrorCode.NO_ENDPOINTS_CONFIGURED,
+      "No RPC URLs configured — check STELLAR_RPC_URLS"
+    );
   }
 
   _entries = buildEntries(urls);
@@ -103,6 +106,7 @@ export function getSorobanRpcServer(
   }
 
   throw new RpcError(
+    RpcErrorCode.ALL_ENDPOINTS_UNAVAILABLE,
     "All RPC endpoints are unavailable (circuit breaker OPEN on every endpoint)"
   );
 }
@@ -170,8 +174,9 @@ export async function withRpcFailover<T>(
   }
 
   throw new RpcError(
+    RpcErrorCode.ALL_ENDPOINTS_UNAVAILABLE,
     "All RPC endpoints failed or have open circuit breakers",
-    lastError
+    { cause: lastError }
   );
 }
 
@@ -255,7 +260,7 @@ export async function getLatestLedger(
     );
     return result.sequence;
   } catch (cause) {
-    throw new RpcError("Failed to fetch latest ledger", cause);
+    throw new RpcError(RpcErrorCode.REQUEST_FAILED, "Failed to fetch latest ledger", { cause });
   }
 }
 

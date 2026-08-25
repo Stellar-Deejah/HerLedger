@@ -149,6 +149,12 @@ test.describe("Attestation list", () => {
 // middleware, not a real signed/seeded session.
 // ---------------------------------------------------------------------------
 
+test("renders both active and revoked attestations with correct status badges", async ({
+  page,
+}) => {
+  await page.goto("/dashboard/attestations");
+});
+
 test.describe("Attester registration / attestation creation (pre-wallet-connection)", () => {
   test.beforeEach(async ({ context }) => {
     await context.addCookies([

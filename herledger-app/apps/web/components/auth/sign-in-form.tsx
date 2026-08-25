@@ -1,18 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { validateCallbackUrl } from "@/lib/auth/callback-url";
 import { signIn } from "@/lib/auth/client";
 import { EMAIL_NOT_VERIFIED_ERROR, normalizeSignInError } from "@/lib/auth/messages";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,9 @@ export function SignInForm() {
         if (result.error) {
           setError(normalizeSignInError(result.error));
         } else {
-          router.push("/dashboard");
+          const rawCallback = searchParams?.get("callbackUrl");
+          const targetUrl = validateCallbackUrl(rawCallback) || "/dashboard";
+          router.push(targetUrl);
         }
       } catch {
         setError("An unexpected error occurred. Please try again.");

@@ -24,12 +24,37 @@ export type { AttesterRegistry, AttesterRegistryEntry } from "./attester-registr
 // Errors
 export {
   WalletError,
+  WalletErrorCode,
   RpcError,
+  RpcErrorCode,
   ContractError,
+  ContractErrorCode,
   ValidationError,
+  ValidationErrorCode,
   AuthenticationError,
+  AuthenticationErrorCode,
+  assertUnreachable,
 } from "./errors/index.js";
-export type { AppError } from "./errors/index.js";
+export type {
+  AppError,
+  AppErrorCode,
+  AppErrorOptions,
+  WalletErrorContext,
+  RpcErrorContext,
+  ContractErrorContext,
+  ValidationErrorContext,
+  AuthenticationErrorContext,
+} from "./errors/index.js";
+
+// Query cache
+export {
+  QueryCache,
+  defaultQueryCache,
+  clearQueryCache,
+  buildCacheKey,
+  DEFAULT_QUERY_CACHE_TTL_MS,
+} from "./cache/query-cache.js";
+export type { QueryCacheOptions } from "./cache/query-cache.js";
 
 // RPC
 export {
@@ -48,6 +73,8 @@ export type { RpcHealthResult } from "./rpc/client.js";
 export { CircuitBreaker } from "./rpc/circuit-breaker.js";
 export type { CircuitState, CircuitBreakerOptions } from "./rpc/circuit-breaker.js";
 export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/transactions.js";
+export { DEFAULT_RPC_TIMEOUT_MS } from "./rpc/timeout.js";
+export type { RpcCallOptions } from "./rpc/timeout.js";
 
 // Wallet
 export { WalletAdapter, WalletConnection, WalletAccount } from "./wallet/types.js";

@@ -1,4 +1,4 @@
-import { WalletError } from "@herledger/sdk";
+import { WalletError, WalletErrorCode } from "@herledger/sdk";
 import type { ReactNode } from "react";
 
 import { SdkContext, defaultSdkClient, type SdkClient } from "@/lib/sdk/sdk-context";
@@ -81,7 +81,7 @@ export function mockRegisterBusinessWalletDisconnected(
   message = "Freighter signing rejected: wallet disconnected"
 ): SdkClient["registerBusiness"] {
   return async () => {
-    throw new WalletError(message);
+    throw new WalletError(WalletErrorCode.SIGNING_REJECTED, message);
   };
 }
 

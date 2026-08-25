@@ -9,13 +9,37 @@ export const environment = process.env["NODE_ENV"] ?? "development";
  * Creates a structured JSON Pino logger instance configured for the indexer.
  * Automatically injects service, environment, ISO timestamp, and dynamic
  * correlationId via AsyncLocalStorage mixin.
+ *
+ * Automatically redacts sensitive financial and PII fields (amount, walletAddress,
+ * stellarReference) at INFO level and higher; full un-redacted values are only
+ * logged when log level is DEBUG.
  */
 export function createLogger(
   options: LoggerOptions = {},
   destination?: DestinationStream
 ): Logger {
+  const level = process.env["LOG_LEVEL"] ?? options.level ?? "info";
+  const isDebug = level === "debug";
+
+  const defaultRedact = isDebug
+    ? undefined
+    : {
+        paths: [
+          "amount",
+          "walletAddress",
+          "stellarReference",
+          "*.amount",
+          "*.walletAddress",
+          "*.stellarReference",
+          "context.walletAddress",
+        ],
+        censor: "[REDACTED]",
+      };
+
+  const redact = options.redact ?? defaultRedact;
+
   const pinoOptions: LoggerOptions = {
-    level: process.env["LOG_LEVEL"] ?? options.level ?? "info",
+    level,
     base: {
       service: serviceName,
       environment,
@@ -30,6 +54,7 @@ export function createLogger(
       const correlationId = getCorrelationId();
       return correlationId ? { correlationId } : {};
     },
+    ...(redact ? { redact } : {}),
     ...options,
   };
 

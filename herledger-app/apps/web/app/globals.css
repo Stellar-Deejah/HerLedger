@@ -129,7 +129,13 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family:
+    var(--font-inter),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   font-size: var(--font-size-base);
   line-height: 1.5;
   margin: 0;
@@ -162,4 +168,79 @@ a:hover {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Dashboard navigation responsive shell
+   Desktop (>= 768px): persistent sidebar. Mobile (< 768px): top bar + drawer.
+--------------------------------------------------------------------------- */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.nav-sidebar {
+  width: 220px;
+  min-height: 100vh;
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.nav-mobile-bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .dashboard-layout {
+    display: block;
+  }
+
+  .nav-sidebar {
+    display: none;
+  }
+
+  .nav-mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    background: var(--background);
+  }
+}
+
+.nav-mobile-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  max-width: 85vw;
+  background: var(--background);
+  border-right: 1px solid var(--border);
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+  z-index: 100;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.nav-mobile-drawer--open {
+  transform: translateX(0);
+}
+
+.nav-mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 90;
 }

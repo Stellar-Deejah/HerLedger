@@ -86,4 +86,75 @@ describe("Structured Pino Logger", () => {
     expect(parsed.level).toBe("warn");
     expect(parsed.event).toBe("should-log");
   });
+
+  it("redacts amount, walletAddress, and stellarReference at INFO log level", () => {
+    const logs: string[] = [];
+    const stream = new Writable({
+      write(chunk, _encoding, callback) {
+        logs.push(chunk.toString());
+        callback();
+      },
+    });
+
+    const infoLogger = createLogger(
+      {
+        level: "info",
+        base: { service: "indexer-test", environment: "test" },
+      },
+      stream
+    );
+
+    infoLogger.info(
+      {
+        event: "financial_event_indexed",
+        amount: "100.0000000",
+        walletAddress: "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFXYSFSSTY2ELW6CUSIZD",
+        stellarReference: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      },
+      "Financial event indexed"
+    );
+
+    expect(logs.length).toBe(1);
+    const parsed = JSON.parse(logs[0] ?? "{}");
+    expect(parsed.amount).toBe("[REDACTED]");
+    expect(parsed.walletAddress).toBe("[REDACTED]");
+    expect(parsed.stellarReference).toBe("[REDACTED]");
+  });
+
+  it("preserves full un-redacted fields at DEBUG log level", () => {
+    const logs: string[] = [];
+    const stream = new Writable({
+      write(chunk, _encoding, callback) {
+        logs.push(chunk.toString());
+        callback();
+      },
+    });
+
+    const debugLogger = createLogger(
+      {
+        level: "debug",
+        base: { service: "indexer-test", environment: "test" },
+      },
+      stream
+    );
+
+    const fullWallet = "GBRPYHIL2CI3FNQ4BXLFMNDLFJUNPU2HY3ZMFXYSFSSTY2ELW6CUSIZD";
+    const fullTxHash = "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+
+    debugLogger.debug(
+      {
+        event: "financial_event_indexed",
+        amount: "100.0000000",
+        walletAddress: fullWallet,
+        stellarReference: fullTxHash,
+      },
+      "Financial event indexed debug"
+    );
+
+    expect(logs.length).toBe(1);
+    const parsed = JSON.parse(logs[0] ?? "{}");
+    expect(parsed.amount).toBe("100.0000000");
+    expect(parsed.walletAddress).toBe(fullWallet);
+    expect(parsed.stellarReference).toBe(fullTxHash);
+  });
 });

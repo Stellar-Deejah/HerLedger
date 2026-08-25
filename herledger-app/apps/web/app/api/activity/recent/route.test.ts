@@ -89,13 +89,16 @@ describe("GET /api/activity/recent", () => {
       financialEvents: {
         upsert: vi.fn(),
         updateStatus: vi.fn(),
-        findByBusiness: vi.fn().mockResolvedValue([
-          { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100 },
-        ] as never),
-        findRecentByBusiness: vi.fn(),
+        findByBusiness: vi.fn(),
+        findRecentByBusiness: vi
+          .fn()
+          .mockResolvedValue([
+            { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100 },
+          ] as never),
         findById: vi.fn(),
         findUpdatedAfter: vi.fn(),
         findAttestableEvents: vi.fn(),
+        summarize: vi.fn(),
       },
     });
     setDbClient(mockDb);
@@ -104,7 +107,10 @@ describe("GET /api/activity/recent", () => {
     const res = await GET(req);
 
     expect(res.status).toBe(200);
-    expect(mockDb.financialEvents.findByBusiness).toHaveBeenCalledWith("biz_1", 0, 10);
+    expect(mockDb.financialEvents.findRecentByBusiness).toHaveBeenCalledWith("biz_1", {
+      offset: 0,
+      limit: 10,
+    });
     const body = await res.json();
     expect(body.data.events).toHaveLength(1);
     expect(body.data.pagination.count).toBe(1);

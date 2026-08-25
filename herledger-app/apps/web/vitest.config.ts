@@ -20,7 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
-      "server-only": "node:events",
+      "server-only": path.resolve(__dirname, "../../indexer/src/__mocks__/server-only.ts"),
     },
   },
 });

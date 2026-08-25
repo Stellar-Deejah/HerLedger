@@ -1,4 +1,3 @@
-import { getServerEnv } from "@herledger/config/server";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { z } from "zod";
@@ -73,12 +72,12 @@ export async function GET(req: NextRequest) {
     const [disputes, total] = await Promise.all([
       prisma.dispute.findMany({
         where: {
-          financialEvent: {
+          event: {
             businessId,
           },
         },
         include: {
-          financialEvent: {
+          event: {
             select: {
               id: true,
             },
@@ -90,7 +89,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.dispute.count({
         where: {
-          financialEvent: {
+          event: {
             businessId,
           },
         },

@@ -1,8 +1,9 @@
 "use client";
 
-import { useSession, signOut } from "@/lib/auth/client";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+
+import { useSession, signOut } from "@/lib/auth/client";
 
 export function SettingsPanel() {
   const { data: session } = useSession();
@@ -25,14 +26,14 @@ export function SettingsPanel() {
       });
 
       if (!res.ok) {
-        const data = await res.json();
+        const data = (await res.json()) as { error?: string };
         throw new Error(data.error || "Failed to delete account");
       }
 
       await signOut();
       router.push("/");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete account");
       setIsDeleting(false);
     }
   };

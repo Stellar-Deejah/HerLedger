@@ -39,7 +39,7 @@ export function DisputeList() {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetch("/api/activity/recent?limit=100");
+        const res = await fetch("/api/v1/activity/recent?limit=100");
         if (!res.ok) throw new Error();
         const json = (await res.json()) as { data: { events: DisputedEvent[] } | null };
         const all = json.data?.events ?? [];
@@ -147,7 +147,7 @@ function DisputeLifecycle({ eventId }: { eventId: string }) {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch(`/api/disputes/${eventId}`);
+        const res = await fetch(`/api/v1/disputes/${eventId}`);
         if (!res.ok) return;
         const json = (await res.json()) as { data: { dispute: DisputeRecord } | null };
         if (!cancelled) setDispute(json.data?.dispute ?? null);

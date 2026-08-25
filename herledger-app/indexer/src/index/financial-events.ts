@@ -5,7 +5,7 @@ import { upsertFinancialEvent } from "../db/schema/financial-events.js";
 import { upsertStellarTransaction } from "../db/schema/stellar-transactions.js";
 import { findBusinessByWallet } from "../db/schema/businesses.js";
 import type { ParsedPayment } from "../types/index.js";
-import { eventsIndexedTotal } from "../observability/index.js";
+import { eventsIndexedTotal, logger } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Financial event indexing logic
@@ -70,6 +70,18 @@ export async function indexPayment(
         ledgerSequence: payment.ledgerSequence,
       });
       eventsIndexedTotal.inc({ event_type: "PaymentReceived", status: "Pending" });
+      logger.info(
+        {
+          event: "financial_event_indexed",
+          eventType: "PaymentReceived",
+          businessId: recipientBusiness.businessId,
+          eventId,
+          amount: payment.amount.toString(),
+          walletAddress: payment.destinationAddress,
+          stellarReference: payment.transactionHash,
+        },
+        "Financial event indexed"
+      );
     }
 
     if (senderBusiness) {
@@ -86,6 +98,18 @@ export async function indexPayment(
         ledgerSequence: payment.ledgerSequence,
       });
       eventsIndexedTotal.inc({ event_type: "PaymentSent", status: "Pending" });
+      logger.info(
+        {
+          event: "financial_event_indexed",
+          eventType: "PaymentSent",
+          businessId: senderBusiness.businessId,
+          eventId,
+          amount: payment.amount.toString(),
+          walletAddress: payment.sourceAddress,
+          stellarReference: payment.transactionHash,
+        },
+        "Financial event indexed"
+      );
     }
   });
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useSession } from "@/lib/auth/client";
+import { truncateAddress } from "@/lib/utils/format";
 import { BusinessRegistrationForm } from "./business-registration-form";
 import { BusinessMetadataUpdateForm } from "./business-metadata-update-form";
 import { BusinessDeactivationFlow } from "./business-deactivation-flow";
@@ -16,13 +17,7 @@ interface BusinessData {
   wallet: string;
 }
 
-interface ChainBusiness {
-  id: string;
-  owner: string;
-  wallet: string;
-  metadataHash: string;
-  active: boolean;
-}
+
 
 interface Discrepancy {
   field: string;
@@ -280,16 +275,24 @@ export function BusinessProfile() {
             <label style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--muted)" }}>
               Owner
             </label>
-            <p style={{ marginTop: "0.25rem", fontFamily: "monospace", fontSize: "0.875rem" }}>
-              {business.owner}
+            <p
+              style={{ marginTop: "0.25rem", fontFamily: "monospace", fontSize: "0.875rem" }}
+              title={business.owner}
+              aria-label={business.owner}
+            >
+              {truncateAddress(business.owner)}
             </p>
           </div>
           <div>
             <label style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--muted)" }}>
               Wallet
             </label>
-            <p style={{ marginTop: "0.25rem", fontFamily: "monospace", fontSize: "0.875rem" }}>
-              {business.wallet}
+            <p
+              style={{ marginTop: "0.25rem", fontFamily: "monospace", fontSize: "0.875rem" }}
+              title={business.wallet}
+              aria-label={business.wallet}
+            >
+              {truncateAddress(business.wallet)}
             </p>
           </div>
           <div>
@@ -370,8 +373,18 @@ export function BusinessProfile() {
               {discrepancies.map((disc, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
                   <td style={{ padding: "0.5rem", fontWeight: 500 }}>{disc.field}</td>
-                  <td style={{ padding: "0.5rem", fontFamily: "monospace" }}>{disc.dbValue}</td>
-                  <td style={{ padding: "0.5rem", fontFamily: "monospace" }}>{disc.chainValue}</td>
+                  <td
+                    style={{ padding: "0.5rem", fontFamily: "monospace" }}
+                    title={disc.dbValue}
+                  >
+                    {truncateAddress(disc.dbValue)}
+                  </td>
+                  <td
+                    style={{ padding: "0.5rem", fontFamily: "monospace" }}
+                    title={disc.chainValue}
+                  >
+                    {truncateAddress(disc.chainValue)}
+                  </td>
                 </tr>
               ))}
             </tbody>

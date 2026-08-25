@@ -5,7 +5,7 @@ import {
   requestAccess,
   getNetwork,
 } from "@stellar/freighter-api";
-import { WalletError } from "../errors/index.js";
+import { WalletError, WalletErrorCode } from "../errors/index.js";
 
 // ---------------------------------------------------------------------------
 // Freighter wallet adapter
@@ -38,6 +38,7 @@ export async function connectWallet(): Promise<WalletConnection> {
   const available = await isFreighterAvailable();
   if (!available) {
     throw new WalletError(
+      WalletErrorCode.NOT_INSTALLED,
       "Freighter wallet extension is not installed or not available. Please install Freighter to continue."
     );
   }
@@ -46,23 +47,35 @@ export async function connectWallet(): Promise<WalletConnection> {
   try {
     accessResult = await requestAccess();
   } catch (cause) {
-    throw new WalletError("Failed to request Freighter access", cause);
+    throw new WalletError(WalletErrorCode.ACCESS_DENIED, "Failed to request Freighter access", {
+      cause,
+    });
   }
 
   if (accessResult.error) {
-    throw new WalletError(`Freighter access denied: ${accessResult.error}`);
+    throw new WalletError(
+      WalletErrorCode.ACCESS_DENIED,
+      `Freighter access denied: ${accessResult.error}`,
+      { context: { reason: accessResult.error } }
+    );
   }
 
   let addressResult: Awaited<ReturnType<typeof getAddress>>;
   try {
     addressResult = await getAddress();
   } catch (cause) {
-    throw new WalletError("Failed to retrieve wallet address from Freighter", cause);
+    throw new WalletError(
+      WalletErrorCode.ADDRESS_UNAVAILABLE,
+      "Failed to retrieve wallet address from Freighter",
+      { cause }
+    );
   }
 
   if (addressResult.error || !addressResult.address) {
     throw new WalletError(
-      `Could not retrieve wallet address: ${addressResult.error ?? "unknown error"}`
+      WalletErrorCode.ADDRESS_UNAVAILABLE,
+      `Could not retrieve wallet address: ${addressResult.error ?? "unknown error"}`,
+      { context: { reason: addressResult.error } }
     );
   }
 
@@ -70,7 +83,11 @@ export async function connectWallet(): Promise<WalletConnection> {
   try {
     networkResult = await getNetwork();
   } catch (cause) {
-    throw new WalletError("Failed to retrieve network from Freighter", cause);
+    throw new WalletError(
+      WalletErrorCode.UNAVAILABLE,
+      "Failed to retrieve network from Freighter",
+      { cause }
+    );
   }
 
   return {
@@ -110,15 +127,23 @@ export async function signTransactionWithFreighter(
       ...(accountToSign !== undefined && { address: accountToSign }),
     });
   } catch (cause) {
-    throw new WalletError("Failed to sign transaction with Freighter", cause);
+    throw new WalletError(
+      WalletErrorCode.SIGNING_REJECTED,
+      "Failed to sign transaction with Freighter",
+      { cause }
+    );
   }
 
   if (result.error) {
-    throw new WalletError(`Freighter signing rejected: ${result.error}`);
+    throw new WalletError(
+      WalletErrorCode.SIGNING_REJECTED,
+      `Freighter signing rejected: ${result.error}`,
+      { context: { reason: result.error } }
+    );
   }
 
   if (!result.signedTxXdr) {
-    throw new WalletError("Freighter returned no signed transaction XDR");
+    throw new WalletError(WalletErrorCode.UNAVAILABLE, "Freighter returned no signed transaction XDR");
   }
 
   return result.signedTxXdr;
