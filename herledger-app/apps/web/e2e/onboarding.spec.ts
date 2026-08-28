@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { expect } from "@playwright/test";
 import { test } from "./fixtures/auth";
 import { mockFreighter } from "./helpers/mock-wallet";
@@ -46,6 +47,6 @@ test.describe("Business Onboarding Flow", () => {
       where: { walletAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }
     });
     expect(userBusiness).toBeDefined();
-    expect(userBusiness?.name).toBe("My Playwright Test Business");
+    expect(userBusiness?.displayName).toBe("My Playwright Test Business");
   });
 });

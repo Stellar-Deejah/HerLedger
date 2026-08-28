@@ -1,12 +1,15 @@
+import { getDbClient } from "@herledger/db";
+import { getBusiness } from "@herledger/sdk";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
-import { getDbClient } from "@herledger/db";
-import { getBusiness } from "@herledger/sdk";
+
 
 const RequestSchema = z.object({
   businessId: z.string().min(1),
@@ -19,6 +22,10 @@ interface SyncResponse {
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<SyncResponse>(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },

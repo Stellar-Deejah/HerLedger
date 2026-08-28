@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk";
+import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk/types";
 import { indexPayment } from "../index/financial-events.js";
 import { fetchOperationsForTransaction } from "../stellar/rpc.js";
 import { parsePaymentsFromTransaction } from "../stellar/transactions.js";

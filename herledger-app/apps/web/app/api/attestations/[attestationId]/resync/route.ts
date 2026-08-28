@@ -1,18 +1,25 @@
+import { getDbClient } from "@herledger/db";
+import { getAttestation } from "@herledger/sdk";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { auth } from "@/lib/auth/server";
 import { attestationsTag } from "@/lib/data/attestations";
 import { getServerStellarConfig, getServerContractConfig } from "@/lib/stellar/server-config";
-import { getDbClient } from "@herledger/db";
-import { getAttestation } from "@herledger/sdk";
+
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   context: { params: Promise<{ attestationId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return NextResponse.json(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
@@ -63,10 +70,6 @@ export async function POST(
     ledgerSequence: existing.ledgerSequence,
   });
 
-  // "max" per Next.js's own guidance: revalidateTag's second argument
-  // selects a cacheLife profile to purge from; "max" purges regardless of
-  // profile, which is what we want for a plain unstable_cache tag (this
-  // route isn't using the newer "use cache" directive).
   revalidateTag(attestationsTag(profile.businessId), "max");
 
   return NextResponse.json({ data: { attestation: updated }, error: null });

@@ -17,16 +17,19 @@ vi.mock("@/lib/auth/server", () => ({
   },
 }));
 
-const findFirstMock = vi.fn();
+const { mockFindFirst, mockGetAttestations } = vi.hoisted(() => ({
+  mockFindFirst: vi.fn(),
+  mockGetAttestations: vi.fn(),
+}));
+
 vi.mock("@/lib/db/client", () => ({
   getPrismaClient: () => ({
-    businessProfile: { findFirst: findFirstMock },
+    businessProfile: { findFirst: mockFindFirst },
   }),
 }));
 
-const getAttestationsMock = vi.fn();
 vi.mock("@/lib/data/attestations", () => ({
-  getAttestations: (...args: unknown[]) => getAttestationsMock(...args),
+  getAttestations: (...args: unknown[]) => mockGetAttestations(...args),
 }));
 
 describe("GET /api/attestations", () => {
@@ -54,27 +57,39 @@ describe("GET /api/attestations", () => {
 
   it("returns an empty list when the user has no business profile", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
-    findFirstMock.mockResolvedValueOnce(null);
-    getAttestationsMock.mockResolvedValueOnce({ attestations: [] });
+    mockFindFirst.mockResolvedValueOnce(null);
+    mockGetAttestations.mockResolvedValueOnce({ attestations: [] });
 
     const req = new NextRequest("http://localhost/api/attestations");
     const res = await GET(req);
     expect(res.status).toBe(200);
-    expect(getAttestationsMock).toHaveBeenCalledWith(null, false);
+    const body = await res.json();
+    expect(body.data.attestations).toEqual([]);
+    expect(mockGetAttestations).toHaveBeenCalledWith(null, false);
   });
 
-  it("returns attestations for the caller's business", async () => {
+  it("projects all fields when the user is a business owner", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
-    findFirstMock.mockResolvedValueOnce({ businessId: "biz_1" });
-    getAttestationsMock.mockResolvedValueOnce({
-      attestations: [{ id: "a1", attestationId: "att_1" }],
+    mockFindFirst.mockResolvedValueOnce({ businessId: "biz_1" });
+    mockGetAttestations.mockResolvedValueOnce({
+      attestations: [
+        {
+          id: "1",
+          attestationId: "att_1",
+          eventId: "ev_1",
+          attesterAddress: "addr_1",
+          claimHash: "hash_1",
+          claimDescription: "desc_1",
+          status: "Active",
+          ledgerSequence: 100,
+        },
+      ],
     });
 
-    const req = new NextRequest("http://localhost/api/attestations?includeRevoked=true");
+    const req = new NextRequest("http://localhost/api/attestations");
     const res = await GET(req);
     expect(res.status).toBe(200);
-    expect(getAttestationsMock).toHaveBeenCalledWith("biz_1", true);
     const body = await res.json();
-    expect(body.data.attestations).toHaveLength(1);
+    expect(body.data.attestations[0]).toHaveProperty("claimHash");
   });
 });

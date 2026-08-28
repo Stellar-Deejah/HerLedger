@@ -2,6 +2,8 @@ import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 
@@ -9,6 +11,10 @@ import { RequestSchema, type BusinessRegisterResponse } from "./schema";
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<BusinessRegisterResponse>(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
@@ -36,16 +42,6 @@ export async function POST(req: NextRequest) {
 
   const { businessId, walletAddress, displayName, metadataHash } = parsed.data;
 
-  // businessId is the idempotency key here: it's generated client-side once
-  // per submission attempt (see generateBusinessId in
-  // apps/web/hooks/use-registration-flow.ts) and is unique in the DB, so a
-  // retried POST for the *same* submission (double-click, a resumed
-  // registration replaying after a tab close — see
-  // lib/business/pending-registration.ts) always carries the same
-  // businessId. We treat an exact replay of that submission as a 200
-  // (nothing new to do, hand back the same result) and reserve 409 for a
-  // genuine conflict: this businessId or wallet already belongs to a
-  // *different* registration.
   try {
     const db = getDbClient();
     const existingForUser = await db.businesses.findByUserId(session.user.id);

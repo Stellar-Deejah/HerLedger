@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { auth } from "@/lib/auth/server";
 import { encryptDisputeReason } from "@/lib/crypto/dispute-encryption";
 import { getPrismaClient } from "@/lib/db/client";
@@ -20,6 +22,10 @@ const bodySchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return NextResponse.json(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },

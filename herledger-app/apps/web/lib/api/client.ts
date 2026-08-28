@@ -7,12 +7,6 @@ import {
   type ActivityRecentData,
 } from "@/app/api/activity/recent/schema";
 import {
-  RequestSchema as ActivitySummaryRequestSchema,
-  ResponseSchema as ActivitySummaryResponseSchema,
-  type ActivitySummaryRequest,
-  type ActivitySummaryData,
-} from "@/app/api/v1/activity/summary/schema";
-import {
   RequestSchema as AttestationsRequestSchema,
   ResponseSchema as AttestationsResponseSchema,
   type AttestationsRequest,
@@ -25,6 +19,12 @@ import {
   type BusinessRegisterData,
 } from "@/app/api/business/register/schema";
 import { ResponseSchema as HealthResponseSchema, type HealthData } from "@/app/api/health/schema";
+import {
+  RequestSchema as ActivitySummaryRequestSchema,
+  ResponseSchema as ActivitySummaryResponseSchema,
+  type ActivitySummaryRequest,
+  type ActivitySummaryData,
+} from "@/app/api/v1/activity/summary/schema";
 
 import type { EnvelopeShape } from "./envelope";
 import { ApiRequestError, ApiValidationError } from "./errors";

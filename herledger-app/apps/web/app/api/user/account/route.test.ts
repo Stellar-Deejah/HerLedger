@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DELETE } from "./route";
-import { auth } from "@/lib/auth/server";
 import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { auth } from "@/lib/auth/server";
+
+import { DELETE } from "./route";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@herledger/config", () => ({

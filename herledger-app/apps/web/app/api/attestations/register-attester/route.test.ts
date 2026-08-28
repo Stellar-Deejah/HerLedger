@@ -1,8 +1,8 @@
+import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 
 import { POST } from "./route";
 
@@ -24,6 +24,7 @@ const validBody = {
   displayName: "Notary Co",
   description: "Independent notary",
   metadataHash: "a".repeat(64),
+  txHash: "tx_123",
 };
 
 function jsonRequest(body: unknown) {

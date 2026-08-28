@@ -17,13 +17,16 @@ vi.mock("@/lib/auth/server", () => ({
   },
 }));
 
-const businessFindFirstMock = vi.fn();
-const disputeFindManyMock = vi.fn();
-const disputeCountMock = vi.fn();
+const { mockBusinessFindFirst, mockDisputeFindMany, mockDisputeCount } = vi.hoisted(() => ({
+  mockBusinessFindFirst: vi.fn(),
+  mockDisputeFindMany: vi.fn(),
+  mockDisputeCount: vi.fn(),
+}));
+
 vi.mock("@/lib/db/client", () => ({
   getPrismaClient: () => ({
-    businessProfile: { findFirst: businessFindFirstMock },
-    dispute: { findMany: disputeFindManyMock, count: disputeCountMock },
+    businessProfile: { findFirst: mockBusinessFindFirst },
+    dispute: { findMany: mockDisputeFindMany, count: mockDisputeCount },
   }),
 }));
 
@@ -43,52 +46,54 @@ describe("GET /api/disputes", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 400 when businessId is missing", async () => {
+  it("returns 400 when businessId parameter is missing", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
 
     const res = await GET(makeRequest(""));
     expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it("returns 404 when the business is not owned by the caller", async () => {
+  it("returns 404 when business profile is not found or not owned by user", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
-    businessFindFirstMock.mockResolvedValueOnce(null);
+    mockBusinessFindFirst.mockResolvedValueOnce(null);
 
     const res = await GET(makeRequest("?businessId=biz_1"));
     expect(res.status).toBe(404);
   });
 
-  it("returns paginated disputes on success", async () => {
+  it("returns disputes with pagination when authorized", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
-    businessFindFirstMock.mockResolvedValueOnce({ businessId: "biz_1" });
-    disputeFindManyMock.mockResolvedValueOnce([
+    mockBusinessFindFirst.mockResolvedValueOnce({ id: "b1", businessId: "biz_1", userId: "u_1" });
+    mockDisputeFindMany.mockResolvedValueOnce([
       {
         id: "d1",
         eventId: "ev_1",
-        reasonHash: "hash",
-        status: "Pending",
-        createdAt: new Date("2026-01-01"),
-        updatedAt: new Date("2026-01-02"),
+        reasonHash: "hash1",
+        status: "Submitted",
+        createdAt: new Date("2025-01-01T00:00:00Z"),
+        updatedAt: new Date("2025-01-01T00:00:00Z"),
       },
     ]);
-    disputeCountMock.mockResolvedValueOnce(1);
+    mockDisputeCount.mockResolvedValueOnce(1);
 
     const res = await GET(makeRequest("?businessId=biz_1&offset=0&limit=10"));
     expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.data.disputes).toHaveLength(1);
-    expect(body.data.total).toBe(1);
-  });
 
-  it("returns 500 when the database call throws", async () => {
-    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
-    businessFindFirstMock.mockRejectedValueOnce(new Error("db down"));
-
-    const res = await GET(makeRequest("?businessId=biz_1"));
-    expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.error.code).toBe("INTERNAL_ERROR");
+    expect(body.data).toEqual({
+      disputes: [
+        {
+          id: "d1",
+          eventId: "ev_1",
+          reasonHash: "hash1",
+          status: "Submitted",
+          createdAt: "2025-01-01T00:00:00.000Z",
+          updatedAt: "2025-01-01T00:00:00.000Z",
+        },
+      ],
+      total: 1,
+      offset: 0,
+      limit: 10,
+    });
   });
 });

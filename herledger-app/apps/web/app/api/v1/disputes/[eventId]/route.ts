@@ -1,7 +1,10 @@
 import { getServerEnv } from "@herledger/config";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { readLimiter } from "@/lib/api/rate-limit-config";
 import { auth } from "@/lib/auth/server";
 import { decryptDisputeReason, DisputeDecryptionError } from "@/lib/crypto/dispute-encryption";
 import { getPrismaClient } from "@/lib/db/client";
@@ -9,12 +12,20 @@ import { deriveDisputeLifecycleStatus } from "@/lib/disputes/status";
 
 const prisma = getPrismaClient();
 
+const ParamsSchema = z.object({
+  eventId: z.string().min(1, "eventId is required"),
+});
+
 interface RouteContext {
   params: Promise<{ eventId: string }>;
 }
 
-export async function GET(_req: NextRequest, context: RouteContext) {
+export async function GET(req: NextRequest, context: RouteContext) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = readLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return NextResponse.json(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
@@ -23,7 +34,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   }
 
   const { eventId } = await context.params;
-  if (!eventId) {
+  const parsed = ParamsSchema.safeParse({ eventId });
+  if (!parsed.success) {
     return NextResponse.json(
       { data: null, error: { code: "INVALID_PARAMS", message: "eventId is required" } },
       { status: 400 }
@@ -46,7 +58,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     }
 
     const event = await prisma.financialEvent.findUnique({
-      where: { eventId },
+      where: { eventId: parsed.data.eventId },
       select: { businessId: true, status: true },
     });
     if (!event) {
@@ -66,7 +78,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     }
 
     const dispute = await prisma.dispute.findFirst({
-      where: { eventId },
+      where: { eventId: parsed.data.eventId },
       orderBy: { submittedAt: "desc" },
     });
     if (!dispute) {
@@ -131,7 +143,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       error: null,
     });
   } catch (err) {
-    console.error({ operation: "get-dispute", userId: session.user.id, eventId, error: err });
+    console.error({ operation: "get-dispute", userId: session.user.id, eventId: parsed.data.eventId, error: err });
     return NextResponse.json(
       { data: null, error: { code: "INTERNAL_ERROR", message: "Failed to load dispute" } },
       { status: 500 }

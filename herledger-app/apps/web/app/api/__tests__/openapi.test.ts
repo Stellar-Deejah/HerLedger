@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import { buildWebOpenApiSpec } from "@/lib/api/openapi";
 
 describe("Web Next.js OpenAPI Specification", () => {

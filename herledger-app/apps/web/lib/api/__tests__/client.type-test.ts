@@ -1,10 +1,10 @@
 import { expectTypeOf, test } from "vitest";
 
 import type { ActivityRecentData } from "@/app/api/activity/recent/schema";
-import type { ActivitySummaryData } from "@/app/api/v1/activity/summary/schema";
 import type { AttestationsData } from "@/app/api/attestations/schema";
 import type { BusinessRegisterData } from "@/app/api/business/register/schema";
 import type { HealthData } from "@/app/api/health/schema";
+import type { ActivitySummaryData } from "@/app/api/v1/activity/summary/schema";
 import { apiClient } from "@/lib/api/client";
 
 // These assert that apiClient's method return types exactly match the Zod

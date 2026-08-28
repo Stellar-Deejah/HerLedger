@@ -1,4 +1,4 @@
-import type { EventStatus } from "@herledger/sdk";
+import type { EventStatus } from "@herledger/sdk/types";
 
 // ---------------------------------------------------------------------------
 // Dispute lifecycle state machine

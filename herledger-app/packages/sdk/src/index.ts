@@ -1,21 +1,16 @@
+// ---------------------------------------------------------------------------
+// `@herledger/sdk` — convenience barrel re-exporting the full public surface.
+//
+// Prefer the tree-shakeable sub-path entries when you only need one slice:
+//   - `@herledger/sdk/contracts` — contract clients, encoding, ABI types
+//   - `@herledger/sdk/wallet`    — Freighter adapter
+//   - `@herledger/sdk/rpc`       — RPC client + transaction lifecycle
+//   - `@herledger/sdk/types`     — shared types
+//   - `@herledger/sdk/errors`    — typed error classes
+// ---------------------------------------------------------------------------
+
 // Types
-export type {
-  Business,
-  FinancialEvent,
-  EventType,
-  EventStatus,
-  Attestation,
-  AttestationStatus,
-  Attester,
-  StellarNetworkConfig,
-  ContractConfig,
-  TransactionResult,
-  NetworkId,
-  Brand,
-  ContractAddress,
-  HexString32,
-  TransactionSigner,
-} from "./types/index.js";
+export * from "./types/index.js";
 
 // Attester registry
 export { KNOWN_ATTESTERS, resolveAttesterName } from "./attester-registry.js";
@@ -116,36 +111,5 @@ export type {
   ContractAddressRegistryEntry,
 } from "./contracts/registry.js";
 
-// Generated ABI types
-export * from "./contracts/__generated__/index.js";
-
-// BusinessRegistry
-export {
-  getBusiness,
-  getBusinessByWallet,
-  registerBusiness,
-  updateBusinessMetadata,
-  deactivateBusiness,
-} from "./contracts/business-registry.js";
-
-// FinancialLedger
-export {
-  getFinancialEvent,
-  getBusinessEvents,
-  isSupportedAsset,
-  recordFinancialEvent,
-  disputeFinancialEvent,
-  verifyFinancialEvent,
-  resolveFinancialEvent,
-  revokeFinancialEvent,
-} from "./contracts/financial-ledger.js";
-
-// AttestationRegistry
-export {
-  getAttestation,
-  isValidAttestation,
-  registerAttester,
-  deactivateAttester,
-  createAttestation,
-  revokeAttestation,
-} from "./contracts/attestation-registry.js";
+// Contracts (clients, encoding, registry, generated ABI types)
+export * from "./contracts/index.js";

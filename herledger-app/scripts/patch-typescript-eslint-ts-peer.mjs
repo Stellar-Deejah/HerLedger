@@ -2,21 +2,24 @@
 // typescript-eslint's parser/plugin/meta-package hard-error at import time
 // against TypeScript >=7 (they check `ts.versionMajorMinor` and throw):
 // https://github.com/typescript-eslint/typescript-eslint/issues/10940
+// TypeDoc (typedoc@0.28.x) likewise crashes against TS 7 because its peer
+// range is `5.0.x || … || 6.0.x` (it reads `ts.SyntaxKind` at import time).
 //
 // This repo pins the real `typescript` package to 7.x everywhere (for tsc
 // and for TS7-specific strictness), so the peer that pnpm would normally
-// hoist into every @typescript-eslint/* package is the one that crashes
-// them. The typescript-eslint team's own suggested workaround is to run
-// their toolchain "side by side" against a TS 6-line compiler. `pnpm
+// hoist into every @typescript-eslint/* / typedoc package is the one that
+// crashes them. The typescript-eslint team's own suggested workaround is to
+// run their toolchain "side by side" against a TS 6-line compiler. `pnpm
 // overrides` doesn't reach into these nested peer slots reliably, so this
 // script does it directly after every install: it repoints the private
-// `node_modules/typescript` symlink inside each @typescript-eslint/*
-// package (in pnpm's content-addressable store) at the pinned
+// `node_modules/typescript` symlink inside each @typescript-eslint/* /
+// typedoc package (in pnpm's content-addressable store) at the pinned
 // `typescript-eslint-ts6-compat` package (real `typescript@5.9.3`,
 // installed under an alias so it doesn't collide with the repo's TS 7).
 //
 // Safe to re-run: it's a no-op once the symlinks already point at the
-// compat package. Remove this once typescript-eslint ships TS7 support.
+// compat package. Remove this once typescript-eslint / TypeDoc ship TS7
+// support.
 import { existsSync, lstatSync, readlinkSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, relative } from "node:path";
@@ -46,6 +49,7 @@ const targetPackagePrefixes = [
   "@typescript-eslint+project-service@",
   "@typescript-eslint+tsconfig-utils@",
   "ts-api-utils@",
+  "typedoc@",
 ];
 
 let patched = 0;
