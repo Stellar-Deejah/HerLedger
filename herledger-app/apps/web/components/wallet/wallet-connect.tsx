@@ -58,14 +58,11 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
     clearWalletState();
     setError(null);
     setStatusMessage("Wallet disconnected.");
+    disconnect();
   }
 
   return (
     <div>
-      {/* Kept mounted across every state (including the initial `checking`
-          phase) so screen readers reliably pick up each announcement —
-          a live region that gets unmounted/remounted is not guaranteed to
-          be observed by assistive tech. */}
       <div role="status" aria-live="polite" className="sr-only">
         {statusMessage}
       </div>
@@ -127,7 +124,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
               cursor: loading ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Connecting…" : "Connect Freighter wallet"}
+            {loading ? "Connecting..." : "Connect wallet"}
           </button>
           <p
             style={{

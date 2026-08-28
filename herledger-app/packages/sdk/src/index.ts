@@ -72,6 +72,8 @@ export { DEFAULT_RPC_TIMEOUT_MS } from "./rpc/timeout.js";
 export type { RpcCallOptions } from "./rpc/timeout.js";
 
 // Wallet
+export { WalletAdapter, WalletConnection, WalletAccount } from "./wallet/types.js";
+export { FreighterAdapter } from "./wallet/freighter-adapter.js";
 export {
   isFreighterAvailable,
   connectWallet,

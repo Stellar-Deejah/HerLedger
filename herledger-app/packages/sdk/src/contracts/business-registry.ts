@@ -10,6 +10,7 @@ import type {
   StellarNetworkConfig,
   ContractConfig,
   TransactionResult,
+  TransactionSigner,
 } from "../types/index.js";
 import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
 import { getSorobanRpcServer } from "../rpc/client.js";
@@ -176,6 +177,7 @@ export async function registerBusiness(
   },
   config: StellarNetworkConfig,
   contracts: ContractConfig,
+  signer?: TransactionSigner,
   onSubmitted?: (hash: string) => void
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.businessRegistryId);
@@ -196,7 +198,8 @@ export async function registerBusiness(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.owner
@@ -219,7 +222,8 @@ export async function updateBusinessMetadata(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.businessRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -237,7 +241,8 @@ export async function updateBusinessMetadata(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.owner
@@ -259,7 +264,8 @@ export async function deactivateBusiness(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  signer?: TransactionSigner
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.businessRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -271,7 +277,8 @@ export async function deactivateBusiness(
     .build();
 
   const prepared = await simulateAndPrepare(tx, config);
-  const signedXdr = await signTransactionWithFreighter(
+  const signFn = signer?.signTransaction ?? signTransactionWithFreighter;
+  const signedXdr = await signFn(
     prepared.toXDR(),
     config.networkPassphrase,
     params.owner
