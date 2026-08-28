@@ -19,6 +19,12 @@ import {
   type BusinessRegisterData,
 } from "@/app/api/business/register/schema";
 import { ResponseSchema as HealthResponseSchema, type HealthData } from "@/app/api/health/schema";
+import {
+  RequestSchema as ActivitySummaryRequestSchema,
+  ResponseSchema as ActivitySummaryResponseSchema,
+  type ActivitySummaryRequest,
+  type ActivitySummaryData,
+} from "@/app/api/v1/activity/summary/schema";
 
 import type { EnvelopeShape } from "./envelope";
 import { ApiRequestError, ApiValidationError } from "./errors";
@@ -74,7 +80,17 @@ export const apiClient = {
     recent: async (params: ActivityRecentRequest = {}): Promise<ActivityRecentData> => {
       const normalized = ActivityRecentRequestSchema.parse(params);
       const qs = toQueryString(normalized);
-      return request(`/api/activity/recent${qs}`, ActivityRecentResponseSchema);
+      return request(`/api/v1/activity/recent${qs}`, ActivityRecentResponseSchema);
+    },
+    summary: async (params: ActivitySummaryRequest = {}): Promise<ActivitySummaryData> => {
+      const normalized = ActivitySummaryRequestSchema.parse(params);
+      const qs = toQueryString(normalized);
+      return request(`/api/v1/activity/summary${qs}`, ActivitySummaryResponseSchema);
+    },
+    /** Not a `request()` call: this URL is meant to be navigated to directly so the browser saves the streamed CSV, not fetched and parsed as JSON. */
+    exportUrl: (params: { startDate?: string; endDate?: string } = {}): string => {
+      const qs = toQueryString(params);
+      return `/api/v1/activity/export${qs}`;
     },
   },
 
@@ -82,14 +98,14 @@ export const apiClient = {
     list: async (params: AttestationsRequest = {}): Promise<AttestationsData> => {
       const normalized = AttestationsRequestSchema.parse(params);
       const qs = toQueryString(normalized);
-      return request(`/api/attestations${qs}`, AttestationsResponseSchema);
+      return request(`/api/v1/attestations${qs}`, AttestationsResponseSchema);
     },
   },
 
   business: {
     register: async (body: BusinessRegisterRequest): Promise<BusinessRegisterData> => {
       const normalized = BusinessRegisterRequestSchema.parse(body);
-      return request("/api/business/register", BusinessRegisterResponseSchema, {
+      return request("/api/v1/business/register", BusinessRegisterResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(normalized),
@@ -99,7 +115,7 @@ export const apiClient = {
 
   health: {
     check: async (): Promise<HealthData> => {
-      return request("/api/health", HealthResponseSchema);
+      return request("/api/v1/health", HealthResponseSchema);
     },
   },
 };

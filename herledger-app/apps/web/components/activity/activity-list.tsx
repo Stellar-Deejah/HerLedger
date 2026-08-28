@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,24 +10,45 @@ import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { formatAmount } from "@/lib/utils/format";
 
-const PAGE_SIZE = 20;
+export const PAGE_SIZE = 20;
 
-export function ActivityList() {
-  const [events, setEvents] = useState<FinancialEventDto[]>([]);
+interface ActivityListProps {
+  /** Page 0, fetched server-side (see ActivityListServer) so it's available on first paint. */
+  initialEvents: FinancialEventDto[];
+  initialHasMore: boolean;
+}
+
+export function ActivityList({ initialEvents, initialHasMore }: ActivityListProps) {
+  const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const { newEvents } = useEventStream();
   const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  // Page 0's data already arrived via props from the server — this effect
+  // should only run when the user actually changes pages or the date range.
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
     let ignore = false;
 
     async function loadPage() {
       setLoading(true);
       setError(null);
       try {
-        const data = await apiClient.activity.recent({ offset, limit: PAGE_SIZE });
+        const data = await apiClient.activity.recent({
+          offset,
+          limit: PAGE_SIZE,
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        });
         if (ignore) return;
         setEvents(data.events);
         setHasMore(data.pagination.count === PAGE_SIZE);
@@ -47,7 +68,7 @@ export function ActivityList() {
     return () => {
       ignore = true;
     };
-  }, [offset]);
+  }, [offset, startDate, endDate]);
 
   // Real-time events from the stream are overlaid onto the fetched page
   // (rather than merged into `events` via an effect) so this is a plain
@@ -68,27 +89,125 @@ export function ActivityList() {
       .slice(0, PAGE_SIZE); // Keep it strictly PAGE_SIZE on first page
   }, [events, newEvents, offset]);
 
-  if (loading) return <LoadingSpinner label="Loading activity…" />;
+  // A new range starts back at page 0 -- filtering while on page 3 of the
+  // old range would otherwise apply the new dates at a stale offset.
+  function handleRangeChange(next: { startDate?: string; endDate?: string }) {
+    if ("startDate" in next) setStartDate(next.startDate ?? "");
+    if ("endDate" in next) setEndDate(next.endDate ?? "");
+    setOffset(0);
+  }
+
+  const rangeControls = (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-end",
+        flexWrap: "wrap",
+        gap: "var(--spacing-md)",
+        marginBottom: "var(--spacing-lg)",
+      }}
+    >
+      <label style={{ fontSize: "var(--font-size-sm)" }}>
+        <div style={{ color: "var(--muted)", marginBottom: "var(--spacing-xs)" }}>From</div>
+        <input
+          type="date"
+          value={startDate}
+          max={endDate || undefined}
+          onChange={(e) => handleRangeChange({ startDate: e.target.value })}
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "0.375rem 0.5rem",
+          }}
+        />
+      </label>
+      <label style={{ fontSize: "var(--font-size-sm)" }}>
+        <div style={{ color: "var(--muted)", marginBottom: "var(--spacing-xs)" }}>To</div>
+        <input
+          type="date"
+          value={endDate}
+          min={startDate || undefined}
+          onChange={(e) => handleRangeChange({ endDate: e.target.value })}
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "0.375rem 0.5rem",
+          }}
+        />
+      </label>
+      {(startDate || endDate) && (
+        <button
+          type="button"
+          onClick={() => handleRangeChange({ startDate: "", endDate: "" })}
+          style={{
+            background: "none",
+            border: "none",
+            color: "var(--color-brand)",
+            cursor: "pointer",
+            fontSize: "var(--font-size-sm)",
+            padding: "0.375rem 0",
+          }}
+        >
+          Clear
+        </button>
+      )}
+      <a
+        href={apiClient.activity.exportUrl({
+          ...(startDate ? { startDate } : {}),
+          ...(endDate ? { endDate } : {}),
+        })}
+        style={{
+          marginLeft: "auto",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "0.375rem 0.75rem",
+          fontSize: "var(--font-size-sm)",
+          color: "inherit",
+          textDecoration: "none",
+        }}
+      >
+        Export CSV
+      </a>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div>
+        {rangeControls}
+        <LoadingSpinner label="Loading activity…" />
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <div role="alert" style={{ color: "var(--danger)" }}>
-        {error}
+      <div>
+        {rangeControls}
+        <div role="alert" style={{ color: "var(--danger)" }}>
+          {error}
+        </div>
       </div>
     );
   }
 
   if (displayedEvents.length === 0 && offset === 0) {
     return (
-      <EmptyState
-        title="No financial activity yet."
-        description="Supported Stellar transactions involving your registered wallet will appear here."
-      />
+      <div>
+        {rangeControls}
+        <EmptyState
+          title={
+            startDate || endDate ? "No activity in this date range." : "No financial activity yet."
+          }
+          description="Supported Stellar transactions involving your registered wallet will appear here."
+        />
+      </div>
     );
   }
 
   return (
     <div>
+      {rangeControls}
       <table
         style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9375rem" }}
         aria-label="Financial activity"

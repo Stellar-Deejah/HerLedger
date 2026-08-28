@@ -11,16 +11,18 @@ import type {
   ContractConfig,
   TransactionResult,
 } from "../types/index.js";
-import { RpcError, ContractError } from "../errors/index.js";
+import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
 import { getSorobanRpcServer } from "../rpc/client.js";
 import { simulateAndPrepare, submitAndWait } from "../rpc/transactions.js";
 import { signTransactionWithFreighter } from "../wallet/freighter.js";
+import { defaultQueryCache, buildCacheKey, type QueryCacheOptions } from "../cache/query-cache.js";
 import {
   encodeBytes32,
   encodeAddress,
   decodeBytes32,
   decodeAddress,
   decodeBool,
+  toHexString32,
 } from "./encoding.js";
 
 // ---------------------------------------------------------------------------
@@ -36,7 +38,7 @@ function isVoid(val: xdr.ScVal): boolean {
 
 function decodeBusiness(val: xdr.ScVal): Business {
   const map = val.map();
-  if (!map) throw new ContractError("Expected struct map for Business");
+  if (!map) throw new ContractError(ContractErrorCode.DECODE_ERROR, "Expected struct map for Business");
 
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
@@ -60,7 +62,7 @@ async function simulateRead(
   try {
     return await server.simulateTransaction(tx);
   } catch (cause) {
-    throw new RpcError("Contract simulation failed", cause);
+    throw new RpcError(RpcErrorCode.REQUEST_FAILED, "Contract simulation failed", { cause });
   }
 }
 
@@ -70,56 +72,86 @@ async function simulateRead(
 
 /**
  * Read: get_business(business_id) -> Option<Business>
+ *
+ * Results are cached (in-memory, TTL default 30s, keyed by contract id +
+ * method + args) and concurrent identical calls are de-duplicated into a
+ * single RPC request. Pass `cacheOptions: { bypassCache: true }` to force a
+ * fresh read, or `{ ttlMs }` to override the TTL for this call.
  */
 export async function getBusiness(
   businessId: string,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<Business | null> {
-  const contract = new Contract(contracts.businessRegistryId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call("get_business", encodeBytes32(businessId)))
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.businessRegistryId, "get_business", [businessId]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.businessRegistryId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(contract.call("get_business", encodeBytes32(toHexString32(businessId))))
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`get_business error: ${sim.error}`);
-  }
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(ContractErrorCode.SIMULATION_ERROR, `get_business error: ${sim.error}`, {
+          context: { contractCode: sim.error, method: "get_business" },
+        });
+      }
 
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return null;
-  return decodeBusiness(retval);
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return null;
+      return decodeBusiness(retval);
+    },
+    cacheOptions
+  );
 }
 
 /**
  * Read: get_business_by_wallet(wallet) -> Option<Business>
+ *
+ * See `getBusiness` for cache behavior; `cacheOptions` accepts the same
+ * `{ ttlMs, bypassCache }` shape.
  */
 export async function getBusinessByWallet(
   wallet: string,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<Business | null> {
-  const contract = new Contract(contracts.businessRegistryId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call("get_business_by_wallet", encodeAddress(wallet)))
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.businessRegistryId, "get_business_by_wallet", [wallet]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.businessRegistryId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(contract.call("get_business_by_wallet", encodeAddress(wallet)))
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`get_business_by_wallet error: ${sim.error}`);
-  }
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `get_business_by_wallet error: ${sim.error}`,
+          { context: { contractCode: sim.error, method: "get_business_by_wallet" } }
+        );
+      }
 
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return null;
-  return decodeBusiness(retval);
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return null;
+      return decodeBusiness(retval);
+    },
+    cacheOptions
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +160,11 @@ export async function getBusinessByWallet(
 
 /**
  * Write: register_business(business_id, owner, wallet, metadata_hash)
+ *
+ * `onSubmitted`, when given, fires with the transaction hash as soon as the
+ * network accepts the submission -- see `submitAndWait` in
+ * `../rpc/transactions.js` for why this is the seam a caller uses to
+ * persist "registration in flight" state ahead of on-chain confirmation.
  */
 export async function registerBusiness(
   params: {
@@ -138,7 +175,8 @@ export async function registerBusiness(
     sourceAccount: Account;
   },
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  onSubmitted?: (hash: string) => void
 ): Promise<TransactionResult> {
   const contract = new Contract(contracts.businessRegistryId);
   const tx = new TransactionBuilder(params.sourceAccount, {
@@ -148,10 +186,10 @@ export async function registerBusiness(
     .addOperation(
       contract.call(
         "register_business",
-        encodeBytes32(params.businessId),
+        encodeBytes32(toHexString32(params.businessId)),
         encodeAddress(params.owner),
         encodeAddress(params.wallet),
-        encodeBytes32(params.metadataHash)
+        encodeBytes32(toHexString32(params.metadataHash))
       )
     )
     .setTimeout(300)
@@ -163,7 +201,11 @@ export async function registerBusiness(
     config.networkPassphrase,
     params.owner
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config, onSubmitted);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.businessRegistryId, "get_business", [params.businessId])
+  );
+  return result;
 }
 
 /**
@@ -187,8 +229,8 @@ export async function updateBusinessMetadata(
     .addOperation(
       contract.call(
         "update_metadata",
-        encodeBytes32(params.businessId),
-        encodeBytes32(params.metadataHash)
+        encodeBytes32(toHexString32(params.businessId)),
+        encodeBytes32(toHexString32(params.metadataHash))
       )
     )
     .setTimeout(300)
@@ -200,7 +242,11 @@ export async function updateBusinessMetadata(
     config.networkPassphrase,
     params.owner
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.businessRegistryId, "get_business", [params.businessId])
+  );
+  return result;
 }
 
 /**
@@ -220,7 +266,7 @@ export async function deactivateBusiness(
     fee: "1000000",
     networkPassphrase: config.networkPassphrase,
   })
-    .addOperation(contract.call("deactivate_business", encodeBytes32(params.businessId)))
+    .addOperation(contract.call("deactivate_business", encodeBytes32(toHexString32(params.businessId))))
     .setTimeout(300)
     .build();
 
@@ -230,5 +276,9 @@ export async function deactivateBusiness(
     config.networkPassphrase,
     params.owner
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.businessRegistryId, "get_business", [params.businessId])
+  );
+  return result;
 }

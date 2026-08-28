@@ -1,0 +1,126 @@
+# Local development stack: Postgres + the web app + the indexer, wired
+# together with health checks so `docker compose up` produces a fully
+# working environment in one command (see README.md's "Docker Compose"
+# quick-start section and CONTRIBUTING.md#database-seeding).
+#
+# Dev-only, not a production deployment manifest: source directories are
+# bind-mounted for hot reload rather than baked into an immutable image
+# layer (see apps/web/Dockerfile's comment for the production-parity
+# trade-off this implies).
+#
+# node_modules volume strategy: each service bind-mounts the full repo for
+# hot reload, but a *named volume* is layered on top of every
+# node_modules/ path (root + each workspace package). Prisma's query
+# engine ships as a platform-specific native binary -- if the container
+# saw the host's node_modules (via the bind mount) it would try to run a
+# macOS/Windows binary on Linux and fail. The named volumes let each
+# container keep its own Linux-native `pnpm install` output while still
+# getting live source edits from the bind mount everywhere else.
+#
+# Requires a `.env` file at this directory (`cp .env.example .env`) --
+# every variable `packages/config`'s `getServerEnv()` requires must be
+# present or the web/indexer containers exit immediately on boot.
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: herledger
+      POSTGRES_PASSWORD: herledger
+      POSTGRES_DB: herledger_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U herledger -d herledger_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # One-shot: generates the Prisma client and applies migrations, then
+  # exits. web/indexer wait for this to complete successfully before
+  # starting, so the stack never races a service against an un-migrated
+  # database.
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    command: ["sh", "-c", "pnpm db:generate && pnpm db:migrate"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://herledger:herledger@postgres:5432/herledger_dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes: &workspace_volumes
+      - .:/app
+      - node_modules_root:/app/node_modules
+      - node_modules_web:/app/apps/web/node_modules
+      - node_modules_indexer:/app/indexer/node_modules
+      - node_modules_config:/app/packages/config/node_modules
+      - node_modules_sdk:/app/packages/sdk/node_modules
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://herledger:herledger@postgres:5432/herledger_dev
+      INDEXER_API_URL: http://indexer:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes: *workspace_volumes
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
+  indexer:
+    build:
+      context: .
+      dockerfile: indexer/Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://herledger:herledger@postgres:5432/herledger_dev
+    ports:
+      - "4000:4000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    volumes: *workspace_volumes
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+
+volumes:
+  postgres_data:
+  node_modules_root:
+  node_modules_web:
+  node_modules_indexer:
+  node_modules_config:
+  node_modules_sdk:

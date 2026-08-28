@@ -36,6 +36,16 @@ export const KNOWN_ATTESTERS: AttesterRegistry = {};
  * Falls back to a truncated form of the address when the attester is not
  * in the registry (e.g. `GABCDE…WXYZ0`), so unknown attesters are still
  * legible rather than rendering as raw 56-character strkeys.
+ *
+ * @param address - The attester's Stellar `G...` address.
+ * @param registry - The registry to look the address up in; defaults to
+ *   {@link KNOWN_ATTESTERS}.
+ * @returns The known display name, or a truncated address fallback.
+ *
+ * @example
+ * ```ts
+ * resolveAttesterName("G…"); // "Acme Auditing" or "GABCDE…WXYZ0"
+ * ```
  */
 export function resolveAttesterName(
   address: string,

@@ -61,7 +61,7 @@ function handleEvents(data: unknown) {
 function connectEventSource() {
   if (sharedEventSource) return;
 
-  sharedEventSource = new EventSource("/api/events/stream");
+  sharedEventSource = new EventSource("/api/v1/events/stream");
 
   sharedEventSource.onopen = () => {
     isConnected = true;

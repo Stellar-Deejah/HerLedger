@@ -1,13 +1,16 @@
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from '@prisma/config'
+import dotenv from 'dotenv'
+import { resolve } from 'path'
 
-// Prisma 7 CLI requires connection info to live in a config file rather than
-// the `datasource.url` field in schema.prisma (which now errors with
-// P1012). This file exists purely so `prisma migrate`/`generate`/etc. can
-// resolve DATABASE_URL when run from this package -- it does not change
-// how the generated `@prisma/client` package is instantiated at runtime.
+dotenv.config({ path: resolve(process.cwd(), '.env.local') })
+
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  earlyAccess: true,
   datasource: {
-    url: env("DATABASE_URL"),
+    url: process.env.DATABASE_URL,
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
-});
+  migrations: {
+    seed: 'tsx prisma/seed.ts',
+  },
+})

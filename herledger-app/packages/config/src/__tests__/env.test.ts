@@ -1,6 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { z } from "zod";
 import { StrKey } from "@stellar/stellar-sdk";
+
+vi.mock("server-only", () => ({}));
+
 import { validateNetworkConsistency } from "../server.js";
 
 const MAINNET_PASSPHRASE = "Public Global Stellar Network ; September 2015";

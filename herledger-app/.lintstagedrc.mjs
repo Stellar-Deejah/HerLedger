@@ -10,19 +10,19 @@
 // staged file actually falls under that package.
 export default {
   "apps/web/**/*.{ts,tsx}": (files) => [
-    `eslint --fix ${files.join(" ")}`,
+    `eslint --fix ${files.map((f) => `"${f}"`).join(" ")}`,
     "pnpm --filter web typecheck",
   ],
   "indexer/**/*.ts": (files) => [
-    `eslint --fix ${files.join(" ")}`,
+    `eslint --fix ${files.map((f) => `"${f}"`).join(" ")}`,
     "pnpm --filter indexer typecheck",
   ],
   "packages/config/**/*.ts": (files) => [
-    `eslint --fix ${files.join(" ")}`,
+    `eslint --fix ${files.map((f) => `"${f}"`).join(" ")}`,
     "pnpm --filter @herledger/config typecheck",
   ],
   "packages/sdk/**/*.ts": (files) => [
-    `eslint --fix ${files.join(" ")}`,
+    `eslint --fix ${files.map((f) => `"${f}"`).join(" ")}`,
     "pnpm --filter @herledger/sdk typecheck",
   ],
 };

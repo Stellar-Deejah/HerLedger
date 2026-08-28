@@ -1,21 +1,29 @@
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
-import { RequestSchema } from "./schema";
 
+import { projectFields } from "@/lib/api/projection";
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { readLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
 import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
+import { getAttestations } from "@/lib/data/attestations";
+import { withRateLimit } from "@/lib/rate-limit";
 
-import type { AttestationsResponse } from "./schema";
+import { RequestSchema } from "./schema";
+import type { AttestationsResponse, AttestationDto } from "./schema";
 
-const prisma = getPrismaClient();
-
-export async function GET(req: NextRequest) {
+export const GET = withRateLimit(async (req: NextRequest) => {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = readLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<AttestationsResponse>(
-      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" },
+          meta: null
+        },
       { status: 401 }
     );
   }
@@ -26,33 +34,35 @@ export async function GET(req: NextRequest) {
   });
   if (!parsed.success) {
     return typedJson<AttestationsResponse>(
-      { data: null, error: { code: "INVALID_PARAMS", message: "Invalid query params" } },
-      { status: 400 }
+      { data: null, error: { code: "INVALID_PARAMS", message: "Invalid query params" },
+          meta: null
+        },
+      { status: 422 }
     );
   }
 
   const ownership = await requireBusinessOwner(session);
   if (!ownership.ok) {
     return typedJson<AttestationsResponse>(
-      { data: null, error: { code: ownership.code, message: ownership.message } },
+      { data: null, error: { code: ownership.code, message: ownership.message }, meta: null },
       { status: ownership.status }
     );
   }
 
-  const events = await prisma.financialEvent.findMany({
-    where: { businessId: ownership.businessId },
-    select: {
-      eventId: true,
-      attestations: {
-        ...(parsed.data.includeRevoked ? {} : { where: { status: "Active" as const } }),
-        orderBy: { ledgerSequence: "desc" },
-      },
-    },
+  const data = await getAttestations(ownership.businessId, parsed.data.includeRevoked);
+
+  const allowedFields: (keyof AttestationDto)[] = [
+    "id", "attestationId", "eventId", "attesterAddress", "claimHash",
+    "claimDescription", "status", "ledgerSequence",
+  ];
+
+  const projectedAttestations = data.attestations.map((att) =>
+    projectFields(att, allowedFields)
+  ) as AttestationDto[];
+
+  return typedJson<AttestationsResponse>({
+    data: { attestations: projectedAttestations },
+    error: null,
+    meta: null,
   });
-
-  const attestations = events
-    .flatMap((event) => event.attestations)
-    .sort((a, b) => b.ledgerSequence - a.ledgerSequence);
-
-  return typedJson<AttestationsResponse>({ data: { attestations }, error: null });
-}
+});

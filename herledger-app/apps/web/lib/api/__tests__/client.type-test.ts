@@ -4,6 +4,7 @@ import type { ActivityRecentData } from "@/app/api/activity/recent/schema";
 import type { AttestationsData } from "@/app/api/attestations/schema";
 import type { BusinessRegisterData } from "@/app/api/business/register/schema";
 import type { HealthData } from "@/app/api/health/schema";
+import type { ActivitySummaryData } from "@/app/api/v1/activity/summary/schema";
 import { apiClient } from "@/lib/api/client";
 
 // These assert that apiClient's method return types exactly match the Zod
@@ -15,6 +16,10 @@ import { apiClient } from "@/lib/api/client";
 
 test("apiClient.activity.recent matches ActivityRecentData", () => {
   expectTypeOf(apiClient.activity.recent).returns.resolves.toEqualTypeOf<ActivityRecentData>();
+});
+
+test("apiClient.activity.summary matches ActivitySummaryData", () => {
+  expectTypeOf(apiClient.activity.summary).returns.resolves.toEqualTypeOf<ActivitySummaryData>();
 });
 
 test("apiClient.attestations.list matches AttestationsData", () => {

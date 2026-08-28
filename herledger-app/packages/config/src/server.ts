@@ -28,9 +28,12 @@ export interface ContractConfig {
 
 export function getStellarNetworkConfig(): StellarNetworkConfig {
   const env = getServerEnv();
+  // Prefer STELLAR_RPC_URLS (comma-separated list); fall back to the
+  // deprecated single STELLAR_RPC_URL for backward compatibility.
+  const rpcUrl = env.STELLAR_RPC_URLS ?? env.STELLAR_RPC_URL ?? "";
   return {
     network: env.STELLAR_NETWORK,
-    rpcUrl: env.STELLAR_RPC_URL,
+    rpcUrl,
     horizonUrl: env.STELLAR_HORIZON_URL,
     networkPassphrase: env.STELLAR_NETWORK_PASSPHRASE,
   };
@@ -53,8 +56,7 @@ export function validateNetworkConsistency(
   rpcUrl: string,
   passphrase: string
 ): void {
-  const expectedPassphrase =
-    network === "mainnet" ? MAINNET_PASSPHRASE : TESTNET_PASSPHRASE;
+  const expectedPassphrase = network === "mainnet" ? MAINNET_PASSPHRASE : TESTNET_PASSPHRASE;
 
   if (passphrase !== expectedPassphrase) {
     throw new Error(

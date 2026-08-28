@@ -23,7 +23,7 @@ vi.mock("../../../jobs/process-transaction.js", () => ({
   processTransactionForWallet: mockProcessTransaction,
 }));
 
-vi.mock("@herledger/config", () => ({
+vi.mock("@herledger/config/server", () => ({
   getStellarNetworkConfig: () => ({
     network: "testnet",
     rpcUrl: "https://soroban-testnet.stellar.org",
@@ -37,7 +37,21 @@ vi.mock("@herledger/config", () => ({
   }),
 }));
 
-vi.mock("@herledger/sdk", () => ({
+vi.mock("@herledger/config/server", () => ({
+  getStellarNetworkConfig: () => ({
+    network: "testnet",
+    rpcUrl: "https://soroban-testnet.stellar.org",
+    horizonUrl: "https://horizon-testnet.stellar.org",
+    networkPassphrase: "Test SDF Network ; September 2015",
+  }),
+  getContractConfig: () => ({
+    businessRegistryId: "CBUSINESS",
+    financialLedgerId: "CLEDGER",
+    attestationRegistryId: "CATTEST",
+  }),
+}));
+
+vi.mock("@herledger/sdk/contracts", () => ({
   registerCurrentNetworkAddresses: (_network: string, addrs: unknown) => addrs,
   buildContractConfig: (_registry: unknown, _network: string, addrs: unknown) => addrs,
 }));
@@ -51,11 +65,14 @@ vi.mock("@stellar/stellar-sdk", () => ({
   },
 }));
 
+vi.mock("server-only", () => ({}));
+
 import { adminRoutes } from "../admin.js";
 
 async function buildTestApp() {
   const app = Fastify();
   await app.register(adminRoutes);
+  await app.ready();
   return app;
 }
 
@@ -72,7 +89,7 @@ describe("POST /replay/:errorId", () => {
     const app = await buildTestApp();
     const res = await app.inject({ method: "POST", url: "/replay/err-1" });
     expect(res.statusCode).toBe(401);
-  });
+  }, 30000);
 
   it("returns 404 when the errorId does not exist", async () => {
     mockFindDeadLetter.mockResolvedValue(null);

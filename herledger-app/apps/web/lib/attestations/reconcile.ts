@@ -1,4 +1,4 @@
-import type { AttestationStatus } from "@herledger/sdk";
+import type { AttestationStatus } from "@herledger/sdk/types";
 
 /**
  * Compare a DB-indexed attestation status against the result of an
@@ -7,10 +7,7 @@ import type { AttestationStatus } from "@herledger/sdk";
  * been revoked (or the reverse, which shouldn't normally happen but is
  * still worth flagging as a sync bug if it does).
  */
-export function hasStatusDiscrepancy(
-  dbStatus: AttestationStatus,
-  onChainValid: boolean
-): boolean {
+export function hasStatusDiscrepancy(dbStatus: AttestationStatus, onChainValid: boolean): boolean {
   const expectedValid = dbStatus === "Active";
   return expectedValid !== onChainValid;
 }

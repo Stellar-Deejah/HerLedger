@@ -13,10 +13,11 @@ import type {
   ContractConfig,
   TransactionResult,
 } from "../types/index.js";
-import { RpcError, ContractError } from "../errors/index.js";
+import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
 import { getSorobanRpcServer } from "../rpc/client.js";
 import { simulateAndPrepare, submitAndWait } from "../rpc/transactions.js";
 import { signTransactionWithFreighter } from "../wallet/freighter.js";
+import { defaultQueryCache, buildCacheKey, type QueryCacheOptions } from "../cache/query-cache.js";
 import {
   encodeBytes32,
   encodeAddress,
@@ -27,6 +28,7 @@ import {
   decodeAddress,
   decodeI128,
   decodeU64,
+  toHexString32,
 } from "./encoding.js";
 
 // ---------------------------------------------------------------------------
@@ -48,7 +50,8 @@ function decodeEventType(val: xdr.ScVal): EventType {
     CommitmentFulfilled: "CommitmentFulfilled",
   };
   const result = map[name];
-  if (!result) throw new ContractError(`Unknown EventType: ${name}`);
+  if (!result)
+    throw new ContractError(ContractErrorCode.UNKNOWN_VARIANT, `Unknown EventType: ${name}`);
   return result;
 }
 
@@ -61,13 +64,15 @@ function decodeEventStatus(val: xdr.ScVal): EventStatus {
     Revoked: "Revoked",
   };
   const result = map[name];
-  if (!result) throw new ContractError(`Unknown EventStatus: ${name}`);
+  if (!result)
+    throw new ContractError(ContractErrorCode.UNKNOWN_VARIANT, `Unknown EventStatus: ${name}`);
   return result;
 }
 
 function decodeFinancialEvent(val: xdr.ScVal): FinancialEvent {
   const map = val.map();
-  if (!map) throw new ContractError("Expected struct map for FinancialEvent");
+  if (!map)
+    throw new ContractError(ContractErrorCode.DECODE_ERROR, "Expected struct map for FinancialEvent");
 
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
@@ -95,7 +100,7 @@ async function simulateRead(
   try {
     return await server.simulateTransaction(tx);
   } catch (cause) {
-    throw new RpcError("Contract simulation failed", cause);
+    throw new RpcError(RpcErrorCode.REQUEST_FAILED, "Contract simulation failed", { cause });
   }
 }
 
@@ -103,85 +108,131 @@ async function simulateRead(
 // Reads
 // ---------------------------------------------------------------------------
 
+/**
+ * Results are cached (in-memory, TTL default 30s, keyed by contract id +
+ * method + args) and concurrent identical calls are de-duplicated into a
+ * single RPC request. Pass `cacheOptions: { bypassCache: true }` to force a
+ * fresh read, or `{ ttlMs }` to override the TTL for this call.
+ */
 export async function getFinancialEvent(
   eventId: string,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<FinancialEvent | null> {
-  const contract = new Contract(contracts.financialLedgerId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call("get_event", encodeBytes32(eventId)))
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.financialLedgerId, "get_event", [eventId]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.financialLedgerId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(contract.call("get_event", encodeBytes32(toHexString32(eventId))))
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`get_event error: ${sim.error}`);
-  }
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return null;
-  return decodeFinancialEvent(retval);
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(ContractErrorCode.SIMULATION_ERROR, `get_event error: ${sim.error}`, {
+          context: { contractCode: sim.error, method: "get_event" },
+        });
+      }
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return null;
+      return decodeFinancialEvent(retval);
+    },
+    cacheOptions
+  );
 }
 
+/** See `getFinancialEvent` for cache behavior. */
 export async function getBusinessEvents(
   businessId: string,
   offset: number,
   limit: number,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<FinancialEvent[]> {
-  const contract = new Contract(contracts.financialLedgerId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(
-      contract.call(
-        "get_business_events",
-        encodeBytes32(businessId),
-        encodeU32(offset),
-        encodeU32(limit)
-      )
-    )
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.financialLedgerId, "get_business_events", [
+    businessId,
+    offset,
+    limit,
+  ]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.financialLedgerId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(
+          contract.call(
+            "get_business_events",
+            encodeBytes32(toHexString32(businessId)),
+            encodeU32(offset),
+            encodeU32(limit)
+          )
+        )
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`get_business_events error: ${sim.error}`);
-  }
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return [];
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `get_business_events error: ${sim.error}`,
+          { context: { contractCode: sim.error, method: "get_business_events" } }
+        );
+      }
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return [];
 
-  const vec = retval.vec();
-  if (!vec) return [];
-  return vec.map(decodeFinancialEvent);
+      const vec = retval.vec();
+      if (!vec) return [];
+      return vec.map(decodeFinancialEvent);
+    },
+    cacheOptions
+  );
 }
 
+/** See `getFinancialEvent` for cache behavior. */
 export async function isSupportedAsset(
   assetAddress: string,
   config: StellarNetworkConfig,
-  contracts: ContractConfig
+  contracts: ContractConfig,
+  cacheOptions?: QueryCacheOptions
 ): Promise<boolean> {
-  const contract = new Contract(contracts.financialLedgerId);
-  const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
-    fee: "100",
-    networkPassphrase: config.networkPassphrase,
-  })
-    .addOperation(contract.call("is_supported_asset", encodeAddress(assetAddress)))
-    .setTimeout(30)
-    .build();
+  const cacheKey = buildCacheKey(contracts.financialLedgerId, "is_supported_asset", [assetAddress]);
+  return defaultQueryCache.get(
+    cacheKey,
+    async () => {
+      const contract = new Contract(contracts.financialLedgerId);
+      const tx = new TransactionBuilder(new Account(READ_ACCOUNT, "0"), {
+        fee: "100",
+        networkPassphrase: config.networkPassphrase,
+      })
+        .addOperation(contract.call("is_supported_asset", encodeAddress(assetAddress)))
+        .setTimeout(30)
+        .build();
 
-  const sim = await simulateRead(tx, config);
-  if (StellarRpc.Api.isSimulationError(sim)) {
-    throw new ContractError(`is_supported_asset error: ${sim.error}`);
-  }
-  const retval = sim.result?.retval;
-  if (!retval || isVoid(retval)) return false;
-  return retval.b();
+      const sim = await simulateRead(tx, config);
+      if (StellarRpc.Api.isSimulationError(sim)) {
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `is_supported_asset error: ${sim.error}`,
+          { context: { contractCode: sim.error, method: "is_supported_asset" } }
+        );
+      }
+      const retval = sim.result?.retval;
+      if (!retval || isVoid(retval)) return false;
+      return retval.b();
+    },
+    cacheOptions
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -211,13 +262,13 @@ export async function recordFinancialEvent(
     .addOperation(
       contract.call(
         "record_event",
-        encodeBytes32(params.eventId),
-        encodeBytes32(params.businessId),
+        encodeBytes32(toHexString32(params.eventId)),
+        encodeBytes32(toHexString32(params.businessId)),
         xdr.ScVal.scvVec([xdr.ScVal.scvSymbol(params.eventType)]),
         encodeAddress(params.asset),
         encodeI128(params.amount),
-        encodeBytes32(params.stellarReference),
-        encodeBytes32(params.metadataHash)
+        encodeBytes32(toHexString32(params.stellarReference)),
+        encodeBytes32(toHexString32(params.metadataHash))
       )
     )
     .setTimeout(300)
@@ -229,7 +280,11 @@ export async function recordFinancialEvent(
     config.networkPassphrase,
     params.submitter
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.financialLedgerId, "get_event", [params.eventId])
+  );
+  return result;
 }
 
 /**
@@ -259,9 +314,9 @@ export async function disputeFinancialEvent(
     .addOperation(
       contract.call(
         "dispute_event",
-        encodeBytes32(params.eventId),
+        encodeBytes32(toHexString32(params.eventId)),
         encodeAddress(params.owner),
-        encodeBytes32(params.reasonHash)
+        encodeBytes32(toHexString32(params.reasonHash))
       )
     )
     .setTimeout(300)
@@ -273,7 +328,11 @@ export async function disputeFinancialEvent(
     config.networkPassphrase,
     params.owner
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.financialLedgerId, "get_event", [params.eventId])
+  );
+  return result;
 }
 
 export async function verifyFinancialEvent(
@@ -290,7 +349,7 @@ export async function verifyFinancialEvent(
     fee: "1000000",
     networkPassphrase: config.networkPassphrase,
   })
-    .addOperation(contract.call("verify_event", encodeBytes32(params.eventId)))
+    .addOperation(contract.call("verify_event", encodeBytes32(toHexString32(params.eventId))))
     .setTimeout(300)
     .build();
 
@@ -300,7 +359,11 @@ export async function verifyFinancialEvent(
     config.networkPassphrase,
     params.submitter
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.financialLedgerId, "get_event", [params.eventId])
+  );
+  return result;
 }
 
 export async function resolveFinancialEvent(
@@ -322,9 +385,9 @@ export async function resolveFinancialEvent(
     .addOperation(
       contract.call(
         "resolve_dispute",
-        encodeBytes32(params.eventId),
+        encodeBytes32(toHexString32(params.eventId)),
         encodeBool(params.valid),
-        encodeBytes32(params.resolutionHash)
+        encodeBytes32(toHexString32(params.resolutionHash))
       )
     )
     .setTimeout(300)
@@ -336,7 +399,11 @@ export async function resolveFinancialEvent(
     config.networkPassphrase,
     params.submitter
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.financialLedgerId, "get_event", [params.eventId])
+  );
+  return result;
 }
 
 export async function revokeFinancialEvent(
@@ -355,7 +422,7 @@ export async function revokeFinancialEvent(
     networkPassphrase: config.networkPassphrase,
   })
     .addOperation(
-      contract.call("revoke_event", encodeBytes32(params.eventId), encodeBytes32(params.reasonHash))
+      contract.call("revoke_event", encodeBytes32(toHexString32(params.eventId)), encodeBytes32(toHexString32(params.reasonHash)))
     )
     .setTimeout(300)
     .build();
@@ -366,5 +433,9 @@ export async function revokeFinancialEvent(
     config.networkPassphrase,
     params.submitter
   );
-  return submitAndWait(signedXdr, config);
+  const result = await submitAndWait(signedXdr, config);
+  defaultQueryCache.invalidate(
+    buildCacheKey(contracts.financialLedgerId, "get_event", [params.eventId])
+  );
+  return result;
 }

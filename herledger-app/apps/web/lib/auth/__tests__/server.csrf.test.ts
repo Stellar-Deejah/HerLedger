@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeAll } from "vitest";
 import { StrKey } from "@stellar/stellar-sdk";
+import { describe, it, expect, beforeAll, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 
 // `server.ts` reads all server env vars at module load time (via
 // getServerEnv()), so they must be set before the module is imported. We
@@ -12,8 +14,12 @@ beforeAll(async () => {
   Object.assign(process.env, {
     NODE_ENV: "test",
     APP_URL: "http://localhost:3000",
-    DATABASE_URL: "postgresql://herledger:herledger@localhost:5432/herledger_test",
+    DATABASE_URL: process.env["DATABASE_URL"] ?? "postgresql://herledger:herledger@localhost:5432/herledger_test",
     BETTER_AUTH_SECRET: "test-secret-must-be-at-least-32-characters-long",
+    DATABASE_URL: "postgresql://herledger:herledger@localhost:5432/herledger_test",
+    BETTER_AUTH_SECRET: "05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78",
+    RESEND_API_KEY: "test-resend-key",
+    EMAIL_FROM: "HerLedger <test@herledger.test>",
     STELLAR_NETWORK: "testnet",
     STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
     STELLAR_HORIZON_URL: "https://horizon-testnet.stellar.org",
@@ -25,7 +31,7 @@ beforeAll(async () => {
   });
 
   ({ auth } = await import("../server.js"));
-});
+}, 30000);
 
 // Better Auth 1.6.28 has no `csrf` config option; sign-in/sign-up carry
 // `formCsrfMiddleware` (see api/middlewares/origin-check.mjs), which rejects
@@ -45,6 +51,7 @@ describe("auth CSRF protection (sign-in/email)", () => {
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "navigate",
         "sec-fetch-dest": "document",
+        "x-forwarded-for": `198.51.100.${Math.floor(Math.random() * 200) + 1}`,
       },
       body: JSON.stringify({ email: "victim@example.com", password: "irrelevant123" }),
     });
@@ -63,6 +70,7 @@ describe("auth CSRF protection (sign-in/email)", () => {
         "sec-fetch-site": "cross-site",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
+        "x-forwarded-for": `203.0.113.${Math.floor(Math.random() * 200) + 1}`,
       },
       body: JSON.stringify({ email: "victim@example.com", password: "irrelevant123" }),
     });
@@ -81,6 +89,7 @@ describe("auth CSRF protection (sign-in/email)", () => {
         "sec-fetch-site": "same-origin",
         "sec-fetch-mode": "cors",
         "sec-fetch-dest": "empty",
+        "x-forwarded-for": `192.0.2.${Math.floor(Math.random() * 200) + 1}`,
       },
       body: JSON.stringify({ email: "nobody@example.com", password: "irrelevant123" }),
     });

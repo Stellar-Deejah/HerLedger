@@ -10,7 +10,7 @@ import { processTransactionForWallet } from "../../jobs/process-transaction.js";
 import {
   getStellarNetworkConfig,
   getContractConfig as getRawContractConfig,
-} from "@herledger/config";
+} from "@herledger/config/server";
 import { registerCurrentNetworkAddresses, buildContractConfig } from "@herledger/sdk";
 
 // ---------------------------------------------------------------------------

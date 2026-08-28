@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
-import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk";
-import { getBusiness } from "@herledger/sdk";
+import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk/types";
+import { getBusiness } from "@herledger/sdk/contracts";
 
 // ---------------------------------------------------------------------------
 // Business indexing — sync on-chain business state to local database
