@@ -1,7 +1,9 @@
+import pLimit from "p-limit";
 import { getPrismaClient } from "../db/client.js";
 import { getCheckpoint, saveCheckpoint, MAIN_STREAM } from "../db/schema/checkpoint.js";
 import { findAllActiveBusinessWallets } from "../db/schema/businesses.js";
 import { writeDeadLetter } from "../db/schema/indexer-errors.js";
+import { tryClaimWallet, releaseWallet, DEFAULT_LEASE_MS } from "../db/schema/sync-jobs.js";
 import { processTransactionForWallet } from "./process-transaction.js";
 import { fetchTransactionsForAccount, fetchLatestLedger } from "../stellar/rpc.js";
 import { isSuccessfulTransaction, getTransactionLedger } from "../stellar/verification.js";
@@ -37,6 +39,13 @@ import {
 
 const SYNC_INTERVAL_MS = 30_000; // 30 seconds between sync cycles
 const WALLET_PAGE_SIZE = 100;
+const DEFAULT_SYNC_CONCURRENCY = 5;
+
+interface ActiveWallet {
+  id: string;
+  businessId: string;
+  walletAddress: string;
+}
 
 export async function runSyncJob(): Promise<void> {
   const prisma = getPrismaClient();
@@ -85,6 +94,14 @@ async function syncCycle(
   resetCycleMetrics();
 
   const latestLedger = await fetchLatestLedger(stellarConfig);
+
+  console.log({
+    job: "sync-ledger",
+    event: "cycle-begin",
+    latestLedger,
+    concurrency: getSyncConcurrency(),
+    instanceId: getInstanceId(),
+  });
   const lastCheckpoint = await getCheckpoint(prisma, MAIN_STREAM);
   const initialLag = Math.max(0, latestLedger - lastCheckpoint);
   syncLagLedgers.set(initialLag);
@@ -100,13 +117,14 @@ async function syncCycle(
     "Beginning ledger sync cycle"
   );
 
-  let maxProcessedLedger = lastCheckpoint;
+  const limit = pLimit(getSyncConcurrency());
+  const instanceId = getInstanceId();
   let anyWallets = false;
   const processedLedgers = new Set<number>();
 
   // Iterate active business wallets in cursor pages -- never load the full
-  // set into memory at once. Each page is fetched only after the previous
-  // one has been fully processed.
+  // set into memory at once -- but process the wallets within each page with
+  // bounded concurrency so a slow wallet doesn't serialize the whole pass.
   let walletCursor: string | undefined;
   while (true) {
     const { wallets, nextCursor } = await findAllActiveBusinessWallets(prisma, {
@@ -118,6 +136,20 @@ async function syncCycle(
       anyWallets = true;
     }
 
+    await Promise.all(
+      wallets.map((wallet) =>
+        limit(() =>
+          processWallet(
+            wallet,
+            prisma,
+            stellarConfig,
+            contractConfig,
+            latestLedger,
+            instanceId
+          )
+        )
+      )
+    );
     for (const { walletAddress } of wallets) {
       let txCursor: string | undefined;
 
@@ -224,6 +256,7 @@ async function syncCycle(
     syncLagLedgers.set(0);
     return;
   }
+}
 
   // Persist per-ledger checkpoints for each successfully processed ledger.
   // This ensures that on restart, we only re-process ledgers that haven't
@@ -259,6 +292,29 @@ async function syncCycle(
       "Sync cycle complete"
     );
   }
+}
+
+function getSyncConcurrency(): number {
+  const raw = process.env["SYNC_CONCURRENCY"];
+  if (!raw) return DEFAULT_SYNC_CONCURRENCY;
+  const parsed = Number(raw);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    console.warn({ job: "sync-ledger", event: "invalid-sync-concurrency", value: raw });
+    return DEFAULT_SYNC_CONCURRENCY;
+  }
+  return parsed;
+}
+
+function getLeaseMs(): number {
+  const raw = process.env["SYNC_LEASE_MS"];
+  if (!raw) return DEFAULT_LEASE_MS;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LEASE_MS;
+  return parsed;
+}
+
+function getInstanceId(): string {
+  return process.env["INDEXER_INSTANCE_ID"] ?? `indexer-${process.pid}`;
 }
 
 function sleep(ms: number): Promise<void> {
