@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { indexPayment } from "../financial-events.js";
+import { indexPayment, deriveEventId } from "../financial-events.js";
 import { upsertFinancialEvent } from "../../db/schema/financial-events.js";
 import { upsertStellarTransaction } from "../../db/schema/stellar-transactions.js";
 import { resetMetrics, getMetrics } from "../../observability/index.js";
@@ -231,8 +231,7 @@ describe("Financial Events Indexing & Metrics", () => {
     );
   });
 
-  // -- deriveEventId determinism (exercised indirectly via the eventId
-  // passed to upsertFinancialEvent, since deriveEventId isn't exported) --
+  // -- deriveEventId (now exported and directly testable) --
 
   it("derives a deterministic, direction-suffixed eventId for a received payment", async () => {
     const txHash = "3".repeat(64);
@@ -249,7 +248,8 @@ describe("Financial Events Indexing & Metrics", () => {
     await indexPayment(mockPrisma, payment, mockConfig, mockContracts);
 
     const call = upsertFinancialEventMock.mock.calls[0]![1] as { eventId: string };
-    expect(call.eventId).toBe(txHash.slice(0, 62) + "00");
+    const expected = deriveEventId(txHash, "recv");
+    expect(call.eventId).toBe(expected);
     expect(call.eventId).toHaveLength(64);
   });
 
@@ -268,7 +268,7 @@ describe("Financial Events Indexing & Metrics", () => {
     await indexPayment(mockPrisma, payment, mockConfig, mockContracts);
 
     const call = upsertFinancialEventMock.mock.calls[0]![1] as { eventId: string };
-    expect(call.eventId).toBe(txHash.slice(0, 62) + "01");
+    expect(call.eventId).toBe(deriveEventId(txHash, "sent"));
   });
 
   it("derives distinct recv/sent eventIds from the same transaction hash for a self-payment", async () => {
@@ -290,8 +290,8 @@ describe("Financial Events Indexing & Metrics", () => {
     );
     expect(eventIds).toHaveLength(2);
     expect(new Set(eventIds).size).toBe(2);
-    expect(eventIds).toContain(txHash.slice(0, 62) + "00");
-    expect(eventIds).toContain(txHash.slice(0, 62) + "01");
+    expect(eventIds).toContain(deriveEventId(txHash, "recv"));
+    expect(eventIds).toContain(deriveEventId(txHash, "sent"));
   });
 
   it("is idempotent — processing the same payment twice derives the same eventId both times", async () => {
@@ -353,5 +353,44 @@ describe("Financial Events Indexing & Metrics", () => {
       "simulated write failure"
     );
     expect(transactionMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("deriveEventId", () => {
+  it("produces a 64-character hex string", () => {
+    const id = deriveEventId("a".repeat(64), "recv");
+    expect(id).toHaveLength(64);
+    expect(/^[0-9a-f]{64}$/.test(id)).toBe(true);
+  });
+
+  it("is deterministic — same input always produces the same output", () => {
+    const hash = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890";
+    const id1 = deriveEventId(hash, "recv");
+    const id2 = deriveEventId(hash, "recv");
+    expect(id1).toBe(id2);
+  });
+
+  it("produces different IDs for recv vs sent on the same hash", () => {
+    const hash = "a".repeat(64);
+    const recv = deriveEventId(hash, "recv");
+    const sent = deriveEventId(hash, "sent");
+    expect(recv).not.toBe(sent);
+  });
+
+  it("produces different IDs for different transaction hashes", () => {
+    const id1 = deriveEventId("a".repeat(64), "recv");
+    const id2 = deriveEventId("b".repeat(64), "recv");
+    expect(id1).not.toBe(id2);
+  });
+
+  it("uses SHA-256 of (txHash:suffix) — not truncation", () => {
+    // The old algorithm was txHash.slice(0, 62) + suffix
+    // The new algorithm is SHA-256(txHash:suffix)
+    // Verify by computing the expected SHA-256 manually
+    const { createHash } = require("node:crypto");
+    const hash = "deadbeef".repeat(8); // 64 hex chars
+    const suffix = "00";
+    const expected = createHash("sha256").update(`${hash}:${suffix}`).digest("hex");
+    expect(deriveEventId(hash, "recv")).toBe(expected);
   });
 });

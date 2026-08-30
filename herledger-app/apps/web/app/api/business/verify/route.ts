@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
     if (dbBusiness.walletAddress !== chainBusiness.wallet) {
       discrepancies.push({
         field: "Wallet Address",
-        dbValue: dbBusiness.walletAddress,
+        dbValue: dbBusiness.walletAddress ?? "",
         chainValue: chainBusiness.wallet,
       });
     }

@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     // Get Stellar account for signing
     const networkConfig = getStellarNetworkConfig();
     const contractConfig = getContractConfig();
-    const sourceAccount = await getAccount(dbBusiness.walletAddress);
+    const sourceAccount = await getAccount(dbBusiness.walletAddress ?? "");
 
     // Call on-chain deactivation
     await deactivateBusiness(

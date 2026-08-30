@@ -87,4 +87,34 @@ describe("parseAmount", () => {
     expect(parseAmount("10.0000000")).toBe(100_000_000n);
     expect(parseAmount("0.0000001")).toBe(1n);
   });
+
+  it("parses zero correctly", () => {
+    expect(parseAmount("0")).toBe(0n);
+    expect(parseAmount("0.0000000")).toBe(0n);
+  });
+
+  it("handles values exceeding Number.MAX_SAFE_INTEGER (i128 precision)", () => {
+    // 2^53 (9007199254740992) is just above MAX_SAFE_INTEGER
+    const maxSafePlusOne = "9007199254740993";
+    expect(parseAmount(maxSafePlusOne)).toBe(9007199254740993n);
+
+    // Max i128: 170141183460469231731687303715884105727
+    const maxI128 = "170141183460469231731687303715884105727";
+    expect(parseAmount(maxI128)).toBe(170141183460469231731687303715884105727n);
+
+    // Negative max i128
+    const negMaxI128 = "-170141183460469231731687303715884105727";
+    expect(parseAmount(negMaxI128)).toBe(-170141183460469231731687303715884105727n);
+  });
+
+  it("handles negative amounts", () => {
+    expect(parseAmount("-100")).toBe(-100n);
+    expect(parseAmount("-10.0000000")).toBe(-100_000_000n);
+  });
+
+  it("handles large decimal Horizon amounts exceeding MAX_SAFE_INTEGER", () => {
+    // A Horizon decimal that, when converted to stroops, exceeds MAX_SAFE_INTEGER
+    // 900719925474.0993000 → 9007199254740993000 (exceeds MAX_SAFE_INTEGER)
+    expect(parseAmount("900719925474.0993000")).toBe(9007199254740993000n);
+  });
 });

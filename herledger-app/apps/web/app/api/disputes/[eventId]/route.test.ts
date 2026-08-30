@@ -21,11 +21,6 @@ vi.mock("@herledger/config/server", () => ({
   getServerEnv: vi.fn(() => ({ BETTER_AUTH_SECRET: "test-secret-at-least-32-characters" })),
 }));
 
-const { decryptDisputeReasonMock, MockDisputeDecryptionError } = vi.hoisted(() => {
-  const mock = vi.fn();
-  class Err extends Error {}
-  return { decryptDisputeReasonMock: mock, MockDisputeDecryptionError: Err };
-});
 const { mockDecryptDisputeReason, MockDisputeDecryptionError } = vi.hoisted(() => {
   class MockErr extends Error {}
   return {

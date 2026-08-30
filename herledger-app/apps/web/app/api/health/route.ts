@@ -1,6 +1,10 @@
 import { getStellarNetworkConfig } from "@herledger/config/server";
 import { checkRpcHealth } from "@herledger/sdk";
 
+import { NextRequest } from "next/server";
+
+import { getClientIp } from "@/lib/api/rate-limit";
+import { readLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { getPrismaClient } from "@/lib/db/client";
 
@@ -51,17 +55,7 @@ async function pingIndexer(): Promise<{ healthy: boolean; latencyMs: number | nu
   }
 }
 
-export async function GET(): Promise<Response> {
-import { NextRequest } from "next/server";
-
-import { getClientIp } from "@/lib/api/rate-limit";
-import { readLimiter } from "@/lib/api/rate-limit-config";
-import { typedJson } from "@/lib/api/route-handler";
-
-
-import type { HealthResponse } from "./schema";
-
-export async function GET(req?: NextRequest) {
+export async function GET(req?: NextRequest): Promise<Response> {
   if (req) {
     const limited = readLimiter.check(getClientIp(req));
     if (limited) return limited;

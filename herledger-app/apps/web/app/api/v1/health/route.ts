@@ -56,7 +56,12 @@ async function pingIndexer(): Promise<{ healthy: boolean; latencyMs: number | nu
   }
 }
 
-export async function GET(): Promise<Response> {
+export async function GET(req?: NextRequest): Promise<Response> {
+  if (req) {
+    const limited = readLimiter.check(getClientIp(req));
+    if (limited) return limited;
+  }
+
   const config = getStellarNetworkConfig();
   const [rpcHealth, dbHealth, indexerHealth] = await Promise.all([
     checkRpcHealth(config),
@@ -84,11 +89,4 @@ export async function GET(): Promise<Response> {
     error: null,
     meta: null,
   });
-export function GET(req?: NextRequest) {
-  if (req) {
-    const limited = readLimiter.check(getClientIp(req));
-    if (limited) return limited;
-  }
-
-  return typedJson<HealthResponse>({ data: { status: "ok" }, error: null });
 }

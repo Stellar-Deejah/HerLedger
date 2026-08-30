@@ -11,6 +11,17 @@ interface WalletConnectProps {
   onConnected: (publicKey: string) => void;
 }
 
+/**
+ * Wallet connection widget.
+ *
+ * All wallet state (address, isConnecting, error) now comes from the shared
+ * `WalletContext` via `useWallet()`.  This means:
+ * - No duplicate Freighter API calls per render.
+ * - Account changes detected by the context polling propagate here
+ *   automatically without any local timer.
+ * - The `onConnected` callback is still forwarded so parent forms can advance
+ *   their own step state when the wallet becomes connected.
+ */
 export function WalletConnect({ onConnected }: WalletConnectProps) {
   const { connectedAddress, isChecking, connect, clearWalletState } = useWallet();
   const [error, setError] = useState<string | null>(null);
@@ -35,10 +46,13 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
     }
   }, [connectedAddress]);
 
+  const isConnecting = loading;
+  const isConnected = Boolean(connectedAddress);
+  const disconnect = handleDisconnect;
+
   async function handleConnect() {
-    setError(null);
     setLoading(true);
-    setStatusMessage("Connecting to Freighter wallet…");
+    setError(null);
     try {
       const { publicKey } = await connectWallet();
       connect(publicKey);
@@ -62,12 +76,15 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
 
   return (
     <div>
-      {/* Kept mounted across every state (including the initial `checking`
-          phase) so screen readers reliably pick up each announcement —
-          a live region that gets unmounted/remounted is not guaranteed to
-          be observed by assistive tech. */}
+      {/* Persistent live region for screen readers. */}
       <div role="status" aria-live="polite" className="sr-only">
-        {statusMessage}
+        {isConnecting
+          ? "Connecting to Freighter wallet…"
+          : isConnected
+            ? "Wallet connected."
+            : error
+              ? `Wallet connection failed: ${error}`
+              : ""}
       </div>
 
       {isChecking ? null : connectedAddress ? (
@@ -94,7 +111,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
             {truncateAddress(connectedAddress)}
           </p>
           <button
-            onClick={handleDisconnect}
+            onClick={() => void disconnect()}
             type="button"
             style={{
               background: "none",
@@ -114,7 +131,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
           {error && <ErrorMessage message={error} />}
           <button
             onClick={() => void handleConnect()}
-            disabled={loading}
+            disabled={isConnecting}
             type="button"
             style={{
               padding: "0.625rem 1.25rem",
@@ -124,10 +141,10 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
               borderRadius: "var(--radius)",
               fontSize: "0.9375rem",
               fontWeight: 500,
-              cursor: loading ? "not-allowed" : "pointer",
+              cursor: isConnecting ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Connecting…" : "Connect Freighter wallet"}
+            {isConnecting ? "Connecting…" : "Connect Freighter wallet"}
           </button>
           <p
             style={{

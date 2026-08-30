@@ -103,7 +103,7 @@ export async function PUT(req: NextRequest) {
     // Get Stellar account for signing
     const networkConfig = getStellarNetworkConfig();
     const contractConfig = getContractConfig();
-    const sourceAccount = await getAccount(dbBusiness.walletAddress);
+    const sourceAccount = await getAccount(dbBusiness.walletAddress ?? "");
 
     // Call on-chain update
     await updateBusinessMetadata(

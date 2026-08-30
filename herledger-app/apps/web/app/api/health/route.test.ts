@@ -68,7 +68,6 @@ describe("GET /api/health", () => {
     const body = await res.json();
     expect(body.data.status).toBe("degraded");
     expect(body.data.rpc.healthy).toBe(false);
-    expect(body.data.rpc.error).toBe("all endpoints down");
     expect(body.data.version).toBeDefined();
     expect(body.meta).toBeNull();
     expect(body.data.rpc.error).toBe("RPC unreachable");

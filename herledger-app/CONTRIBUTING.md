@@ -97,6 +97,65 @@ docs(app): improve local setup instructions
 - Unit tests: `pnpm test`
 - Type checking: `pnpm typecheck`
 - Formatting: `pnpm format`
+- E2E tests: `pnpm test:e2e` (requires running dev server and database)
+
+### CI Pipeline Structure
+
+The CI pipeline (`.github/workflows/ci.yml`) runs on every push and pull request to `main` with a parallel job structure for faster feedback:
+
+1. **setup** - Installs and caches pnpm dependencies using a cache key derived from `pnpm-lock.yaml` hash. This reduces install time to <30s on cache hits.
+
+2. **lint-typecheck** - Runs format check, type checking, and linting in parallel with other jobs (depends on setup).
+
+3. **unit-tests** - Runs unit tests with PostgreSQL service container, including OpenAPI spec validation, environment validation, Prisma schema validation, migration validation, and database migrations (depends on setup).
+
+4. **build** - Builds the web app, checks CSS bundle size budget, and builds Storybook (depends on unit-tests).
+
+5. **e2e** - Runs Playwright E2E tests with PostgreSQL service container, database migrations, and seeded test data (depends on unit-tests).
+
+6. **abi-check** - Validates that generated contract ABI types match committed types (separate job, skipped on nightly schedule).
+
+7. **testnet-smoke** - Nightly testnet smoke tests (schedule-triggered only).
+
+**Job Dependencies:**
+- `lint-typecheck` and `unit-tests` run in parallel after `setup` completes
+- `build` and `e2e` run in parallel after `unit-tests` passes
+- This ensures fast feedback for lint/type errors while blocking expensive operations on test failures
+
+**Caching Strategy:**
+- pnpm store is cached using `actions/cache` with key: `${{ runner.os }}-pnpm-store-${{ hashFiles('herledger-app/pnpm-lock.yaml') }}`
+- Cache key includes the lockfile hash to avoid stale cache when dependencies change
+- Fallback restore key `${{ runner.os }}-pnpm-store-` allows partial cache hits on lockfile changes
+
+### E2E Tests in CI
+
+The E2E job (`pnpm test:e2e`) runs Playwright tests against a real PostgreSQL database:
+
+**Environment Setup:**
+- PostgreSQL 16 service container with health checks
+- Database migrations applied via `pnpm db.generate` and `pnpm db:migrate`
+- Playwright browsers installed via `pnpm exec playwright install --with-deps chromium`
+
+**Database Seeding:**
+- Tests use `e2e/helpers/seed.ts` to create test data directly via Prisma
+- Seeded data includes authenticated users with proper session cookies signed with `BETTER_AUTH_SECRET`
+- Each test cleans up its seeded data via `cleanupSeed()` to avoid test pollution
+
+**Mocking Strategy:**
+- Stellar RPC calls are mocked via `page.route()` in test specs (see `business-registration.spec.ts`)
+- Freighter wallet interactions are mocked - tests never require actual wallet signing
+- This allows E2E tests to validate full user flows without depending on external blockchain services
+
+**Test Coverage:**
+- Auth hardening (password policy, email verification, rate limiting)
+- Business registration resume-on-reload flow
+- Dashboard rendering with real SSR data
+- Accessibility compliance
+- Event lifecycle and attestations
+
+**Branch Protection:**
+- Configure branch protection rules to require the `e2e` job to pass before merging to `main`
+- This ensures all multi-step user flows are validated automatically
 
 ### Testing components that call the SDK: `MockSdkProvider`
 
@@ -219,5 +278,15 @@ export async function up(prisma: PrismaClient): Promise<void> {
 CI checks enforce schema and migration sanity:
 - **Schema Drift Check:** CI compares the current schema with the committed migrations using `prisma migrate diff`. If a schema change exists without a corresponding migration file, CI will fail.
 - **Unsafe Migration Detection:** CI checks for unsafe migrations, such as adding a new `NOT NULL` column without a `DEFAULT` to an existing table. Any such statement will fail CI to prevent downtime or deployment errors.
+
+### 4. Adding Indexes for New Queryable Fields
+
+When adding a new field that will be used in `WHERE`, `ORDER BY`, or `GROUP BY` clauses:
+
+- **Single-column queries:** Add a `@@index([fieldName])` in the Prisma schema.
+- **Composite queries:** If a query filters by two or more columns together (e.g. `(businessId, status)`), use a composite `@@index([col1, col2])`. Composite indexes also cover queries that filter on the leading column(s) alone, so a composite `(businessId, status)` subsumes a standalone `(businessId)` index.
+- **Partial indexes:** For queries that only need a subset of rows (e.g. only `active` records), consider a Prisma `@@index([field], where: "condition")` to keep the index small.
+- **Index rationale:** When adding indexes, document in the PR description why each index was chosen (composite vs. single-column, partial index considered, etc.) and reference the query patterns it supports.
+- **Never remove an index without replacing it** — existing production queries depend on it.
 
 - [ ] CI passes

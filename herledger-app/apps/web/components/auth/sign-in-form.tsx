@@ -72,7 +72,7 @@ export function SignInForm() {
 
       {error === EMAIL_NOT_VERIFIED_ERROR && (
         <p style={{ fontSize: "0.875rem", marginBottom: "1rem" }}>
-          <Link href={`/auth/verify-email?email=${encodeURIComponent(email)}`}>
+          <Link href={{ pathname: "/auth/verify-email", query: { email } }}>
             Resend verification email
           </Link>
         </p>

@@ -19,7 +19,7 @@ interface CurrentBusinessResponse {
   error: { code: string; message: string } | null;
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   const limited = readLimiter.check(rateLimitKey(req, session?.user?.id));
@@ -50,7 +50,7 @@ export async function GET(_req: NextRequest) {
         metadataHash: business.metadataHash,
         active: business.active,
         owner: session.user.id,
-        wallet: business.walletAddress,
+        wallet: business.walletAddress ?? "",
       },
       error: null,
     });

@@ -6,7 +6,6 @@
     "moduleResolution": "NodeNext",
     "types": ["node"],
     "strict": true,
-    "types": ["node"],
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,

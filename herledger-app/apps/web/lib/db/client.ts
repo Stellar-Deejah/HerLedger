@@ -1,6 +1,1 @@
-export {
-  createDbClient,
-  getDbClient,
-  getPrismaClient,
-  type DbClient,
-} from "@herledger/db";
+export { createDbClient, getDbClient, getPrismaClient, type DbClient } from "@herledger/db";

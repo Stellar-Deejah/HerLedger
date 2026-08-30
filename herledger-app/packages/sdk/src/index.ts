@@ -88,13 +88,28 @@ export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/
 export { DEFAULT_RPC_TIMEOUT_MS } from "./rpc/timeout.js";
 export type { RpcCallOptions } from "./rpc/timeout.js";
 
-// Wallet
+// Wallet — interface + Freighter adapter
+export type { WalletProvider, WalletConnection } from "./wallet/types.js";
 export {
+  FreighterWalletProvider,
+  freighterWalletProvider,
+  // Backward-compatible functional API (deprecated — use useWallet() hook)
   isFreighterAvailable,
   connectWallet,
   getConnectedAddress,
   signTransactionWithFreighter,
 } from "./wallet/freighter.js";
+
+// Wallet ownership challenge (re-linking)
+export {
+  WALLET_LINK_CHALLENGE_TTL_MS,
+  generateWalletLinkNonce,
+  buildWalletLinkChallengeMessage,
+  isWalletLinkChallengeExpired,
+  signWalletLinkChallenge,
+  verifyWalletLinkChallengeSignature,
+} from "./wallet/challenge.js";
+export type { WalletLinkChallengeParams } from "./wallet/challenge.js";
 
 // Encoding
 export {

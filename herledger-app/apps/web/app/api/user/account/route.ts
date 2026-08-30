@@ -8,7 +8,6 @@ import { z } from "zod";
 import { getClientIp } from "@/lib/api/rate-limit";
 import { authLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
-import { auth } from "@/lib/auth/server";
 
 const BodySchema = z.object({
   password: z.string().min(1, "Password is required"),

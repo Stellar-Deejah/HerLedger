@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useSession, signOut } from "@/lib/auth/client";
+import { LinkedWallet } from "./linked-wallet";
+import { NotificationPreferences } from "./notification-preferences";
+import { PersonalAccessTokens } from "./personal-access-tokens";
 
 export function SettingsPanel() {
   const { data: session } = useSession();
@@ -71,6 +74,47 @@ export function SettingsPanel() {
           borderRadius: "var(--radius)",
           padding: "1.5rem",
           marginBottom: "1.5rem",
+        }}
+      >
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
+          Linked Wallet
+        </h2>
+        <LinkedWallet />
+      </section>
+
+      <section
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
+          Notification Preferences
+        </h2>
+        <NotificationPreferences />
+      </section>
+
+      <section
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "1.5rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
+          Personal Access Tokens
+        </h2>
+        <PersonalAccessTokens />
+      </section>
+
+      <section
+        style={{
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius)",
+          padding: "1.5rem",
         }}
       >
         <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Privacy</h2>
