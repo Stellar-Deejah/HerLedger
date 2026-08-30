@@ -3,11 +3,16 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const push = vi.fn();
+// The panel imports useRouter from @/i18n/navigation (which wraps
+// next/navigation) and useSearchParams from next/navigation directly.
+// Mocking both keeps the test focused on the panel's behavior.
+const { push } = vi.hoisted(() => ({ push: vi.fn() }));
 let searchParams = new URLSearchParams();
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push }),
   useSearchParams: () => searchParams,
+}));
+vi.mock("@/i18n/navigation", () => ({
+  useRouter: () => ({ push }),
 }));
 
 const sendVerificationEmailMock = vi.fn();
@@ -16,6 +21,8 @@ vi.mock("@/lib/auth/client", () => ({
 }));
 
 import { VerifyEmailPanel } from "../verify-email-panel";
+
+import { WithIntl } from "./intl-test-utils";
 
 beforeEach(() => {
   push.mockClear();
@@ -26,7 +33,11 @@ beforeEach(() => {
 describe("VerifyEmailPanel", () => {
   it("shows the check-your-email message with the address from the URL", () => {
     searchParams = new URLSearchParams({ email: "jane@example.com" });
-    render(<VerifyEmailPanel />);
+    render(
+      <WithIntl>
+        <VerifyEmailPanel />
+      </WithIntl>
+    );
 
     expect(screen.getByText(/jane@example.com/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /resend verification email/i })).toBeInTheDocument();
@@ -34,7 +45,11 @@ describe("VerifyEmailPanel", () => {
 
   it("redirects to /dashboard when the URL carries verified=true", () => {
     searchParams = new URLSearchParams({ verified: "true" });
-    render(<VerifyEmailPanel />);
+    render(
+      <WithIntl>
+        <VerifyEmailPanel />
+      </WithIntl>
+    );
 
     expect(push).toHaveBeenCalledWith("/dashboard");
   });
@@ -43,7 +58,11 @@ describe("VerifyEmailPanel", () => {
     const user = userEvent.setup();
     searchParams = new URLSearchParams({ email: "jane@example.com" });
     sendVerificationEmailMock.mockResolvedValue({ data: { status: true }, error: null });
-    render(<VerifyEmailPanel />);
+    render(
+      <WithIntl>
+        <VerifyEmailPanel />
+      </WithIntl>
+    );
 
     const button = screen.getByRole("button", { name: /resend verification email/i });
     await user.click(button);
@@ -62,7 +81,11 @@ describe("VerifyEmailPanel", () => {
       data: null,
       error: { message: "Too many requests. Please try again later." },
     });
-    render(<VerifyEmailPanel />);
+    render(
+      <WithIntl>
+        <VerifyEmailPanel />
+      </WithIntl>
+    );
 
     await user.click(screen.getByRole("button", { name: /resend verification email/i }));
 

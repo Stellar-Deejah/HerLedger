@@ -1,18 +1,21 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
 import { FormField } from "@/components/ui/form-field";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Link, useRouter } from "@/i18n/navigation";
 import { validateCallbackUrl } from "@/lib/auth/callback-url";
 import { signIn } from "@/lib/auth/client";
 import { EMAIL_NOT_VERIFIED_ERROR, normalizeSignInError } from "@/lib/auth/messages";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 export function SignInForm() {
+  const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -36,11 +39,19 @@ export function SignInForm() {
           setError(normalizeSignInError(result.error));
         } else {
           const rawCallback = searchParams?.get("callbackUrl");
-          const targetUrl = validateCallbackUrl(rawCallback) || "/dashboard";
-          router.push(targetUrl as unknown as Parameters<typeof router.push>[0]);
+          const validated = validateCallbackUrl(rawCallback);
+          // The middleware stores the caller's original (locale-prefixed)
+          // pathname as the callback; strip the active locale prefix so the
+          // locale-aware router doesn't prefix it a second time.
+          const prefix = `/${locale}`;
+          const targetUrl =
+            validated && validated.startsWith(`${prefix}/`)
+              ? validated.slice(prefix.length)
+              : validated;
+          router.push(targetUrl || "/dashboard");
         }
       } catch {
-        setError("An unexpected error occurred. Please try again.");
+        setError(t("unexpectedError"));
       } finally {
         setLoading(false);
       }
@@ -53,7 +64,7 @@ export function SignInForm() {
 
       <FormField
         id="email"
-        label="Email"
+        label={t("email")}
         type="email"
         value={email}
         onChange={setEmail}
@@ -62,7 +73,7 @@ export function SignInForm() {
       />
       <FormField
         id="password"
-        label="Password"
+        label={t("password")}
         type="password"
         value={password}
         onChange={setPassword}
@@ -72,13 +83,13 @@ export function SignInForm() {
 
       {error === EMAIL_NOT_VERIFIED_ERROR && (
         <p style={{ fontSize: "0.875rem", marginBottom: "1rem" }}>
-          <Link href={{ pathname: "/auth/verify-email", query: { email } }}>
-            Resend verification email
+          <Link href={`/auth/verify-email?email=${encodeURIComponent(email)}`}>
+            {t("resendVerification")}
           </Link>
         </p>
       )}
 
-      <SubmitButton loading={loading}>Sign in</SubmitButton>
+      <SubmitButton loading={loading}>{t("signIn")}</SubmitButton>
 
       <p
         style={{
@@ -88,7 +99,7 @@ export function SignInForm() {
           color: "var(--muted)",
         }}
       >
-        No account? <Link href="/auth/sign-up">Create one</Link>
+        {t("noAccount")} <Link href="/auth/sign-up">{t("createOne")}</Link>
       </p>
     </form>
   );

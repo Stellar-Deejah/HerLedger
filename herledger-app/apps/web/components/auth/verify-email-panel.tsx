@@ -1,15 +1,18 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { ErrorMessage } from "@/components/ui/error-message";
+import { useRouter } from "@/i18n/navigation";
 import { sendVerificationEmail } from "@/lib/auth/client";
 import { runExclusive } from "@/lib/utils/submit-guard";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export function VerifyEmailPanel() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
@@ -47,32 +50,25 @@ export function VerifyEmailPanel() {
           callbackURL: "/auth/verify-email?verified=true",
         });
         if (result.error) {
-          setError(result.error.message ?? "Couldn't resend the verification email.");
+          setError(result.error.message ?? t("resendFailed"));
         } else {
           setSent(true);
           setCooldown(RESEND_COOLDOWN_SECONDS);
         }
       } catch {
-        setError("An unexpected error occurred. Please try again.");
+        setError(t("unexpectedError"));
       }
     });
   }
 
   if (verified) {
-    return <p style={{ textAlign: "center", color: "var(--muted)" }}>Redirecting…</p>;
+    return <p style={{ textAlign: "center", color: "var(--muted)" }}>{t("redirecting")}</p>;
   }
 
   return (
     <div style={{ textAlign: "center" }}>
       <p style={{ color: "var(--muted)", marginBottom: "1.5rem" }}>
-        {email ? (
-          <>
-            We sent a verification link to <strong>{email}</strong>. Click the link in that email to
-            finish setting up your account.
-          </>
-        ) : (
-          "Check your inbox for a verification link to finish setting up your account."
-        )}
+        {email ? <>{t("verifyEmailSent", { email })}</> : t("verifyEmailCheck")}
       </p>
 
       {error && <ErrorMessage message={error} />}
@@ -81,7 +77,7 @@ export function VerifyEmailPanel() {
           role="status"
           style={{ fontSize: "0.875rem", color: "var(--muted)", marginBottom: "1rem" }}
         >
-          Verification email sent.
+          {t("verificationEmailSent")}
         </p>
       )}
 
@@ -99,7 +95,7 @@ export function VerifyEmailPanel() {
             fontSize: "0.875rem",
           }}
         >
-          {cooldown > 0 ? `Resend available in ${cooldown}s` : "Resend verification email"}
+          {cooldown > 0 ? t("resendCooldown", { seconds: cooldown }) : t("resendVerification")}
         </button>
       )}
     </div>
