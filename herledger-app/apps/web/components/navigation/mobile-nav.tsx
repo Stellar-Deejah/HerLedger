@@ -18,7 +18,7 @@ import { SignOutButton } from "./sign-out-button";
 // drawer automatically, without a setState-in-effect.
 // ---------------------------------------------------------------------------
 
-export function MobileNav() {
+export function MobileNav({ onboardingCompleted }: { onboardingCompleted: boolean }) {
   const pathname = usePathname();
   const [openPathname, setOpenPathname] = useState<string | null>(null);
 
@@ -90,7 +90,7 @@ export function MobileNav() {
         <ul style={{ listStyle: "none", padding: 0, margin: 0, flex: 1 }}>
           {NAV_ITEMS.map(({ href, label }) => (
             <li key={href}>
-              <NavItem href={href} label={label} />
+              <NavItem href={href} label={label} disabled={!onboardingCompleted && (href === "/dashboard/attestations" || href === "/dashboard/disputes")} />
             </li>
           ))}
         </ul>

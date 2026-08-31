@@ -111,6 +111,10 @@ export const POST = withRateLimit(async (req: NextRequest) => {
       metadataHash,
       active: true,
     });
+    await db.prisma.user.update({
+      where: { id: session.user.id },
+      data: { onboardingCompleted: true },
+    });
 
     return typedJson<BusinessRegisterResponse>({
       data: { businessId: profile.businessId },

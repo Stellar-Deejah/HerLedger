@@ -17,7 +17,7 @@ import { SignOutButton } from "./sign-out-button";
 // up, while `MobileNav` renders the top bar + drawer shown below 768px.
 // ---------------------------------------------------------------------------
 
-export function DashboardNav() {
+export function DashboardNav({ onboardingCompleted }: { onboardingCompleted: boolean }) {
   return (
     <>
       <aside className="nav-sidebar" aria-label="Dashboard navigation">
@@ -38,7 +38,7 @@ export function DashboardNav() {
         <ul style={{ listStyle: "none", padding: 0, margin: 0, flex: 1 }}>
           {NAV_ITEMS.map(({ href, label }) => (
             <li key={href}>
-              <NavItem href={href} label={label} />
+            <NavItem href={href} label={label} disabled={!onboardingCompleted && (href === "/dashboard/attestations" || href === "/dashboard/disputes")} />
             </li>
           ))}
         </ul>
@@ -46,7 +46,7 @@ export function DashboardNav() {
         <SignOutButton />
       </aside>
 
-      <MobileNav />
+      <MobileNav onboardingCompleted={onboardingCompleted} />
     </>
   );
 }

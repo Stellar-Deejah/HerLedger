@@ -32,6 +32,12 @@ export const auth = betterAuth({
     requireEmailVerification: true,
     minPasswordLength: 12,
   },
+  user: {
+    additionalFields: {
+      role: { type: "string", defaultValue: "USER", input: false },
+      onboardingCompleted: { type: "boolean", defaultValue: false, input: false },
+    },
+  },
   emailVerification: {
     sendOnSignUp: true,
     // Refreshes the token (and re-sends) on a sign-in attempt against an
@@ -80,8 +86,9 @@ export const auth = betterAuth({
     // out-of-band revocation propagating in effectively "the next request or
     // two" while still avoiding a DB round trip on every single navigation.
     cookieCache: {
-      enabled: true,
-      maxAge: 30, // 30 seconds short-lived Edge cache window
+       // Role and onboarding state are server-owned and must take effect
+       // immediately after registration or an administrative update.
+       enabled: false,
     },
   },
   trustedOrigins: [env.APP_URL],

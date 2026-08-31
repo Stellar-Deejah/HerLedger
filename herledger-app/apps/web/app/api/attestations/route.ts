@@ -6,14 +6,12 @@ import { rateLimitKey } from "@/lib/api/rate-limit";
 import { readLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
+import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
 import { getAttestations } from "@/lib/data/attestations";
-import { getPrismaClient } from "@/lib/db/client";
 import { withRateLimit } from "@/lib/rate-limit";
 
 import { RequestSchema } from "./schema";
 import type { AttestationsResponse, AttestationDto } from "./schema";
-
-const prisma = getPrismaClient();
 
 export const GET = withRateLimit(async (req: NextRequest) => {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -43,34 +41,20 @@ export const GET = withRateLimit(async (req: NextRequest) => {
     );
   }
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
+  const ownership = await requireBusinessOwner(session);
+  if (!ownership.ok) {
+    return typedJson<AttestationsResponse>(
+      { data: null, error: { code: ownership.code, message: ownership.message }, meta: null },
+      { status: ownership.status }
+    );
+  }
 
-  const isOwner = Boolean(profile?.businessId);
-  const data = await getAttestations(profile?.businessId ?? null, parsed.data.includeRevoked);
+  const data = await getAttestations(ownership.businessId, parsed.data.includeRevoked);
 
-  const allowedFields: (keyof AttestationDto)[] = isOwner
-    ? [
-        "id",
-        "attestationId",
-        "eventId",
-        "attesterAddress",
-        "claimHash",
-        "claimDescription",
-        "status",
-        "ledgerSequence",
-      ]
-    : [
-        "id",
-        "attestationId",
-        "eventId",
-        "attesterAddress",
-        "claimDescription",
-        "status",
-        "ledgerSequence",
-      ];
+  const allowedFields: (keyof AttestationDto)[] = [
+    "id", "attestationId", "eventId", "attesterAddress", "claimHash",
+    "claimDescription", "status", "ledgerSequence",
+  ];
 
   const projectedAttestations = data.attestations.map((att) =>
     projectFields(att, allowedFields)

@@ -23,6 +23,8 @@ model User {
   name          String?
   /// @PII
   image         String?
+  role          UserRole  @default(USER)
+  onboardingCompleted Boolean @default(false)
   createdAt     DateTime  @default(now()) @db.Timestamptz
   updatedAt     DateTime  @updatedAt @db.Timestamptz
   deletedAt     DateTime? @db.Timestamptz
@@ -393,6 +395,11 @@ enum EventStatus {
 enum AttestationStatus {
   Active
   Revoked
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 

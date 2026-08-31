@@ -11,9 +11,13 @@ import type { NavHref } from "./nav-items";
 // which is a Server Component). Each item calls `usePathname()` independently.
 // ---------------------------------------------------------------------------
 
-export function NavItem({ href, label }: { href: NavHref; label: string }) {
+export function NavItem({ href, label, disabled = false }: { href: NavHref; label: string; disabled?: boolean }) {
   const pathname = usePathname();
   const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+
+  if (disabled) {
+    return <span aria-disabled="true" title="Register your business to unlock this feature" style={{ display: "block", padding: "0.5rem 0.75rem", borderRadius: "var(--radius)", color: "var(--muted)", opacity: 0.55, cursor: "not-allowed", fontSize: "0.9375rem" }}>{label} <span aria-hidden="true">🔒</span></span>;
+  }
 
   return (
     <Link

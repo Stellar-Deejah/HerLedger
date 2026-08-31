@@ -1,4 +1,3 @@
-import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
@@ -6,6 +5,7 @@ import { rateLimitKey } from "@/lib/api/rate-limit";
 import { readLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
+import { requireBusinessOwner } from "@/lib/auth/require-business-owner";
 import { getRecentActivity } from "@/lib/data/activity";
 import { withRateLimit } from "@/lib/rate-limit";
 
@@ -42,10 +42,15 @@ export const GET = withRateLimit(async (req: NextRequest) => {
     );
   }
 
-  const db = getDbClient();
-  const profile = await db.businesses.findByUserId(session.user.id);
+  const ownership = await requireBusinessOwner(session);
+  if (!ownership.ok) {
+    return typedJson<ActivityRecentResponse>(
+      { data: null, error: { code: ownership.code, message: ownership.message }, meta: null },
+      { status: ownership.status }
+    );
+  }
 
-  const data = await getRecentActivity(profile?.businessId ?? null, {
+  const data = await getRecentActivity(ownership.businessId, {
     offset: parsed.data.offset,
     limit: parsed.data.limit,
     ...(parsed.data.startDate ? { startDate: parsed.data.startDate } : {}),
