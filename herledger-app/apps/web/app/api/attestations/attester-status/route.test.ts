@@ -32,7 +32,9 @@ describe("GET /api/attestations/attester-status", () => {
   it("returns 401 when not authenticated", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce(null);
     setDbClient(createMockDbClient());
-    const req = new NextRequest(`http://localhost/api/attestations/attester-status?walletAddress=${WALLET}`);
+    const req = new NextRequest(
+      `http://localhost/api/attestations/attester-status?walletAddress=${WALLET}`
+    );
 
     const res = await GET(req);
     expect(res.status).toBe(401);
@@ -41,7 +43,9 @@ describe("GET /api/attestations/attester-status", () => {
   it("returns 400 when walletAddress is missing or malformed", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
     setDbClient(createMockDbClient());
-    const req = new NextRequest("http://localhost/api/attestations/attester-status?walletAddress=too-short");
+    const req = new NextRequest(
+      "http://localhost/api/attestations/attester-status?walletAddress=too-short"
+    );
 
     const res = await GET(req);
     expect(res.status).toBe(400);
@@ -59,7 +63,9 @@ describe("GET /api/attestations/attester-status", () => {
         },
       })
     );
-    const req = new NextRequest(`http://localhost/api/attestations/attester-status?walletAddress=${WALLET}`);
+    const req = new NextRequest(
+      `http://localhost/api/attestations/attester-status?walletAddress=${WALLET}`
+    );
 
     const res = await GET(req);
     expect(res.status).toBe(200);
@@ -82,7 +88,9 @@ describe("GET /api/attestations/attester-status", () => {
         },
       })
     );
-    const req = new NextRequest(`http://localhost/api/attestations/attester-status?walletAddress=${WALLET}`);
+    const req = new NextRequest(
+      `http://localhost/api/attestations/attester-status?walletAddress=${WALLET}`
+    );
 
     const res = await GET(req);
     expect(res.status).toBe(200);

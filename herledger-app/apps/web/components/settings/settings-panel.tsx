@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
 import { useSession, signOut } from "@/lib/auth/client";
+
 import { LinkedWallet } from "./linked-wallet";
 import { NotificationPreferences } from "./notification-preferences";
 import { PersonalAccessTokens } from "./personal-access-tokens";

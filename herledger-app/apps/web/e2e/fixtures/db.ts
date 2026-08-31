@@ -22,10 +22,10 @@ export const test = base.extend<{
       prisma.$executeRawUnsafe('TRUNCATE TABLE "FinancialEvent" CASCADE;'),
       prisma.$executeRawUnsafe('TRUNCATE TABLE "Attestation" CASCADE;'),
     ]);
-    
+
     await use(prisma);
   },
-  
+
   seedFinancialEvent: async ({ db }, use) => {
     await use(async (override = {}) => {
       return db.financialEvent.create({
@@ -42,10 +42,10 @@ export const test = base.extend<{
           status: "Pending",
           ledgerSequence: 100,
           ...override,
-        }
+        },
       });
     });
-  }
+  },
 });
 
 export { expect } from "@playwright/test";

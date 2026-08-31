@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastify/cors": "^10.1.0",
     "@herledger/config": "workspace:*",
     "@herledger/db": "workspace:*",
     "@herledger/sdk": "workspace:*",

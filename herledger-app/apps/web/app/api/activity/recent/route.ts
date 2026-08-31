@@ -19,9 +19,7 @@ export const GET = withRateLimit(async (req: NextRequest) => {
 
   if (!session) {
     return typedJson<ActivityRecentResponse>(
-      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" },
-          meta: null
-        },
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" }, meta: null },
       { status: 401 }
     );
   }
@@ -35,9 +33,11 @@ export const GET = withRateLimit(async (req: NextRequest) => {
   });
   if (!parsed.success) {
     return typedJson<ActivityRecentResponse>(
-      { data: null, error: { code: "INVALID_PARAMS", message: "Invalid pagination params" },
-          meta: null
-        },
+      {
+        data: null,
+        error: { code: "INVALID_PARAMS", message: "Invalid pagination params" },
+        meta: null,
+      },
       { status: 422 }
     );
   }

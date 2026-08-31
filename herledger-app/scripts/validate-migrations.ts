@@ -15,7 +15,7 @@ function main() {
 
   // 1. Check if there are any uncommitted schema changes (not in migrations)
   console.log("➡️ Checking for unapplied schema changes...");
-  
+
   // Use the same environment variables or rely on GHA setup
   const diffResult = spawnSync(
     "npx",
@@ -42,7 +42,9 @@ function main() {
   // 2 = differences detected
   if (diffResult.status === 2) {
     console.error("❌ Schema changes detected that are not committed as migration files.");
-    console.error("   Please run 'pnpm db:migrate:dev' locally and commit the resulting migration folder.");
+    console.error(
+      "   Please run 'pnpm db:migrate:dev' locally and commit the resulting migration folder."
+    );
     process.exit(1);
   } else if (diffResult.status !== 0) {
     console.error("❌ Error running prisma migrate diff:");
@@ -54,7 +56,7 @@ function main() {
 
   // 2. Scan all migrations for unsafe additions of non-nullable columns without defaults
   console.log("➡️ Scanning migrations for unsafe column additions...");
-  
+
   if (!fs.existsSync(migrationsDir)) {
     console.log("✅ No migrations folder found to scan.");
     process.exit(0);
@@ -79,8 +81,12 @@ function main() {
           const hasDefault = /default/i.test(line);
 
           if (hasAddColumn && hasNotNull && !hasDefault) {
-            console.error(`❌ Unsafe migration detected in file: ${path.relative(rootDir, itemPath)}`);
-            console.error(`   Adding a non-nullable column without a default value is prohibited on existing tables.`);
+            console.error(
+              `❌ Unsafe migration detected in file: ${path.relative(rootDir, itemPath)}`
+            );
+            console.error(
+              `   Adding a non-nullable column without a default value is prohibited on existing tables.`
+            );
             console.error(`   Line: ${line.trim()}`);
             process.exit(1);
           }

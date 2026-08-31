@@ -23,10 +23,7 @@ export function clampPagination(
 /**
  * Paginates an in-memory array slice with metadata.
  */
-export function paginateArray<T>(
-  items: T[],
-  options?: PaginationOptions
-): PaginatedResult<T> {
+export function paginateArray<T>(items: T[], options?: PaginationOptions): PaginatedResult<T> {
   const { offset, limit } = clampPagination(options);
   const total = items.length;
   const pagedItems = items.slice(offset, offset + limit);

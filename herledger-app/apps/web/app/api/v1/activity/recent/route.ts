@@ -33,7 +33,11 @@ export const GET = withRateLimit(async (req: NextRequest) => {
   });
   if (!parsed.success) {
     return typedJson<ActivityRecentResponse>(
-      { data: null, error: { code: "INVALID_PARAMS", message: "Invalid pagination params" }, meta: null },
+      {
+        data: null,
+        error: { code: "INVALID_PARAMS", message: "Invalid pagination params" },
+        meta: null,
+      },
       { status: 422 }
     );
   }

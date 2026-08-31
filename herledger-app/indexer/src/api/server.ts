@@ -1,6 +1,8 @@
 import Fastify, { type FastifyInstance, type FastifyBaseLogger } from "fastify";
+import cors from "@fastify/cors";
 import { registerRoutes } from "./routes/index.js";
 import { logger, generateCorrelationId, runWithContext } from "../observability/index.js";
+import { createAuthMiddleware, isPublicRoute } from "./auth.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -16,6 +18,17 @@ export function buildServer(): FastifyInstance {
   const app = Fastify({
     loggerInstance: logger as unknown as FastifyBaseLogger,
     disableRequestLogging: false,
+  });
+
+  // Register CORS plugin - restrict to INDEXER_API_URL origin only
+  const indexerApiUrl = process.env["INDEXER_API_URL"] ?? "http://localhost:3000";
+  const allowedOrigin = new URL(indexerApiUrl).origin;
+
+  void app.register(cors, {
+    origin: allowedOrigin,
+    credentials: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "X-Indexer-Secret", "X-Correlation-Id", "X-Request-Id"],
   });
 
   // Correlation ID middleware: extracts or generates correlationId,
@@ -36,6 +49,22 @@ export function buildServer(): FastifyInstance {
     runWithContext({ correlationId }, () => {
       done();
     });
+  });
+
+  // Authentication middleware - validate X-Indexer-Secret header
+  const indexerSecret = process.env["INDEXER_API_SECRET"];
+  if (!indexerSecret) {
+    throw new Error("INDEXER_API_SECRET environment variable is required");
+  }
+
+  const authMiddleware = createAuthMiddleware(indexerSecret);
+
+  app.addHook("onRequest", async (request, reply) => {
+    // Skip authentication for public routes (health, metrics, openapi)
+    if (isPublicRoute(request.url)) {
+      return;
+    }
+    await authMiddleware(request, reply);
   });
 
   // Global error handler — never expose stack traces to clients

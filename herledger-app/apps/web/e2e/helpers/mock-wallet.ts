@@ -18,20 +18,23 @@ export async function mockFreighter(page: Page, options: MockFreighterOptions = 
   } = options;
 
   // 1. Inject the mocked window.freighter API
-  await page.addInitScript((mockOpts) => {
-    (window as any).freighter = {
-      isConnected: async () => ({ isConnected: mockOpts.isConnected }),
-      requestAccess: async () => {
-        if (!mockOpts.isConnected) {
-          return { error: "User declined access" };
-        }
-        return { address: mockOpts.address };
-      },
-      getAddress: async () => ({ address: mockOpts.address }),
-      getNetwork: async () => ({ network: mockOpts.network }),
-      signTransaction: async (xdr: string) => ({ signedTxXdr: mockOpts.signTransactionXdr }),
-    };
-  }, { isConnected, address, network, signTransactionXdr });
+  await page.addInitScript(
+    (mockOpts) => {
+      (window as any).freighter = {
+        isConnected: async () => ({ isConnected: mockOpts.isConnected }),
+        requestAccess: async () => {
+          if (!mockOpts.isConnected) {
+            return { error: "User declined access" };
+          }
+          return { address: mockOpts.address };
+        },
+        getAddress: async () => ({ address: mockOpts.address }),
+        getNetwork: async () => ({ network: mockOpts.network }),
+        signTransaction: async (xdr: string) => ({ signedTxXdr: mockOpts.signTransactionXdr }),
+      };
+    },
+    { isConnected, address, network, signTransactionXdr }
+  );
 
   // 2. Intercept Soroban RPC / Stellar Horizon calls if enabled
   if (interceptRpc) {
@@ -57,7 +60,7 @@ export async function mockFreighter(page: Page, options: MockFreighterOptions = 
           });
           return;
         }
-        
+
         // Mock sendTransaction to return a pending status
         if (postData?.method === "sendTransaction") {
           await route.fulfill({
@@ -83,7 +86,7 @@ export async function mockFreighter(page: Page, options: MockFreighterOptions = 
             body: JSON.stringify({
               jsonrpc: "2.0",
               id: postData.id,
-              result: { passphrase: "Test SDF Network ; September 2015" }
+              result: { passphrase: "Test SDF Network ; September 2015" },
             }),
           });
           return;

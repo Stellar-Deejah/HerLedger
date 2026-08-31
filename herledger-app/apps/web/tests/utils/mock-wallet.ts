@@ -19,8 +19,7 @@
 // bytes + correct checksum, base32-encoded per RFC4648) built with plain
 // arithmetic, no crypto library involved, and reproducible in any
 // environment.
-export const TEST_WALLET_ADDRESS =
-  "GCVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVH7N";
+export const TEST_WALLET_ADDRESS = "GCVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVKVH7N";
 
 // ---------------------------------------------------------------------------
 // Shared mutable connection flag for the mocked WalletConnect used in

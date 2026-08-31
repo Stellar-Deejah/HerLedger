@@ -1,5 +1,5 @@
 import { Contract, TransactionBuilder, Account, rpc as StellarRpc } from "@stellar/stellar-sdk";
-import { getSorobanRpcServer, encodeAddress } from "@herledger/sdk";
+import { getSorobanRpcServer } from "@herledger/sdk";
 import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk";
 import { logger } from "../observability/index.js";
 import { retryWithBackoff } from "./retry.js";
@@ -74,7 +74,7 @@ async function fetchSupportedAssetsFromContract(
 
     return vec.map((val) => {
       const addr = val.address();
-      return addr ?? "";
+      return addr?.toString() ?? "";
     });
   }, "fetchSupportedAssetsFromContract");
 }
@@ -94,8 +94,7 @@ export async function getSupportedAssets(
 ): Promise<Set<string>> {
   const interval = cacheConfig?.refreshIntervalLedgers ?? 1000;
   const needsRefresh =
-    _cache.lastRefreshLedger === 0 ||
-    currentLedger - _cache.lastRefreshLedger >= interval;
+    _cache.lastRefreshLedger === 0 || currentLedger - _cache.lastRefreshLedger >= interval;
 
   if (needsRefresh && !_cache.refreshInProgress) {
     _cache.refreshInProgress = true;

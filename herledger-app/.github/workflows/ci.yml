@@ -53,6 +53,11 @@ jobs:
     timeout-minutes: 10
     needs: setup
 
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
+      SHADOW_DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_shadow
+
     steps:
       - uses: actions/checkout@v4
 
@@ -79,6 +84,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: herledger-app
+
+      - name: Create .env.local for Prisma
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" > .env.local
+          echo "SHADOW_DATABASE_URL=$SHADOW_DATABASE_URL" >> .env.local
         working-directory: herledger-app
 
       - name: Format check
@@ -131,6 +142,7 @@ jobs:
       FINANCIAL_LEDGER_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
       ATTESTATION_REGISTRY_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
       INDEXER_API_URL: http://localhost:4000
+      INDEXER_API_SECRET: ci-test-indexer-secret-must-be-at-least-32-chars-long
       ADMIN_API_TOKEN: ci-test-admin-token
       RECONCILIATION_CRON_SCHEDULE: "0 2 * * *"
       RECONCILIATION_SAMPLE_SIZE: "50"
@@ -206,6 +218,11 @@ jobs:
     timeout-minutes: 15
     needs: [setup, unit-tests]
 
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
+      SHADOW_DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_shadow
+
     steps:
       - uses: actions/checkout@v4
 
@@ -232,6 +249,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: herledger-app
+
+      - name: Create .env.local for Prisma
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" > .env.local
+          echo "SHADOW_DATABASE_URL=$SHADOW_DATABASE_URL" >> .env.local
         working-directory: herledger-app
 
       - name: Build
@@ -293,6 +316,7 @@ jobs:
       FINANCIAL_LEDGER_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
       ATTESTATION_REGISTRY_CONTRACT_ID: CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4
       INDEXER_API_URL: http://localhost:4000
+      INDEXER_API_SECRET: ci-test-indexer-secret-must-be-at-least-32-chars-long
       ADMIN_API_TOKEN: ci-test-admin-token
       RECONCILIATION_CRON_SCHEDULE: "0 2 * * *"
       RECONCILIATION_SAMPLE_SIZE: "50"

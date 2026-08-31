@@ -31,9 +31,7 @@ let _circuitBreakerOptions: Partial<CircuitBreakerOptions> | undefined;
  * Must be called before the first `getSorobanRpcServer()` call, or followed
  * by `resetRpcState()` to force re-initialisation.
  */
-export function configureCircuitBreaker(
-  options: Partial<CircuitBreakerOptions>
-): void {
+export function configureCircuitBreaker(options: Partial<CircuitBreakerOptions>): void {
   _circuitBreakerOptions = options;
 }
 
@@ -94,9 +92,7 @@ function ensureInitialised(config: StellarNetworkConfig): void {
  *
  * Re-creates server instances only when the configured URL list changes.
  */
-export function getSorobanRpcServer(
-  config: StellarNetworkConfig
-): StellarRpc.Server {
+export function getSorobanRpcServer(config: StellarNetworkConfig): StellarRpc.Server {
   ensureInitialised(config);
 
   for (const entry of _entries) {
@@ -115,9 +111,7 @@ export function getSorobanRpcServer(
  * Returns the currently active endpoint URL (the first one whose circuit
  * breaker allows requests), or `null` if all circuits are open.
  */
-export function getActiveRpcEndpoint(
-  config: StellarNetworkConfig
-): string | null {
+export function getActiveRpcEndpoint(config: StellarNetworkConfig): string | null {
   ensureInitialised(config);
   for (const entry of _entries) {
     if (entry.breaker.allowRequest()) {
@@ -207,9 +201,7 @@ export interface RpcHealthResult {
  * `getLatestLedger`. Returns a structured result suitable for `/health`
  * endpoints.
  */
-export async function checkRpcHealth(
-  config: StellarNetworkConfig
-): Promise<RpcHealthResult> {
+export async function checkRpcHealth(config: StellarNetworkConfig): Promise<RpcHealthResult> {
   ensureInitialised(config);
 
   const endpointStatuses = _entries.map((e) => ({
@@ -219,9 +211,7 @@ export async function checkRpcHealth(
   }));
 
   try {
-    const result = await withRpcFailover(config, (server) =>
-      server.getLatestLedger()
-    );
+    const result = await withRpcFailover(config, (server) => server.getLatestLedger());
 
     return {
       healthy: true,
@@ -251,13 +241,9 @@ export async function checkRpcHealth(
  * Fetch the current ledger sequence from the RPC server.
  * Uses priority-based failover across all configured endpoints.
  */
-export async function getLatestLedger(
-  config: StellarNetworkConfig
-): Promise<number> {
+export async function getLatestLedger(config: StellarNetworkConfig): Promise<number> {
   try {
-    const result = await withRpcFailover(config, (server) =>
-      server.getLatestLedger()
-    );
+    const result = await withRpcFailover(config, (server) => server.getLatestLedger());
     return result.sequence;
   } catch (cause) {
     throw new RpcError(RpcErrorCode.REQUEST_FAILED, "Failed to fetch latest ledger", { cause });

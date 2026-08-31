@@ -8,8 +8,6 @@ import {
 import { WalletError, WalletErrorCode } from "../errors/index.js";
 import type { WalletConnection, WalletProvider } from "./types.js";
 
-import type { WalletConnection, WalletProvider } from "./types.js";
-
 // ---------------------------------------------------------------------------
 // FreighterWalletProvider
 // Implements WalletProvider by delegating to the Freighter browser extension.

@@ -1,10 +1,6 @@
 import type { AttesterProfile, PrismaClient } from "@prisma/client";
 
-import {
-  type AttestersRepository,
-  type UpsertAttesterInput,
-  DatabaseError,
-} from "../types.js";
+import { type AttestersRepository, type UpsertAttesterInput, DatabaseError } from "../types.js";
 
 export async function findAttesterByWallet(
   prisma: PrismaClient,

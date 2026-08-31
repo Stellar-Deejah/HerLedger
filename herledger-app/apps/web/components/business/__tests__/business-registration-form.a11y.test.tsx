@@ -22,7 +22,6 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
       if (mockWalletConnectionState.connected) {
         onConnected(TEST_WALLET_ADDRESS);
       }
-       
     }, []);
 
     if (mockWalletConnectionState.connected) {
@@ -116,7 +115,9 @@ describe("BusinessRegistrationForm accessibility", () => {
   it("announces the error via role=alert and has no axe violations on the error step", async () => {
     const user = userEvent.setup();
     const { container } = render(
-      <MockSdkProvider overrides={{ registerBusiness: mockRegisterBusinessThrows("Simulated failure") }}>
+      <MockSdkProvider
+        overrides={{ registerBusiness: mockRegisterBusinessThrows("Simulated failure") }}
+      >
         <BusinessRegistrationForm />
       </MockSdkProvider>
     );

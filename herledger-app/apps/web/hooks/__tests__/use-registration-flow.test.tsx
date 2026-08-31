@@ -66,9 +66,7 @@ describe("useRegistrationFlow: happy path", () => {
     });
     expect(result.current.txHash).toBe("tx-happy");
 
-    const posts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([url]) => url === "/api/business/register");
+    const posts = vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/business/register");
     expect(posts).toHaveLength(1);
     const parsed = JSON.parse(posts[0]![1]!.body as string);
     expect(parsed).toMatchObject({
@@ -132,9 +130,7 @@ describe("useRegistrationFlow: resuming pending registration", () => {
 
     expect(readPendingRegistration()).toBeNull();
 
-    const posts = vi
-      .mocked(fetch)
-      .mock.calls.filter(([url]) => url === "/api/business/register");
+    const posts = vi.mocked(fetch).mock.calls.filter(([url]) => url === "/api/business/register");
     expect(posts).toHaveLength(1);
   });
 

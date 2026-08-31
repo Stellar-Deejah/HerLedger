@@ -22,7 +22,7 @@ interface CurrentBusinessResponse {
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
 
-  const limited = readLimiter.check(rateLimitKey(_req, session?.user?.id));
+  const limited = readLimiter.check(rateLimitKey(req, session?.user?.id));
   if (limited) return limited;
 
   if (!session) {

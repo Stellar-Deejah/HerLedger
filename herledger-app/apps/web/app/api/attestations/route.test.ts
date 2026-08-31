@@ -18,10 +18,12 @@ vi.mock("@/lib/auth/server", () => ({
   },
 }));
 
-const { findFirstMock, getAttestationsMock } = vi.hoisted(() => ({
-  findFirstMock: vi.fn(),
-  getAttestationsMock: vi.fn(),
-}));
+const { findFirstMock: _findFirstMock, getAttestationsMock: _getAttestationsMock } = vi.hoisted(
+  () => ({
+    findFirstMock: vi.fn(),
+    getAttestationsMock: vi.fn(),
+  })
+);
 const { mockFindFirst, mockGetAttestations } = vi.hoisted(() => ({
   mockFindFirst: vi.fn(),
   mockGetAttestations: vi.fn(),

@@ -1,4 +1,9 @@
-import { rpc as StellarRpc, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
+import {
+  rpc as StellarRpc,
+  Transaction,
+  FeeBumpTransaction,
+  TransactionBuilder,
+} from "@stellar/stellar-sdk";
 import type { StellarNetworkConfig, TransactionResult } from "../types/index.js";
 import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
 import { getSorobanRpcServer } from "./client.js";
@@ -214,18 +219,17 @@ export async function submitAndWait(
   optionsOrOnSubmitted?: ((hash: string) => void) | SubmitAndWaitOptions,
   maybeOptions?: SubmitAndWaitOptions
 ): Promise<TransactionResult> {
-  const onSubmitted =
-    typeof optionsOrOnSubmitted === "function" ? optionsOrOnSubmitted : undefined;
+  const onSubmitted = typeof optionsOrOnSubmitted === "function" ? optionsOrOnSubmitted : undefined;
   const options =
     typeof optionsOrOnSubmitted === "object" && optionsOrOnSubmitted !== null
       ? optionsOrOnSubmitted
-      : maybeOptions ?? {};
+      : (maybeOptions ?? {});
 
   assertNotAborted(options.signal);
   const server = getSorobanRpcServer(config);
 
   const txObj = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
-  const deadline = Date.now() + maxWaitMs;
+  const deadline = Date.now() + (options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS);
 
   const sendResult = await submitWithRetries(server, txObj, deadline, options);
   onSubmitted?.(sendResult.hash);

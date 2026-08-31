@@ -30,6 +30,9 @@ export async function ActivityListServer({ businessId }: ActivityListServerProps
   }
 
   return (
-    <ActivityList initialEvents={data.events} initialHasMore={data.pagination.count === PAGE_SIZE} />
+    <ActivityList
+      initialEvents={data.events}
+      initialHasMore={data.pagination.count === PAGE_SIZE}
+    />
   );
 }

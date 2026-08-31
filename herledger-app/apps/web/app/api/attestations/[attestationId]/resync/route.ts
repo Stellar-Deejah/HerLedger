@@ -10,7 +10,6 @@ import { auth } from "@/lib/auth/server";
 import { attestationsTag } from "@/lib/data/attestations";
 import { getServerStellarConfig, getServerContractConfig } from "@/lib/stellar/server-config";
 
-
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ attestationId: string }> }

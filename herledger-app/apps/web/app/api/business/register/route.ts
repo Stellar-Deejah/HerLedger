@@ -36,7 +36,11 @@ export const POST = withRateLimit(async (req: NextRequest) => {
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid registration data" }, meta: null },
+      {
+        data: null,
+        error: { code: "VALIDATION_ERROR", message: "Invalid registration data" },
+        meta: null,
+      },
       { status: 422 }
     );
   }

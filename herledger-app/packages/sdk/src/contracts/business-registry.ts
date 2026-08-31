@@ -38,7 +38,8 @@ function isVoid(val: xdr.ScVal): boolean {
 
 function decodeBusiness(val: xdr.ScVal): Business {
   const map = val.map();
-  if (!map) throw new ContractError(ContractErrorCode.DECODE_ERROR, "Expected struct map for Business");
+  if (!map)
+    throw new ContractError(ContractErrorCode.DECODE_ERROR, "Expected struct map for Business");
 
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
@@ -99,9 +100,13 @@ export async function getBusiness(
 
       const sim = await simulateRead(tx, config);
       if (StellarRpc.Api.isSimulationError(sim)) {
-        throw new ContractError(ContractErrorCode.SIMULATION_ERROR, `get_business error: ${sim.error}`, {
-          context: { contractCode: sim.error, method: "get_business" },
-        });
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `get_business error: ${sim.error}`,
+          {
+            context: { contractCode: sim.error, method: "get_business" },
+          }
+        );
       }
 
       const retval = sim.result?.retval;
@@ -266,7 +271,9 @@ export async function deactivateBusiness(
     fee: "1000000",
     networkPassphrase: config.networkPassphrase,
   })
-    .addOperation(contract.call("deactivate_business", encodeBytes32(toHexString32(params.businessId))))
+    .addOperation(
+      contract.call("deactivate_business", encodeBytes32(toHexString32(params.businessId)))
+    )
     .setTimeout(300)
     .build();
 

@@ -40,13 +40,13 @@ export function DisputeStatusPoller({
   const pollStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/disputes/${eventId}/status`);
-      
+
       if (!response.ok) {
         throw new Error("Failed to fetch dispute status");
       }
 
       const data = await response.json();
-      
+
       if (data.status === "Disputed") {
         cleanup();
         setStatus("success");
@@ -119,9 +119,7 @@ export function DisputeStatusPoller({
           textAlign: "center",
         }}
       >
-        <p style={{ color: "var(--success, #22c55e)", fontWeight: 600 }}>
-          ✓ Dispute Confirmed
-        </p>
+        <p style={{ color: "var(--success, #22c55e)", fontWeight: 600 }}>✓ Dispute Confirmed</p>
         <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.5rem" }}>
           Your dispute has been successfully confirmed on the Stellar network.
         </p>
@@ -176,9 +174,7 @@ export function DisputeStatusPoller({
         textAlign: "center",
       }}
     >
-      <p style={{ color: "var(--info, #3b82f6)", fontWeight: 600 }}>
-        ⏳ Confirming Dispute...
-      </p>
+      <p style={{ color: "var(--info, #3b82f6)", fontWeight: 600 }}>⏳ Confirming Dispute...</p>
       <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginTop: "0.5rem" }}>
         Waiting for on-chain confirmation ({elapsedSeconds}s / {timeoutSeconds}s)
       </p>

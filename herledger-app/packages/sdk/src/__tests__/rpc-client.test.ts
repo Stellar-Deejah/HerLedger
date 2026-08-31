@@ -78,10 +78,7 @@ describe("parseRpcUrls", () => {
 
   it("strips whitespace and empty entries", () => {
     const config = makeConfig("https://rpc1.example.com , , https://rpc2.example.com");
-    expect(parseRpcUrls(config)).toEqual([
-      "https://rpc1.example.com",
-      "https://rpc2.example.com",
-    ]);
+    expect(parseRpcUrls(config)).toEqual(["https://rpc1.example.com", "https://rpc2.example.com"]);
   });
 });
 
@@ -136,9 +133,7 @@ describe("getSorobanRpcServer", () => {
     recordRpcFailure("https://rpc1.example.com");
     recordRpcFailure("https://rpc2.example.com");
 
-    expect(() => getSorobanRpcServer(config)).toThrow(
-      /All RPC endpoints are unavailable/
-    );
+    expect(() => getSorobanRpcServer(config)).toThrow(/All RPC endpoints are unavailable/);
   });
 
   it("throws when no URLs are configured", () => {
@@ -262,8 +257,6 @@ describe("getLatestLedger", () => {
     const config = makeConfig("https://rpc1.example.com");
     mockGetLatestLedger.mockRejectedValue(new Error("fail"));
 
-    await expect(getLatestLedger(config)).rejects.toThrow(
-      /Failed to fetch latest ledger/
-    );
+    await expect(getLatestLedger(config)).rejects.toThrow(/Failed to fetch latest ledger/);
   });
 });

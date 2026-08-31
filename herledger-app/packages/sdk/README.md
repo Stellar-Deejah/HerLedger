@@ -42,7 +42,7 @@ cache across concurrent requests in the same process/isolate is what enables
 de-duplication; it introduces no per-user data leakage, and the default 30s
 TTL bounds any staleness from sharing across requests. Serverless/Edge
 runtimes spin up a fresh module instance (and therefore an empty cache) per
-isolate, so there's no risk of a *durable* cross-deployment cache. Callers
+isolate, so there's no risk of a _durable_ cross-deployment cache. Callers
 needing hard per-request isolation can construct their own `new QueryCache()`
 or pass `{ bypassCache: true }`.
 

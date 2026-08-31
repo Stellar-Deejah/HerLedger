@@ -21,9 +21,7 @@ describe("validateCallbackUrl", () => {
 
     it("drops javascript: URI payloads (javascript:alert(1))", () => {
       expect(validateCallbackUrl("javascript:alert(1)", allowedOrigins)).toBeNull();
-      expect(
-        validateCallbackUrl("javascript:confirm(document.cookie)", allowedOrigins)
-      ).toBeNull();
+      expect(validateCallbackUrl("javascript:confirm(document.cookie)", allowedOrigins)).toBeNull();
       expect(validateCallbackUrl("JAVASCRIPT:alert(1)", allowedOrigins)).toBeNull();
     });
 
@@ -60,20 +58,17 @@ describe("validateCallbackUrl", () => {
       expect(validateCallbackUrl("/dashboard/attestations", allowedOrigins)).toBe(
         "/dashboard/attestations"
       );
-      expect(
-        validateCallbackUrl("/dashboard/activity?tab=1&page=2#section", allowedOrigins)
-      ).toBe("/dashboard/activity?tab=1&page=2#section");
+      expect(validateCallbackUrl("/dashboard/activity?tab=1&page=2#section", allowedOrigins)).toBe(
+        "/dashboard/activity?tab=1&page=2#section"
+      );
     });
 
     it("allows absolute URLs matching allowed origins and extracts relative path", () => {
+      expect(validateCallbackUrl("http://localhost:3000/dashboard", allowedOrigins)).toBe(
+        "/dashboard"
+      );
       expect(
-        validateCallbackUrl("http://localhost:3000/dashboard", allowedOrigins)
-      ).toBe("/dashboard");
-      expect(
-        validateCallbackUrl(
-          "https://app.herledger.example/dashboard/settings",
-          allowedOrigins
-        )
+        validateCallbackUrl("https://app.herledger.example/dashboard/settings", allowedOrigins)
       ).toBe("/dashboard/settings");
     });
   });

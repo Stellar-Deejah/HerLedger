@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 
-import { addSessionCookie, cleanupSeed, disconnectSeedClient, seedAuthenticatedUser } from "./helpers/seed";
+import {
+  addSessionCookie,
+  cleanupSeed,
+  disconnectSeedClient,
+  seedAuthenticatedUser,
+} from "./helpers/seed";
 
 // ---------------------------------------------------------------------------
 // Informational timing capture for issue #11's RSC migration (per-widget

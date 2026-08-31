@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { buildWalletLinkChallengeMessage, generateWalletLinkNonce } from "@herledger/sdk";
 import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
-import { buildWalletLinkChallengeMessage, generateWalletLinkNonce } from "@herledger/sdk";
 
 const prisma = getPrismaClient();
 

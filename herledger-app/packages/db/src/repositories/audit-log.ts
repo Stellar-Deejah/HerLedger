@@ -44,16 +44,18 @@ export async function findAuditLogsByEntity(
   prisma: PrismaClient,
   entityType: string,
   entityId: string
-): Promise<Array<{
-  id: string;
-  entityType: string;
-  entityId: string;
-  action: string;
-  actorAddress: string;
-  timestamp: Date;
-  oldValue: unknown;
-  newValue: unknown;
-}>> {
+): Promise<
+  Array<{
+    id: string;
+    entityType: string;
+    entityId: string;
+    action: string;
+    actorAddress: string;
+    timestamp: Date;
+    oldValue: unknown;
+    newValue: unknown;
+  }>
+> {
   try {
     return await prisma.$queryRaw`
       SELECT "id", "entityType", "entityId", "action", "actorAddress", "timestamp", "oldValue", "newValue"
@@ -62,9 +64,6 @@ export async function findAuditLogsByEntity(
       ORDER BY "timestamp" ASC
     `;
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to query audit logs for ${entityType}:${entityId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to query audit logs for ${entityType}:${entityId}`, cause);
   }
 }

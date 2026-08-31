@@ -30,10 +30,7 @@
                           "properties": {
                             "status": {
                               "type": "string",
-                              "enum": [
-                                "ok",
-                                "degraded"
-                              ]
+                              "enum": ["ok", "degraded"]
                             },
                             "rpc": {
                               "type": "object",
@@ -57,23 +54,16 @@
                                   }
                                 }
                               },
-                              "required": [
-                                "healthy"
-                              ]
+                              "required": ["healthy"]
                             }
                           },
-                          "required": [
-                            "status"
-                          ]
+                          "required": ["status"]
                         },
                         "error": {
                           "type": "null"
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     },
                     {
                       "type": "object",
@@ -91,16 +81,10 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "code",
-                            "message"
-                          ]
+                          "required": ["code", "message"]
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     }
                   ]
                 }
@@ -186,26 +170,16 @@
                                   "type": "number"
                                 }
                               },
-                              "required": [
-                                "offset",
-                                "limit",
-                                "count"
-                              ]
+                              "required": ["offset", "limit", "count"]
                             }
                           },
-                          "required": [
-                            "events",
-                            "pagination"
-                          ]
+                          "required": ["events", "pagination"]
                         },
                         "error": {
                           "type": "null"
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     },
                     {
                       "type": "object",
@@ -223,16 +197,10 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "code",
-                            "message"
-                          ]
+                          "required": ["code", "message"]
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     }
                   ]
                 }
@@ -306,29 +274,16 @@
                                   "type": "number"
                                 }
                               },
-                              "required": [
-                                "Pending",
-                                "Verified",
-                                "Disputed",
-                                "Revoked"
-                              ]
+                              "required": ["Pending", "Verified", "Disputed", "Revoked"]
                             }
                           },
-                          "required": [
-                            "totalReceived",
-                            "totalSent",
-                            "netBalance",
-                            "countByStatus"
-                          ]
+                          "required": ["totalReceived", "totalSent", "netBalance", "countByStatus"]
                         },
                         "error": {
                           "type": "null"
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     },
                     {
                       "type": "object",
@@ -346,16 +301,10 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "code",
-                            "message"
-                          ]
+                          "required": ["code", "message"]
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     }
                   ]
                 }
@@ -440,18 +389,13 @@
                               }
                             }
                           },
-                          "required": [
-                            "attestations"
-                          ]
+                          "required": ["attestations"]
                         },
                         "error": {
                           "type": "null"
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     },
                     {
                       "type": "object",
@@ -469,16 +413,10 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "code",
-                            "message"
-                          ]
+                          "required": ["code", "message"]
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     }
                   ]
                 }
@@ -518,18 +456,13 @@
                           "additionalProperties": true
                         }
                       },
-                      "required": [
-                        "attestation"
-                      ]
+                      "required": ["attestation"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -563,13 +496,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "businessId",
-                  "walletAddress",
-                  "displayName",
-                  "metadataHash",
-                  "txHash"
-                ]
+                "required": ["businessId", "walletAddress", "displayName", "metadataHash", "txHash"]
               }
             }
           }
@@ -591,18 +518,13 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "businessId"
-                          ]
+                          "required": ["businessId"]
                         },
                         "error": {
                           "type": "null"
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     },
                     {
                       "type": "object",
@@ -620,16 +542,10 @@
                               "type": "string"
                             }
                           },
-                          "required": [
-                            "code",
-                            "message"
-                          ]
+                          "required": ["code", "message"]
                         }
                       },
-                      "required": [
-                        "data",
-                        "error"
-                      ]
+                      "required": ["data", "error"]
                     }
                   ]
                 }
@@ -659,11 +575,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "eventId",
-                  "reason",
-                  "reasonHash"
-                ]
+                "required": ["eventId", "reason", "reasonHash"]
               }
             }
           }
@@ -683,18 +595,13 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id"
-                      ]
+                      "required": ["id"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -767,18 +674,13 @@
                           ]
                         }
                       },
-                      "required": [
-                        "dispute"
-                      ]
+                      "required": ["dispute"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -803,16 +705,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -837,16 +733,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -871,16 +761,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -919,10 +803,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code",
-          "message"
-        ]
+        "required": ["code", "message"]
       },
       "GenericErrorResponse": {
         "type": "object",
@@ -940,16 +821,10 @@
                 "type": "string"
               }
             },
-            "required": [
-              "code",
-              "message"
-            ]
+            "required": ["code", "message"]
           }
         },
-        "required": [
-          "data",
-          "error"
-        ]
+        "required": ["data", "error"]
       },
       "HealthResponse": {
         "oneOf": [
@@ -961,10 +836,7 @@
                 "properties": {
                   "status": {
                     "type": "string",
-                    "enum": [
-                      "ok",
-                      "degraded"
-                    ]
+                    "enum": ["ok", "degraded"]
                   },
                   "rpc": {
                     "type": "object",
@@ -988,23 +860,16 @@
                         }
                       }
                     },
-                    "required": [
-                      "healthy"
-                    ]
+                    "required": ["healthy"]
                   }
                 },
-                "required": [
-                  "status"
-                ]
+                "required": ["status"]
               },
               "error": {
                 "type": "null"
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           },
           {
             "type": "object",
@@ -1022,16 +887,10 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "code",
-                  "message"
-                ]
+                "required": ["code", "message"]
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           }
         ]
       },
@@ -1062,26 +921,16 @@
                         "type": "number"
                       }
                     },
-                    "required": [
-                      "offset",
-                      "limit",
-                      "count"
-                    ]
+                    "required": ["offset", "limit", "count"]
                   }
                 },
-                "required": [
-                  "events",
-                  "pagination"
-                ]
+                "required": ["events", "pagination"]
               },
               "error": {
                 "type": "null"
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           },
           {
             "type": "object",
@@ -1099,16 +948,10 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "code",
-                  "message"
-                ]
+                "required": ["code", "message"]
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           }
         ]
       },
@@ -1145,29 +988,16 @@
                         "type": "number"
                       }
                     },
-                    "required": [
-                      "Pending",
-                      "Verified",
-                      "Disputed",
-                      "Revoked"
-                    ]
+                    "required": ["Pending", "Verified", "Disputed", "Revoked"]
                   }
                 },
-                "required": [
-                  "totalReceived",
-                  "totalSent",
-                  "netBalance",
-                  "countByStatus"
-                ]
+                "required": ["totalReceived", "totalSent", "netBalance", "countByStatus"]
               },
               "error": {
                 "type": "null"
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           },
           {
             "type": "object",
@@ -1185,16 +1015,10 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "code",
-                  "message"
-                ]
+                "required": ["code", "message"]
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           }
         ]
       },
@@ -1213,18 +1037,13 @@
                     }
                   }
                 },
-                "required": [
-                  "attestations"
-                ]
+                "required": ["attestations"]
               },
               "error": {
                 "type": "null"
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           },
           {
             "type": "object",
@@ -1242,16 +1061,10 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "code",
-                  "message"
-                ]
+                "required": ["code", "message"]
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           }
         ]
       },
@@ -1267,18 +1080,13 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "businessId"
-                ]
+                "required": ["businessId"]
               },
               "error": {
                 "type": "null"
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           },
           {
             "type": "object",
@@ -1296,16 +1104,10 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "code",
-                  "message"
-                ]
+                "required": ["code", "message"]
               }
             },
-            "required": [
-              "data",
-              "error"
-            ]
+            "required": ["data", "error"]
           }
         ]
       }

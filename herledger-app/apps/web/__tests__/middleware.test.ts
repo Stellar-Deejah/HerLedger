@@ -110,7 +110,7 @@ describe("middleware", () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce(MOCK_SESSION);
 
     const response = await middleware(
-      requestFor("/auth/sign-in?callbackUrl=%2Fdashboard%2Factivity", "valid-session"),
+      requestFor("/auth/sign-in?callbackUrl=%2Fdashboard%2Factivity", "valid-session")
     );
 
     const location = new URL(response.headers.get("location")!);
@@ -147,12 +147,12 @@ describe("middleware", () => {
       vi.mocked(auth.api.getSession).mockResolvedValueOnce(MOCK_SESSION);
 
       const response = await middleware(
-        requestFor(`/auth/sign-in?callbackUrl=${encodeURIComponent(payload)}`, "valid-session"),
+        requestFor(`/auth/sign-in?callbackUrl=${encodeURIComponent(payload)}`, "valid-session")
       );
 
       const location = new URL(response.headers.get("location")!);
       expect(location.origin).toBe(ORIGIN);
       expect(location.pathname).toBe("/dashboard");
-    },
+    }
   );
 });

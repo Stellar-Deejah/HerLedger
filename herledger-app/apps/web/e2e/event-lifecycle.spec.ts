@@ -8,7 +8,12 @@ import { AttestationsPage } from "./page-objects/AttestationsPage";
 import { DisputesPage } from "./page-objects/DisputesPage";
 
 test.describe("Event Lifecycle Flow", () => {
-  test("creates an attestation and raises a dispute for a financial event", async ({ page, loggedInPage, db, seedFinancialEvent }) => {
+  test("creates an attestation and raises a dispute for a financial event", async ({
+    page,
+    loggedInPage,
+    db,
+    seedFinancialEvent,
+  }) => {
     // 1. Seed the test DB with a Financial Event (bypassing the indexer)
     const eventId = "evt_lifecycle_123";
     const onChainEventId = "beef".repeat(16); // 64 chars
@@ -57,7 +62,10 @@ test.describe("Event Lifecycle Flow", () => {
 
     // Check if the event appears in the attestable list and click Attest
     if (typeof attestationsPage.attestToEvent === "function") {
-      await attestationsPage.attestToEvent(onChainEventId, "Verified against external bank statement");
+      await attestationsPage.attestToEvent(
+        onChainEventId,
+        "Verified against external bank statement"
+      );
     }
     await expect(page.getByText(/Attestation submitted successfully/i)).toBeVisible();
 
@@ -65,7 +73,10 @@ test.describe("Event Lifecycle Flow", () => {
     const disputesPage = new DisputesPage(page) as any;
     await disputesPage.goto();
     if (typeof disputesPage.raiseDispute === "function") {
-      await disputesPage.raiseDispute(onChainEventId, "Discrepancy in invoice amount vs contract terms");
+      await disputesPage.raiseDispute(
+        onChainEventId,
+        "Discrepancy in invoice amount vs contract terms"
+      );
     }
     await expect(page.getByText(/Dispute submitted successfully/i)).toBeVisible();
 

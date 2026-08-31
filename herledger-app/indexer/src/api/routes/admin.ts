@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { TransactionBuilder } from "@stellar/stellar-sdk";
+import { z } from "zod";
 import { getPrismaClient } from "../../db/client.js";
 import {
   findDeadLetterByErrorId,
@@ -24,6 +25,14 @@ import { registerCurrentNetworkAddresses, buildContractConfig } from "@herledger
 
 const MAX_RETRIES = 5;
 
+const errorIdSchema = z.object({
+  errorId: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-zA-Z0-9_-]+$/, "Invalid error ID format"),
+});
+
 function isAuthorized(req: { headers: Record<string, unknown> }): boolean {
   const expected = process.env["ADMIN_API_TOKEN"];
   if (!expected) return false; // fail closed if not configured
@@ -40,8 +49,16 @@ export async function adminRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
+    const params = errorIdSchema.safeParse(req.params);
+    if (!params.success) {
+      return reply.status(400).send({
+        data: null,
+        error: { code: "INVALID_PARAMS", message: "Invalid error ID" },
+      });
+    }
+
     const prisma = getPrismaClient();
-    const { errorId } = req.params;
+    const { errorId } = params.data;
 
     const row = await findDeadLetterByErrorId(prisma, errorId);
     if (!row) {

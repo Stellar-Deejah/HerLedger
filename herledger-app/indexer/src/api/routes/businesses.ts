@@ -9,7 +9,11 @@ import { findAttestationsByEvent } from "../../db/schema/attestations.js";
 // ---------------------------------------------------------------------------
 
 const businessIdSchema = z.object({
-  businessId: z.string().min(1).max(64),
+  businessId: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-fA-F0-9]{64}$/, "Business ID must be a 64-character hexadecimal string"),
 });
 
 const paginationSchema = z.object({

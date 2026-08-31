@@ -1,7 +1,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import { test as base, expect, type Page } from "@playwright/test";
 
-import { addSessionCookie, cleanupSeed, disconnectSeedClient, seedAuthenticatedUser } from "./helpers/seed";
+import {
+  addSessionCookie,
+  cleanupSeed,
+  disconnectSeedClient,
+  seedAuthenticatedUser,
+} from "./helpers/seed";
 
 const test = base;
 
@@ -102,7 +107,9 @@ test.describe("Dashboard accessibility (axe-core)", () => {
     await mockSession(page);
   });
 
-  test("business profile registration form has no critical/serious violations", async ({ page }) => {
+  test("business profile registration form has no critical/serious violations", async ({
+    page,
+  }) => {
     await page.route("**/api/business/current", async (route) => {
       await route.fulfill({ status: 404, contentType: "application/json", body: "{}" });
     });
@@ -212,11 +219,14 @@ rscTest.describe("Dashboard accessibility (axe-core) — RSC routes", () => {
     await disconnectSeedClient();
   });
 
-  rscTest("dashboard summary has no critical/serious violations", async ({ page, seededUser: _u }) => {
-    await page.goto("/dashboard");
-    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-    await runAxe(page);
-  });
+  rscTest(
+    "dashboard summary has no critical/serious violations",
+    async ({ page, seededUser: _u }) => {
+      await page.goto("/dashboard");
+      await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+      await runAxe(page);
+    }
+  );
 
   rscTest(
     "financial activity list has no critical/serious violations",
@@ -227,9 +237,12 @@ rscTest.describe("Dashboard accessibility (axe-core) — RSC routes", () => {
     }
   );
 
-  rscTest("attestations list has no critical/serious violations", async ({ page, seededUser: _u }) => {
-    await page.goto("/dashboard/attestations");
-    await expect(page.getByRole("heading", { name: "Attestations" })).toBeVisible();
-    await runAxe(page);
-  });
+  rscTest(
+    "attestations list has no critical/serious violations",
+    async ({ page, seededUser: _u }) => {
+      await page.goto("/dashboard/attestations");
+      await expect(page.getByRole("heading", { name: "Attestations" })).toBeVisible();
+      await runAxe(page);
+    }
+  );
 });

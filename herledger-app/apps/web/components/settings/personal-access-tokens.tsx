@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { ErrorMessage } from "@/components/ui/error-message";
 
 // ---------------------------------------------------------------------------
@@ -37,7 +38,8 @@ export function PersonalAccessTokens() {
   }
 
   useEffect(() => {
-    void load();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load().catch(() => {});
   }, []);
 
   async function handleCreate(e: React.FormEvent) {

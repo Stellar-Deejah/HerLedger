@@ -1,10 +1,10 @@
 import "server-only";
 
+import { getDbClient } from "@herledger/db";
 import { unstable_cache } from "next/cache";
 
 import type { ActivitySummaryData } from "@/app/api/v1/activity/summary/schema";
 import { toDateRange } from "@/lib/utils/date-range";
-import { getDbClient } from "@herledger/db";
 
 // ---------------------------------------------------------------------------
 // Shared data-access for the financial KPI summary (total received, total

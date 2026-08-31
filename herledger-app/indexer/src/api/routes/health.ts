@@ -31,17 +31,18 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
           endpoints: rpcHealth.endpoints,
         },
       },
-      error: overallStatus === "ok"
-        ? null
-        : {
-            code: "SERVICE_DEGRADED",
-            message: [
-              !dbHealthy && "Database connection failed",
-              !rpcHealth.healthy && "RPC health check failed",
-            ]
-              .filter(Boolean)
-              .join("; "),
-          },
+      error:
+        overallStatus === "ok"
+          ? null
+          : {
+              code: "SERVICE_DEGRADED",
+              message: [
+                !dbHealthy && "Database connection failed",
+                !rpcHealth.healthy && "RPC health check failed",
+              ]
+                .filter(Boolean)
+                .join("; "),
+            },
     });
   });
 }

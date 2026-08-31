@@ -1,10 +1,6 @@
 import type { IndexerError, PrismaClient } from "@prisma/client";
 
-import {
-  type DeadLetterInput,
-  type IndexerErrorsRepository,
-  DatabaseError,
-} from "../types.js";
+import { type DeadLetterInput, type IndexerErrorsRepository, DatabaseError } from "../types.js";
 
 export async function writeDeadLetter(
   prisma: PrismaClient,
@@ -37,10 +33,7 @@ export async function findDeadLetterByErrorId(
   }
 }
 
-export async function markDeadLetterResolved(
-  prisma: PrismaClient,
-  errorId: string
-): Promise<void> {
+export async function markDeadLetterResolved(prisma: PrismaClient, errorId: string): Promise<void> {
   try {
     await prisma.indexerError.update({
       where: { errorId },

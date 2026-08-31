@@ -28,30 +28,20 @@
                       "properties": {
                         "status": {
                           "type": "undefined",
-                          "enum": [
-                            null
-                          ]
+                          "enum": [null]
                         },
                         "database": {
                           "type": "undefined",
-                          "enum": [
-                            null
-                          ]
+                          "enum": [null]
                         }
                       },
-                      "required": [
-                        "status",
-                        "database"
-                      ]
+                      "required": ["status", "database"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -76,16 +66,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -153,10 +137,7 @@
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -181,16 +162,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -215,16 +190,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -296,26 +265,16 @@
                               "type": "number"
                             }
                           },
-                          "required": [
-                            "offset",
-                            "limit",
-                            "count"
-                          ]
+                          "required": ["offset", "limit", "count"]
                         }
                       },
-                      "required": [
-                        "events",
-                        "pagination"
-                      ]
+                      "required": ["events", "pagination"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -340,16 +299,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -391,18 +344,13 @@
                           }
                         }
                       },
-                      "required": [
-                        "attestations"
-                      ]
+                      "required": ["attestations"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -427,16 +375,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -463,18 +405,13 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "note"
-                      ]
+                      "required": ["note"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -508,20 +445,13 @@
                           "additionalProperties": true
                         }
                       },
-                      "required": [
-                        "stream",
-                        "lastLedger",
-                        "lastCycle"
-                      ]
+                      "required": ["stream", "lastLedger", "lastCycle"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -561,10 +491,7 @@
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -589,16 +516,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -623,16 +544,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -684,20 +599,13 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "errorId",
-                        "outcome",
-                        "retryCount"
-                      ]
+                      "required": ["errorId", "outcome", "retryCount"]
                     },
                     "error": {
                       "type": "null"
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -722,16 +630,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -756,16 +658,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -790,16 +686,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -824,16 +714,10 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "code",
-                        "message"
-                      ]
+                      "required": ["code", "message"]
                     }
                   },
-                  "required": [
-                    "data",
-                    "error"
-                  ]
+                  "required": ["data", "error"]
                 }
               }
             }
@@ -854,10 +738,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "code",
-          "message"
-        ]
+        "required": ["code", "message"]
       },
       "HealthSuccess": {
         "type": "object",
@@ -867,30 +748,20 @@
             "properties": {
               "status": {
                 "type": "undefined",
-                "enum": [
-                  null
-                ]
+                "enum": [null]
               },
               "database": {
                 "type": "undefined",
-                "enum": [
-                  null
-                ]
+                "enum": [null]
               }
             },
-            "required": [
-              "status",
-              "database"
-            ]
+            "required": ["status", "database"]
           },
           "error": {
             "type": "null"
           }
         },
-        "required": [
-          "data",
-          "error"
-        ]
+        "required": ["data", "error"]
       },
       "GenericErrorResponse": {
         "type": "object",
@@ -908,16 +779,10 @@
                 "type": "string"
               }
             },
-            "required": [
-              "code",
-              "message"
-            ]
+            "required": ["code", "message"]
           }
         },
-        "required": [
-          "data",
-          "error"
-        ]
+        "required": ["data", "error"]
       }
     }
   }

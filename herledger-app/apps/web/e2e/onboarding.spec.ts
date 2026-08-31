@@ -32,7 +32,7 @@ test.describe("Business Onboarding Flow", () => {
     // Intercept the API call where the app checks confirmation or saves the profile.
     // Assuming the app has an endpoint for finishing registration or polling.
     // If it relies purely on the Soroban RPC mock we set up in mockFreighter, it should pass.
-    
+
     // Submit registration (Step 7-9)
     await businessPage.submitRegistration();
 
@@ -45,7 +45,7 @@ test.describe("Business Onboarding Flow", () => {
 
     // Assert that the business was saved in the DB (Step 11)
     const userBusiness = await db.businessProfile.findFirst({
-      where: { walletAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" }
+      where: { walletAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" },
     });
     expect(userBusiness).toBeDefined();
     expect(userBusiness?.displayName).toBe("My Playwright Test Business");

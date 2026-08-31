@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { createHash } from "node:crypto";
 import { indexPayment, deriveEventId } from "../financial-events.js";
 import { upsertFinancialEvent } from "../../db/schema/financial-events.js";
 import { upsertStellarTransaction } from "../../db/schema/stellar-transactions.js";
@@ -47,7 +48,9 @@ describe("Financial Events Indexing & Metrics", () => {
   const mockPrisma = {
     $transaction: transactionMock,
   } as unknown as import("@prisma/client").PrismaClient;
-  const mockConfig = { network: "testnet" } as unknown as import("@herledger/sdk").StellarNetworkConfig;
+  const mockConfig = {
+    network: "testnet",
+  } as unknown as import("@herledger/sdk").StellarNetworkConfig;
   const mockContracts = {} as unknown as import("@herledger/sdk").ContractConfig;
 
   beforeEach(() => {
@@ -78,7 +81,9 @@ describe("Financial Events Indexing & Metrics", () => {
     await indexPayment(mockPrisma, payment, mockConfig, mockContracts);
 
     const metrics = await getMetrics();
-    expect(metrics).toContain('events_indexed_total{event_type="PaymentReceived",status="Pending"} 1');
+    expect(metrics).toContain(
+      'events_indexed_total{event_type="PaymentReceived",status="Pending"} 1'
+    );
   });
 
   it("increments events_indexed_total with PaymentSent when business is sender", async () => {
@@ -387,7 +392,6 @@ describe("deriveEventId", () => {
     // The old algorithm was txHash.slice(0, 62) + suffix
     // The new algorithm is SHA-256(txHash:suffix)
     // Verify by computing the expected SHA-256 manually
-    const { createHash } = require("node:crypto");
     const hash = "deadbeef".repeat(8); // 64 hex chars
     const suffix = "00";
     const expected = createHash("sha256").update(`${hash}:${suffix}`).digest("hex");

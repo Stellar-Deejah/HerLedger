@@ -96,17 +96,17 @@ type ApiMeta = {
 
 ### Error Codes
 
-| Code | HTTP Status | Meaning |
-|------|-------------|---------|
-| `UNAUTHORIZED` | 401 | Not authenticated — no valid session cookie |
-| `VALIDATION_ERROR` | 422 | Zod validation failed on body/query — e.g., `limit` > 100, `offset` < 0, malformed `businessId` |
-| `INVALID_PARAMS` | 422 | Invalid query string parameters (legacy alias for `VALIDATION_ERROR`) |
-| `INVALID_BODY` | 400 | Malformed JSON body |
-| `ALREADY_REGISTERED` | 409 | Business already registered for this account |
-| `WALLET_ALREADY_REGISTERED` | 409 | Wallet address already taken |
-| `BUSINESS_ID_CONFLICT` | 409 | `businessId` already exists |
-| `RATE_LIMITED` | 429 | Per-user sliding-window limit exceeded (60 req/min) — see `Retry-After` |
-| `INTERNAL_ERROR` | 500 | Unexpected server error |
+| Code                        | HTTP Status | Meaning                                                                                         |
+| --------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| `UNAUTHORIZED`              | 401         | Not authenticated — no valid session cookie                                                     |
+| `VALIDATION_ERROR`          | 422         | Zod validation failed on body/query — e.g., `limit` > 100, `offset` < 0, malformed `businessId` |
+| `INVALID_PARAMS`            | 422         | Invalid query string parameters (legacy alias for `VALIDATION_ERROR`)                           |
+| `INVALID_BODY`              | 400         | Malformed JSON body                                                                             |
+| `ALREADY_REGISTERED`        | 409         | Business already registered for this account                                                    |
+| `WALLET_ALREADY_REGISTERED` | 409         | Wallet address already taken                                                                    |
+| `BUSINESS_ID_CONFLICT`      | 409         | `businessId` already exists                                                                     |
+| `RATE_LIMITED`              | 429         | Per-user sliding-window limit exceeded (60 req/min) — see `Retry-After`                         |
+| `INTERNAL_ERROR`            | 500         | Unexpected server error                                                                         |
 
 Zod validation is colocated in route files for simplicity (e.g., `app/api/activity/recent/route.ts` enforces `limit` ≤ 100 and `offset` ≥ 0). Invalid values return `422` with the structured error body above.
 
@@ -132,7 +132,13 @@ Zod validation is colocated in route files for simplicity (e.g., `app/api/activi
     "db": { "healthy": true, "latencyMs": 12, "error": null },
     "indexer": { "healthy": true, "latencyMs": 45, "error": null },
     "version": "0.0.0",
-    "rpc": { "healthy": true, "activeEndpoint": "...", "latestLedger": 123, "error": null, "endpoints": [] }
+    "rpc": {
+      "healthy": true,
+      "activeEndpoint": "...",
+      "latestLedger": 123,
+      "error": null,
+      "endpoints": []
+    }
   },
   "error": null,
   "meta": null

@@ -26,7 +26,6 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
       if (mockWalletConnectionState.connected) {
         onConnected(TEST_WALLET_ADDRESS);
       }
-       
     }, []);
 
     if (mockWalletConnectionState.connected) {
@@ -104,7 +103,9 @@ describe("BusinessRegistrationForm", () => {
     await user.click(screen.getByRole("button", { name: /register on stellar/i }));
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /business registered on stellar/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole("heading", { name: /business registered on stellar/i })
+      ).toBeInTheDocument()
     );
     expect(screen.getByText(/tx-e2e-1/)).toBeInTheDocument();
   });

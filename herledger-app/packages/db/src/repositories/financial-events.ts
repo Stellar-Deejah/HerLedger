@@ -20,9 +20,7 @@ const VALID_AMOUNT_RE = /^-?\d+$/;
  */
 function validateAmount(amountStr: string): void {
   if (!VALID_AMOUNT_RE.test(amountStr)) {
-    throw new DatabaseError(
-      `Invalid amount format: "${amountStr}" does not match /^-?\d+$/`
-    );
+    throw new DatabaseError(`Invalid amount format: "${amountStr}" does not match /^-?\d+$/`);
   }
 }
 

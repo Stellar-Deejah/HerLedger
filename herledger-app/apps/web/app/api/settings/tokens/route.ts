@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { getServerEnv } from "@herledger/config";
 import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
 import { createPersonalAccessToken, listPersonalAccessTokens } from "@/lib/settings/tokens";
-import { getServerEnv } from "@herledger/config";
 
 const prisma = getPrismaClient();
 
