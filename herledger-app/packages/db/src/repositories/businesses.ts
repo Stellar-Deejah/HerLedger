@@ -17,8 +17,12 @@ export async function findAllActiveBusinessWallets(
   const pageSize = options?.pageSize ?? DEFAULT_PAGE_SIZE;
 
   try {
+    // A business with an unlinked wallet (see the settings panel's
+    // wallet unlink/re-link flow) has nothing for the sync job to watch
+    // on Stellar until it re-links, so it's excluded here rather than
+    // surfaced with a null walletAddress.
     const rows = await prisma.businessProfile.findMany({
-      where: { active: true },
+      where: { active: true, walletAddress: { not: null } },
       select: { id: true, businessId: true, walletAddress: true },
       orderBy: { id: "asc" },
       take: pageSize + 1,
@@ -26,7 +30,9 @@ export async function findAllActiveBusinessWallets(
     });
 
     const hasMore = rows.length > pageSize;
-    const wallets = hasMore ? rows.slice(0, pageSize) : rows;
+    const page = hasMore ? rows.slice(0, pageSize) : rows;
+    // walletAddress is guaranteed non-null by the `not: null` filter above.
+    const wallets = page.map((row) => ({ ...row, walletAddress: row.walletAddress! }));
     const nextCursor = hasMore ? wallets[wallets.length - 1]!.id : null;
 
     return { wallets, nextCursor };

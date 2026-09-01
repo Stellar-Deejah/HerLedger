@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
+import { clearRateLimitStore } from "@/lib/rate-limit";
 
 import { POST } from "./route";
 
@@ -51,6 +52,7 @@ function existingProfile(overrides: Partial<typeof VALID_BODY> = {}) {
 describe("POST /api/business/register", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearRateLimitStore();
   });
 
   afterEach(() => {
@@ -65,12 +67,14 @@ describe("POST /api/business/register", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns 400 for an invalid body", async () => {
+  it("returns 422 for an invalid body", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
     setDbClient(createMockDbClient());
 
     const res = await POST(makeRequest({ businessId: "too-short" }));
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(422);
+    const body = await res.json();
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
   it("creates a new business profile when nothing conflicts", async () => {

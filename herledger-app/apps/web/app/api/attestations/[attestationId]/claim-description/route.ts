@@ -1,11 +1,13 @@
+import { getDbClient } from "@herledger/db";
 import { revalidateTag } from "next/cache";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { attestationsTag } from "@/lib/data/attestations";
-import { getDbClient } from "@herledger/db";
 
 import { RequestSchema, type ClaimDescriptionResponse } from "./schema";
 
@@ -14,6 +16,10 @@ export async function POST(
   context: { params: Promise<{ attestationId: string }> }
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<ClaimDescriptionResponse>(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },

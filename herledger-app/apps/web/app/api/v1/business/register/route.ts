@@ -1,19 +1,28 @@
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
+import { withRateLimit } from "@/lib/rate-limit";
 
 import { RequestSchema, type BusinessRegisterResponse } from "./schema";
 
 const prisma = getPrismaClient();
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async (req: NextRequest) => {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" },
+          meta: null
+        },
       { status: 401 }
     );
   }
@@ -23,7 +32,7 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "INVALID_BODY", message: "Invalid request body" } },
+      { data: null, error: { code: "INVALID_BODY", message: "Invalid request body" }, meta: null },
       { status: 400 }
     );
   }
@@ -31,8 +40,8 @@ export async function POST(req: NextRequest) {
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid registration data" } },
-      { status: 400 }
+      { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid registration data" }, meta: null },
+      { status: 422 }
     );
   }
 
@@ -50,6 +59,7 @@ export async function POST(req: NextRequest) {
             code: "ALREADY_REGISTERED",
             message: "Business already registered for this account",
           },
+          meta: null,
         },
         { status: 409 }
       );
@@ -69,12 +79,13 @@ export async function POST(req: NextRequest) {
     return typedJson<BusinessRegisterResponse>({
       data: { businessId: profile.businessId },
       error: null,
+      meta: null,
     });
   } catch (err) {
     console.error({ operation: "register-business", userId: session.user.id, error: err });
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "INTERNAL_ERROR", message: "Registration failed" } },
+      { data: null, error: { code: "INTERNAL_ERROR", message: "Registration failed" }, meta: null },
       { status: 500 }
     );
   }
-}
+});

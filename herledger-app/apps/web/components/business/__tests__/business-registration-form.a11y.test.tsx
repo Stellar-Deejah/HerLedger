@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { axe } from "vitest-axe";
 import { useEffect } from "react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { axe } from "vitest-axe";
 
 // Must be imported (and vi.mock() registered) before "../business-registration-form"
 // — see use-registration-flow.test.tsx for why import order matters here.
 import { mockPublicEnv } from "@/tests/utils/mock-public-env";
-import { TEST_WALLET_ADDRESS, mockWalletConnectionState } from "@/tests/utils/mock-wallet";
 
 vi.mock("@herledger/config", () => ({
   getPublicEnv: mockPublicEnv,
@@ -44,9 +43,11 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
   },
 }));
 
-import { BusinessRegistrationForm } from "../business-registration-form";
 import { MockSdkProvider, mockRegisterBusinessThrows } from "@/tests/utils/mock-sdk-provider";
+import { TEST_WALLET_ADDRESS, mockWalletConnectionState } from "@/tests/utils/mock-wallet";
 import { resetMockWalletConnectionState } from "@/tests/utils/mock-wallet";
+
+import { BusinessRegistrationForm } from "../business-registration-form";
 
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));

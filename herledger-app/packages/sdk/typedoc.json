@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "@herledger/sdk",
+  "entryPoints": [
+    "src/index.ts",
+    "src/contracts/index.ts",
+    "src/wallet/index.ts",
+    "src/rpc/index.ts",
+    "src/types/index.ts",
+    "src/errors/index.ts"
+  ],
+  "out": "docs",
+  "tsconfig": "./tsconfig.json",
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "includeVersion": true,
+  "githubPages": false
+}

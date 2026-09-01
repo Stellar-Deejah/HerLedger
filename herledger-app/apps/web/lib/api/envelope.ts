@@ -6,12 +6,32 @@ export const ApiErrorSchema = z.object({
 });
 export type ApiErrorShape = z.infer<typeof ApiErrorSchema>;
 
-export type EnvelopeShape = { data: unknown; error: ApiErrorShape | null };
+export const ApiMetaSchema = z
+  .object({
+    requestId: z.string().optional(),
+    timestamp: z.string().optional(),
+    pagination: z
+      .object({
+        offset: z.number(),
+        limit: z.number(),
+        count: z.number(),
+      })
+      .optional(),
+  })
+  .optional()
+  .nullable();
+export type ApiMetaShape = z.infer<typeof ApiMetaSchema>;
+
+export type EnvelopeShape = {
+  data: unknown;
+  error: ApiErrorShape | null;
+  meta?: ApiMetaShape | null;
+};
 
 export function createResponseSchema<DataSchema extends z.ZodTypeAny>(dataSchema: DataSchema) {
   return z.union([
-    z.object({ data: dataSchema, error: z.null() }),
-    z.object({ data: z.null(), error: ApiErrorSchema }),
+    z.object({ data: dataSchema, error: z.null(), meta: ApiMetaSchema }),
+    z.object({ data: z.null(), error: ApiErrorSchema, meta: ApiMetaSchema }),
   ]);
 }
 

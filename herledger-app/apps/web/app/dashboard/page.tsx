@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { OverviewPanel } from "@/components/activity/dashboard-summary-server";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { OverviewSkeleton } from "@/components/ui/loading-skeletons";
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
 
@@ -26,10 +26,12 @@ export default async function DashboardPage() {
   return (
     <div>
       <h1 style={{ fontSize: "1.5rem", fontWeight: 700, marginBottom: "1.5rem" }}>Dashboard</h1>
-      <Suspense fallback={<LoadingSpinner label="Loading overview…" />}>
+      <Suspense fallback={<OverviewSkeleton />}>
         <OverviewPanel
           businessId={profile?.businessId ?? null}
-          businessProfile={profile ? { displayName: profile.displayName, active: profile.active } : null}
+          businessProfile={
+            profile ? { displayName: profile.displayName, active: profile.active } : null
+          }
         />
       </Suspense>
     </div>

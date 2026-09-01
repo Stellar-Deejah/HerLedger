@@ -7,6 +7,21 @@ export type HealthRequest = z.input<typeof RequestSchema>;
 
 const HealthDataSchema = z.object({
   status: z.enum(["ok", "degraded"]),
+  db: z
+    .object({
+      healthy: z.boolean(),
+      latencyMs: z.number().nullable().optional(),
+      error: z.string().nullable().optional(),
+    })
+    .optional(),
+  indexer: z
+    .object({
+      healthy: z.boolean(),
+      latencyMs: z.number().nullable().optional(),
+      error: z.string().nullable().optional(),
+    })
+    .optional(),
+  version: z.string(),
   rpc: z
     .object({
       healthy: z.boolean(),

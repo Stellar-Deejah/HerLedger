@@ -340,17 +340,19 @@ NEXT_PUBLIC_ATTESTATION_REGISTRY_CONTRACT_ID=
 
 ### Schema overview
 
-| Model                | Purpose                                 |
-| -------------------- | --------------------------------------- |
-| `User`               | Application user account (Better Auth)  |
-| `Session`            | Auth session (Better Auth)              |
-| `Account`            | OAuth/password account (Better Auth)    |
-| `Verification`       | Email verification tokens (Better Auth) |
-| `BusinessProfile`    | Registered business linked to a user    |
-| `FinancialEvent`     | Indexed on-chain financial events       |
-| `Attestation`        | Third-party attestations on events      |
-| `StellarTransaction` | Raw Stellar transaction records         |
-| `IndexerCheckpoint`  | Ledger sync progress per stream         |
+| Model                    | Purpose                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `User`                   | Application user account (Better Auth)                                                          |
+| `Session`                | Auth session (Better Auth)                                                                      |
+| `Account`                | OAuth/password account (Better Auth)                                                            |
+| `Verification`           | Email verification tokens (Better Auth)                                                         |
+| `BusinessProfile`        | Registered business linked to a user                                                            |
+| `FinancialEvent`         | Indexed on-chain financial events                                                               |
+| `Attestation`            | Third-party attestations on events                                                              |
+| `StellarTransaction`     | Raw Stellar transaction records                                                                 |
+| `IndexerCheckpoint`      | Ledger sync progress per stream                                                                 |
+| `NotificationPreference` | Per-user, per-event-type email/in-app toggles (infrastructure for a future notification system) |
+| `PersonalAccessToken`    | Long-lived, SHA-256-hashed API credential for read-only indexer API access                      |
 
 ### Key database rules
 
@@ -760,15 +762,15 @@ All responses follow:
 
 ### Endpoints
 
-| Method | Path                                   | Description                          |
-| ------ | -------------------------------------- | ------------------------------------ |
-| `GET`  | `/health`                              | Health check with DB connectivity    |
-| `GET`  | `/businesses/:businessId`              | Get indexed business by on-chain ID  |
-| `GET`  | `/businesses/:businessId/events`       | Paginated financial events (max 100) |
-| `GET`  | `/businesses/:businessId/attestations` | All attestations for a business      |
-| `GET`  | `/transactions/:hash`                  | Get a Stellar transaction by hash    |
-| `GET`  | `/supported-assets`                    | Supported asset info                 |
-| `GET`  | `/indexer/status`                      | Current sync checkpoint              |
+| Method | Path                                   | Auth             | Description                          |
+| ------ | -------------------------------------- | ---------------- | ------------------------------------ |
+| `GET`  | `/health`                              | Public           | Health check with DB connectivity    |
+| `GET`  | `/businesses/:businessId`              | **Bearer token** | Get indexed business by on-chain ID  |
+| `GET`  | `/businesses/:businessId/events`       | **Bearer token** | Paginated financial events (max 100) |
+| `GET`  | `/businesses/:businessId/attestations` | **Bearer token** | All attestations for a business      |
+| `GET`  | `/transactions/:hash`                  | **Bearer token** | Get a Stellar transaction by hash    |
+| `GET`  | `/supported-assets`                    | Public           | Supported asset info                 |
+| `GET`  | `/indexer/status`                      | Public           | Current sync checkpoint              |
 
 ### Pagination
 
@@ -779,6 +781,55 @@ GET /businesses/:id/events?offset=0&limit=20
 - `offset`: integer ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â¥ 0, default 0
 - `limit`: integer 1ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“100, default 20
 - Response includes `pagination.count` for next-page detection
+
+### Personal access token authentication
+
+Routes under `/businesses` and `/transactions` expose per-business financial
+data, so they require a **personal access token (PAT)** sent as a Bearer
+token:
+
+```
+GET /businesses/<businessId>/events
+Authorization: Bearer hl_pat_<secret>
+```
+
+A missing or invalid token gets a `401 UNAUTHORIZED`:
+
+```json
+{
+  "data": null,
+  "error": { "code": "UNAUTHORIZED", "message": "Invalid or revoked personal access token" }
+}
+```
+
+**Creating a token.** From the web app, go to Dashboard -> Settings ->
+Personal Access Tokens, give the token a name (e.g. "QuickBooks sync"), and
+click Create token. The plaintext value (`hl_pat_...`) is shown **once**,
+immediately after creation -- copy it then, because it cannot be retrieved
+again. This calls `POST /api/settings/tokens` on the web app (not the
+indexer).
+
+**Revoking a token.** Click Revoke next to a token in the same settings
+panel (`DELETE /api/settings/tokens/:id`). Revocation is immediate: the next
+request presenting that token gets `401` at the indexer.
+
+**How verification works.** A token's plaintext value is never stored.
+`PersonalAccessToken.tokenHash` stores `HMAC-SHA256(BETTER_AUTH_SECRET,
+token)` -- see `packages/config/src/tokens.ts` for the full rationale (short
+version: tokens are 256-bit random secrets, so salting-per-record buys
+nothing a keyed HMAC pepper doesn't already give against a narrower, more
+realistic threat: a stolen tokens table without the running app's secret).
+The indexer hashes an incoming Bearer token with the same pepper and looks
+it up by that hash (`indexer/src/api/auth/personal-access-token.ts`) --
+O(1), no scan over stored tokens. `BETTER_AUTH_SECRET` must therefore be set
+in the indexer's environment, matching the requirement already implied by
+`getServerEnv()` (see Environment Variables above).
+
+A token authenticates as its owning user; it does not currently scope reads
+to only that user's own business -- any valid, non-revoked token can read
+any business's indexed data, same as the (previously fully public,
+unauthenticated) `/businesses` and `/transactions` routes did before this
+change. Per-business scoping is a natural follow-up, not implemented here.
 
 ---
 
@@ -2097,3 +2148,4 @@ test(indexer): cover payment classification
 ## License
 
 # See [LICENSE](../herledger-contract/LICENSE).
+See [LICENSE](../herledger-contract/LICENSE).

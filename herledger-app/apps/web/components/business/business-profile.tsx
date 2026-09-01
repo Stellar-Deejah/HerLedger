@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+
 import { EmptyState } from "@/components/ui/empty-state";
 import { useSession } from "@/lib/auth/client";
 import { truncateAddress } from "@/lib/utils/format";
-import { BusinessRegistrationForm } from "./business-registration-form";
-import { BusinessMetadataUpdateForm } from "./business-metadata-update-form";
+
 import { BusinessDeactivationFlow } from "./business-deactivation-flow";
+import { BusinessMetadataUpdateForm } from "./business-metadata-update-form";
+import { BusinessRegistrationForm } from "./business-registration-form";
 
 interface BusinessData {
   id: string;

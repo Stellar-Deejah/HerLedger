@@ -1,5 +1,6 @@
-import { defineConfig } from "vitest/config";
 import path from "node:path";
+
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
@@ -11,6 +12,9 @@ export default defineConfig({
     environment: "node",
     include: ["**/*.test.ts", "**/*.test.tsx"],
     setupFiles: ["./vitest.setup.ts"],
+    testTimeout: 15000,
+    hookTimeout: 15000,
+    pool: "forks",
     typecheck: {
       enabled: true,
       include: ["**/*.type-test.ts"],

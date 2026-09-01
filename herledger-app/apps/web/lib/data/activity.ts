@@ -1,10 +1,9 @@
 import "server-only";
-
+import { getDbClient } from "@herledger/db";
 import { unstable_cache } from "next/cache";
 
 import type { ActivityRecentData } from "@/app/api/activity/recent/schema";
 import { toDateRange } from "@/lib/utils/date-range";
-import { getDbClient } from "@herledger/db";
 
 // ---------------------------------------------------------------------------
 // Shared data-access for "recent financial activity", used by both the

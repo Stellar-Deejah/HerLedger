@@ -1,8 +1,9 @@
+import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
+import { clearRateLimitStore } from "@/lib/rate-limit";
 
 import { GET } from "./route";
 
@@ -21,6 +22,7 @@ vi.mock("@/lib/auth/server", () => ({
 describe("GET /api/activity/recent", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    clearRateLimitStore();
   });
 
   afterEach(() => {
@@ -59,6 +61,39 @@ describe("GET /api/activity/recent", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.events).toEqual([]);
+  });
+
+  it("returns 422 when limit exceeds max 100", async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "user_1" } } as never);
+    setDbClient(createMockDbClient());
+    const req = new NextRequest("http://localhost/api/activity/recent?limit=100000");
+    const res = await GET(req);
+    expect(res.status).toBe(422);
+    const body = await res.json();
+    expect(body.data).toBeNull();
+    expect(body.error.code).toBe("INVALID_PARAMS");
+    expect(body.error.message).toBeDefined();
+    expect(body.meta).toBeNull();
+  });
+
+  it("returns 422 when limit is 101", async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "user_1" } } as never);
+    setDbClient(createMockDbClient());
+    const req = new NextRequest("http://localhost/api/activity/recent?limit=101");
+    const res = await GET(req);
+    expect(res.status).toBe(422);
+    const body = await res.json();
+    expect(body.error.code).toBe("INVALID_PARAMS");
+  });
+
+  it("returns 422 when offset is negative", async () => {
+    vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "user_1" } } as never);
+    setDbClient(createMockDbClient());
+    const req = new NextRequest("http://localhost/api/activity/recent?offset=-1&limit=10");
+    const res = await GET(req);
+    expect(res.status).toBe(422);
+    const body = await res.json();
+    expect(body.error.code).toBe("INVALID_PARAMS");
   });
 
   it("queries financial events via injected db client", async () => {

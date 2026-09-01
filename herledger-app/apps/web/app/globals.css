@@ -171,6 +171,34 @@ a:hover {
 }
 
 /* ---------------------------------------------------------------------------
+   Loading skeletons (loading.tsx / page Suspense fallbacks)
+   The pulse only animates when the user hasn't asked for reduced motion.
+   `.skeleton` is applied by SkeletonBlock; every skeleton variant derives
+   from it so the reduced-motion rule is honored app-wide in one place.
+--------------------------------------------------------------------------- */
+.skeleton {
+  background-color: var(--color-muted-bg);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Dashboard navigation responsive shell
    Desktop (>= 768px): persistent sidebar. Mobile (< 768px): top bar + drawer.
 --------------------------------------------------------------------------- */

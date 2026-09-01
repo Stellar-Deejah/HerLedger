@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+
 import { scorePassword, STRENGTH_LABELS } from "@/lib/auth/password-strength";
 
 const SEGMENT_COLORS = [

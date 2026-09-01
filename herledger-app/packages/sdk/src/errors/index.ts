@@ -95,6 +95,8 @@ export const RpcErrorCode = {
   POLL_FAILED: "POLL_FAILED",
   /** Polling exhausted its budget without the transaction reaching a final state. */
   POLL_TIMEOUT: "POLL_TIMEOUT",
+  /** `submitAndWait` retried `TRY_AGAIN_LATER` until `maxWaitMs` expired. */
+  TRY_AGAIN_LATER_TIMEOUT: "TRY_AGAIN_LATER_TIMEOUT",
   /** The call was aborted via `AbortSignal` before it completed. */
   ABORTED: "ABORTED",
 } as const;

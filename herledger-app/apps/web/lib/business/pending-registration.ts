@@ -48,6 +48,13 @@ export function readPendingRegistration(): PendingRegistration | null {
       clearPendingRegistration();
       return null;
     }
+    // Stale pending registrations (>24h) are ignored — they likely belong to a
+    // failed or abandoned attempt that will never confirm.
+    const ageMs = Date.now() - new Date(parsed.submittedAt).getTime();
+    if (Number.isFinite(ageMs) && ageMs > 24 * 60 * 60 * 1000) {
+      clearPendingRegistration();
+      return null;
+    }
     return parsed;
   } catch {
     clearPendingRegistration();

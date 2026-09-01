@@ -1,11 +1,18 @@
 import { getServerEnv } from "@herledger/config/server";
+import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { readLimiter } from "@/lib/api/rate-limit-config";
 import { auth } from "@/lib/auth/server";
 import { decryptDisputeReason, DisputeDecryptionError } from "@/lib/crypto/dispute-encryption";
 import { deriveDisputeLifecycleStatus } from "@/lib/disputes/status";
-import { getDbClient } from "@herledger/db";
+
+const ParamsSchema = z.object({
+  eventId: z.string().min(1, "eventId is required"),
+});
 
 interface RouteContext {
   params: Promise<{ eventId: string }>;
@@ -13,6 +20,10 @@ interface RouteContext {
 
 export async function GET(_req: NextRequest, context: RouteContext) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = readLimiter.check(rateLimitKey(_req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return NextResponse.json(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
@@ -21,7 +32,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   }
 
   const { eventId } = await context.params;
-  if (!eventId) {
+  const parsed = ParamsSchema.safeParse({ eventId });
+  if (!parsed.success) {
     return NextResponse.json(
       { data: null, error: { code: "INVALID_PARAMS", message: "eventId is required" } },
       { status: 400 }
@@ -41,7 +53,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       );
     }
 
-    const event = await db.financialEvents.findById(eventId);
+    const event = await db.financialEvents.findById(parsed.data.eventId);
     if (!event) {
       return NextResponse.json(
         { data: null, error: { code: "NOT_FOUND", message: "Financial event not found" } },
@@ -58,7 +70,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       );
     }
 
-    const dispute = await db.disputes.findByEventId(eventId);
+    const dispute = await db.disputes.findByEventId(parsed.data.eventId);
     if (!dispute) {
       return NextResponse.json(
         { data: null, error: { code: "NOT_FOUND", message: "No dispute found for this event" } },
@@ -121,7 +133,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
       error: null,
     });
   } catch (err) {
-    console.error({ operation: "get-dispute", userId: session.user.id, eventId, error: err });
+    console.error({ operation: "get-dispute", userId: session.user.id, eventId: parsed.data.eventId, error: err });
     return NextResponse.json(
       { data: null, error: { code: "INTERNAL_ERROR", message: "Failed to load dispute" } },
       { status: 500 }

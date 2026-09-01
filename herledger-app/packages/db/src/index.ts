@@ -79,6 +79,12 @@ export {
   createDisputesRepository,
 } from "./repositories/disputes.js";
 
+export {
+  createAuditLog,
+  findAuditLogsByEntity,
+  type CreateAuditLogInput,
+} from "./repositories/audit-log.js";
+
 // Pagination and filtering utilities
 export {
   clampPagination,

@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk";
-import { isSupportedAsset } from "@herledger/sdk";
+import type { StellarNetworkConfig, ContractConfig } from "@herledger/sdk/types";
+import { isSupportedAsset } from "@herledger/sdk/contracts";
+import { createHash } from "node:crypto";
 import { upsertFinancialEvent } from "../db/schema/financial-events.js";
 import { upsertStellarTransaction } from "../db/schema/stellar-transactions.js";
 import { findBusinessByWallet } from "../db/schema/businesses.js";
@@ -116,10 +117,24 @@ export async function indexPayment(
 
 /**
  * Derive a deterministic event ID from a transaction hash and direction.
- * This ensures idempotent processing — same input always yields same ID.
+ *
+ * Algorithm: SHA-256(txHash + ":" + directionSuffix), truncated to 32 bytes
+ * (64 hex characters). The direction suffix is "00" for received events and
+ * "01" for sent events.
+ *
+ * This approach is collision-resistant — SHA-256 preimage resistance means
+ * finding two distinct (txHash, direction) pairs that produce the same hash
+ * is computationally infeasible (2^128 work for collision, 2^256 for
+ * preimage). The old truncation-based approach (first 62 hex chars + suffix)
+ * had a collision probability of ~2^-8 for adversarial inputs sharing a
+ * 31-byte prefix.
+ *
+ * The algorithm is deterministic: same input always produces the same output,
+ * enabling idempotent processing. External tooling can reproduce the
+ * derivation by applying the documented formula.
  */
-function deriveEventId(txHash: string, direction: "recv" | "sent"): string {
+export function deriveEventId(txHash: string, direction: "recv" | "sent"): string {
   const suffix = direction === "recv" ? "00" : "01";
-  // Use first 62 chars of hash + direction suffix = 64 chars (32 bytes hex)
-  return txHash.slice(0, 62) + suffix;
+  const input = `${txHash}:${suffix}`;
+  return createHash("sha256").update(input).digest("hex");
 }

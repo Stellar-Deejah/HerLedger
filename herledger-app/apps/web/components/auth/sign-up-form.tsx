@@ -49,7 +49,7 @@ export function SignUpForm() {
           // requireEmailVerification means this response carries no session
           // (see lib/auth/server.ts) — there's no dashboard to redirect to
           // yet.
-          router.push(`/auth/verify-email?email=${encodeURIComponent(email)}`);
+          router.push(`/auth/verify-email?email=${encodeURIComponent(email)}` as unknown as import("next").Route);
         }
       } catch {
         setError("An unexpected error occurred. Please try again.");

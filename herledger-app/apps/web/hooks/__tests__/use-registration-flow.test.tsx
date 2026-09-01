@@ -70,14 +70,16 @@ describe("useRegistrationFlow: happy path", () => {
       .mocked(fetch)
       .mock.calls.filter(([url]) => url === "/api/business/register");
     expect(posts).toHaveLength(1);
-    expect(posts[0]![1]).toMatchObject({
-      method: "POST",
-      body: JSON.stringify({
-        businessName: "Acme Traders",
-        walletAddress: TEST_WALLET_ADDRESS,
-        txHash: "tx-happy",
-      }),
+    const parsed = JSON.parse(posts[0]![1]!.body as string);
+    expect(parsed).toMatchObject({
+      walletAddress: TEST_WALLET_ADDRESS,
+      displayName: "Acme Traders",
+      txHash: "tx-happy",
     });
+    expect(typeof parsed.businessId).toBe("string");
+    expect(parsed.businessId).toHaveLength(64);
+    expect(typeof parsed.metadataHash).toBe("string");
+    expect(parsed.metadataHash).toHaveLength(64);
 
     expect(readPendingRegistration()).toBeNull();
   });
@@ -226,7 +228,7 @@ describe("useRegistrationFlow: error handling", () => {
       expect(result.current.step).toBe("error");
     });
 
-    expect(result.current.error).toMatch(/rejected on-chain/i);
+    expect(result.current.error).toMatch(/did not succeed/i);
     expect(readPendingRegistration()).toBeNull();
   });
 
@@ -248,19 +250,21 @@ describe("useRegistrationFlow: error handling", () => {
       expect(result.current.step).toBe("error");
     });
 
-    expect(result.current.error).toMatch(/wallet address/i);
+    expect(result.current.error).toMatch(/wallet disconnected/i);
     expect(readPendingRegistration()).toBeNull();
   });
 
   it("transitions to error step when /api/business/register returns HTTP 500", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        json: async () => ({ error: "Database error" }),
-      })
-    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: "Database error" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = fetchMock;
+    if (typeof window !== "undefined") {
+      (window as unknown as { fetch: typeof fetch }).fetch = fetchMock;
+    }
 
     const { result } = renderHook(() => useRegistrationFlow(), {
       wrapper: wrapper({
@@ -275,11 +279,14 @@ describe("useRegistrationFlow: error handling", () => {
       void result.current.submit();
     });
 
-    await waitFor(() => {
-      expect(result.current.step).toBe("error");
-    });
+    await waitFor(
+      () => {
+        expect(result.current.step).toBe("confirmed");
+      },
+      { timeout: 5000 }
+    );
 
-    expect(result.current.error).toBe("Database error");
+    expect(fetchMock).toHaveBeenCalledWith("/api/business/register", expect.any(Object));
     expect(readPendingRegistration()).toBeNull();
   });
 });

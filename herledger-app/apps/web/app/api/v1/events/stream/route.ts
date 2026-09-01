@@ -1,37 +1,39 @@
+import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { streamLimiter } from "@/lib/api/rate-limit-config";
 import { auth } from "@/lib/auth/server";
-import { getPrismaClient } from "@/lib/db/client";
 
-const prisma = getPrismaClient();
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+export async function GET(req: NextRequest | Request) {
   const session = await auth.api.getSession({ headers: await headers() });
 
+  const limited = streamLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+      { status: 401 }
+    );
   }
 
-  const profile = await prisma.businessProfile.findFirst({
-    where: { userId: session.user.id },
-    select: { businessId: true },
-  });
+  const db = getDbClient();
+  const profile = await db.businesses.findByUserId(session.user.id);
 
   if (!profile) {
-    return new Response(JSON.stringify({ error: "No business profile" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(
+      { data: null, error: { code: "NO_BUSINESS", message: "No business profile registered" } },
+      { status: 404 }
+    );
   }
 
   let lastChecked = new Date();
   const encoder = new TextEncoder();
-  let pollInterval: NodeJS.Timeout;
+
   let pingInterval: NodeJS.Timeout;
   let maxTimeout: NodeJS.Timeout;
 
@@ -47,13 +49,10 @@ export async function GET(req: NextRequest) {
 
       const checkEvents = async () => {
         try {
-          const events = await prisma.financialEvent.findMany({
-            where: {
-              businessId: profile.businessId,
-              updatedAt: { gt: lastChecked },
-            },
-            orderBy: { updatedAt: "asc" },
-          });
+          const events = await db.financialEvents.findUpdatedAfter(
+            profile.businessId,
+            lastChecked
+          );
 
           const lastEvent = events[events.length - 1];
           if (lastEvent) {
@@ -65,7 +64,7 @@ export async function GET(req: NextRequest) {
         }
       };
 
-      pollInterval = setInterval(checkEvents, 5000);
+      const pollInterval = setInterval(checkEvents, 2000);
 
       maxTimeout = setTimeout(() => {
         clearInterval(pollInterval);
@@ -73,27 +72,20 @@ export async function GET(req: NextRequest) {
         try {
           controller.close();
         } catch {
-          // Controller may already be closed
+          // Stream might already be closed
         }
       }, 55000);
-
-      req.signal.addEventListener("abort", () => {
-        clearInterval(pollInterval);
-        clearInterval(pingInterval);
-        clearTimeout(maxTimeout);
-      });
     },
     cancel() {
-      clearInterval(pollInterval);
       clearInterval(pingInterval);
       clearTimeout(maxTimeout);
     },
   });
 
-  return new Response(stream, {
+  return new NextResponse(stream, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
     },
   });

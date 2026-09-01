@@ -1,11 +1,6 @@
 import { getPublicEnv } from "@herledger/config";
-import {
-  registerCurrentNetworkAddresses,
-  buildContractConfig,
-  type ContractConfig,
-  type NetworkId,
-  type StellarNetworkConfig,
-} from "@herledger/sdk";
+import { registerCurrentNetworkAddresses, buildContractConfig } from "@herledger/sdk";
+import type { ContractConfig, NetworkId, StellarNetworkConfig } from "@herledger/sdk";
 import { Networks } from "@stellar/stellar-sdk";
 
 export function getNetworkPassphrase(): string {

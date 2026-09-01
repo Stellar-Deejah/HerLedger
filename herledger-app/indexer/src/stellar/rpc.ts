@@ -3,6 +3,7 @@ import { getSorobanRpcServer } from "@herledger/sdk";
 import type { StellarNetworkConfig } from "@herledger/sdk";
 import { rpcRequestDurationSeconds } from "../observability/index.js";
 import { retryWithBackoff } from "./retry.js";
+import { IndexerError } from "../types/index.js";
 
 // ---------------------------------------------------------------------------
 // Stellar RPC helpers for the indexer

@@ -1,4 +1,5 @@
 import { test as base } from "@playwright/test";
+
 import { getPrismaClient } from "../../lib/db/client";
 
 // Ensure DATABASE_URL is configured

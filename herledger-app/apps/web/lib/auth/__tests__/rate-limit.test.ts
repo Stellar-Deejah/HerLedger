@@ -57,7 +57,7 @@ function signInRequest(ip: string, password = "wrong-password-123") {
 
 describe("sign-in rate limiting (5 attempts / 15 min, DB-backed)", () => {
   it("allows 5 failed attempts through and locks out the 6th with 429 + Retry-After", async () => {
-    const ip = `198.51.100.${Math.floor(Math.random() * 200) + 1}`;
+    const ip = `10.${(Date.now() >> 8) & 255}.${Date.now() & 255}.${Math.floor(Math.random() * 254) + 1}`;
 
     for (let i = 0; i < 5; i++) {
       const res = await auth.handler(signInRequest(ip));
@@ -72,23 +72,23 @@ describe("sign-in rate limiting (5 attempts / 15 min, DB-backed)", () => {
     // understands that one. Both are asserted here so a change to either
     // layer is caught.
     expect(lockedOut.headers.get("x-retry-after")).toBe("900");
-  });
+  }, 15000);
 
   it("does not lock out a different IP sharing no history with a locked-out one", async () => {
-    const lockedIp = `192.0.2.${Math.floor(Math.random() * 200) + 1}`;
+    const lockedIp = `10.${(Date.now() >> 16) & 255}.${(Date.now() >> 8) & 255}.${Math.floor(Math.random() * 254) + 1}`;
     for (let i = 0; i < 6; i++) {
       await auth.handler(signInRequest(lockedIp));
     }
     const stillLocked = await auth.handler(signInRequest(lockedIp));
     expect(stillLocked.status).toBe(429);
 
-    const freshIp = `203.0.113.${Math.floor(Math.random() * 200) + 1}`;
+    const freshIp = `10.${((Date.now() + 1) >> 16) & 255}.${((Date.now() + 1) >> 8) & 255}.${Math.floor(Math.random() * 254) + 1}`;
     const freshAttempt = await auth.handler(signInRequest(freshIp));
     expect(freshAttempt.status).not.toBe(429);
   });
 
   it("lifts the lockout once the 15-minute window has elapsed", async () => {
-    const ip = `198.18.0.${Math.floor(Math.random() * 200) + 1}`;
+    const ip = `10.${((Date.now() + 2) >> 16) & 255}.${((Date.now() + 2) >> 8) & 255}.${Math.floor(Math.random() * 254) + 1}`;
     for (let i = 0; i < 6; i++) {
       await auth.handler(signInRequest(ip));
     }

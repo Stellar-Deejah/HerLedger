@@ -40,3 +40,6 @@ test-results/
 
 # TypeScript
 *.tsbuildinfo
+
+# Generated SDK API docs (pnpm --filter @herledger/sdk docs)
+packages/sdk/docs/

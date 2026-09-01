@@ -1,25 +1,14 @@
+import { getDbClient, type DbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
 import { CSV_HEADER_ROW, financialEventToCsvRow } from "@/lib/activity/csv";
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { exportLimiter } from "@/lib/api/rate-limit-config";
 import { auth } from "@/lib/auth/server";
 import { toDateRange } from "@/lib/utils/date-range";
-import { getDbClient, type DbClient } from "@herledger/db";
 
 import { RequestSchema } from "./schema";
-
-// ---------------------------------------------------------------------------
-// GET /api/v1/activity/export -- streams every FinancialEvent for the
-// authenticated business (optionally date-filtered) as CSV.
-//
-// Uses a Web ReadableStream (rather than Node's `stream.Readable`) so the
-// handler stays on the same Request/Response primitives every other Route
-// Handler in this app already uses -- no Node-stream adapter, and it works
-// unchanged if this route is ever deployed to the Edge runtime. Rows are
-// paged out of the database (EXPORT_PAGE_SIZE at a time) instead of loading
-// the full export into memory, so a business with a very long history
-// doesn't require holding its entire dataset in the server's heap at once.
-// ---------------------------------------------------------------------------
 
 const EXPORT_PAGE_SIZE = 500;
 
@@ -66,6 +55,10 @@ function buildCsvStream(
 
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = exportLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return jsonError("UNAUTHORIZED", "Not authenticated", 401);
   }

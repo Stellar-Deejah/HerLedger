@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
-import * as matchers from "vitest-axe/matchers";
-import { afterEach, expect } from "vitest";
 import { cleanup } from "@testing-library/react";
+import { afterEach, expect } from "vitest";
+import * as matchers from "vitest-axe/matchers";
 
 // Adds `toHaveNoViolations()` for the axe-core accessibility tests
 // (apps/web/components/business/__tests__/business-registration-form.a11y.test.tsx).

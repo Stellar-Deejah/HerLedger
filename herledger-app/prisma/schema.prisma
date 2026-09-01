@@ -1,5 +1,5 @@
 // HerLedger application database schema
-// The database is an indexed application layer ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â NOT the source of truth for on-chain data.
+// The database is an indexed application layer — NOT the source of truth for on-chain data.
 // Blockchain-derived fields are immutable after indexing.
 
 generator client {
@@ -11,7 +11,7 @@ datasource db {
 }
 
 // ---------------------------------------------------------------------------
-// Better Auth ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â user and session models
+// Better Auth — user and session models
 // ---------------------------------------------------------------------------
 
 model User {
@@ -31,6 +31,8 @@ model User {
   accounts      Account[]
   businessProfile BusinessProfile?
   disputes      Dispute[]
+  notificationPreferences NotificationPreference[]
+  personalAccessTokens    PersonalAccessToken[]
 
   @@map("users")
 }
@@ -109,10 +111,15 @@ model BusinessProfile {
   userId        String   @unique
   /// On-chain business ID (hex-encoded BytesN<32>)
   businessId    String   @unique
-  /// Stellar address of the registered wallet
+  /// Stellar address of the currently linked wallet. Nullable: a business
+  /// owner can unlink their wallet from the settings panel (blocked while
+  /// the business has an active dispute) and later re-link a wallet — the
+  /// same one or a different one — by signing an ownership challenge with
+  /// Freighter. This is the application's off-chain "current wallet"
+  /// record; it does not rewrite the immutable on-chain BusinessRegistry
+  /// association.
   /// @PII
-  walletAddress String   @unique
-  /// @PII
+  walletAddress String?  @unique
   displayName   String
   /// Hex-encoded metadata hash committed on-chain
   metadataHash  String
@@ -137,8 +144,11 @@ model FinancialEvent {
   eventType        EventType
   /// Stellar asset contract address
   assetAddress     String
-  /// Stored as string to preserve i128 precision ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â never cast to Number
-  amount           String
+  /// Stored as string to preserve i128 precision — never cast to Number.
+  /// Validated at the application layer against /^-?\d+$/ to prevent
+  /// non-numeric strings from reaching the database. DB constraint:
+  /// VarChar(40) — max i128 is 39 digits + optional sign.
+  amount           String      @db.VarChar(40)
   /// Stellar transaction hash (hex-encoded BytesN<32>)
   stellarReference String
   /// Hex-encoded metadata hash
@@ -152,9 +162,11 @@ model FinancialEvent {
   attestations     Attestation[]
   disputes         Dispute[]
 
-  @@index([businessId])
+  // Composite index on (businessId, status) — covers queries that filter by
+  // business alone, as well as the common "events for business with status"
+  // pattern (e.g. pending events for a business dashboard).
+  @@index([businessId, status])
   @@index([ledgerSequence])
-  @@index([status])
   @@map("financial_events")
 }
 
@@ -167,11 +179,11 @@ model Attestation {
   attesterAddress String
   claimHash       String
   /// Human-readable claim text the attester entered before it was hashed to
-  /// `claimHash` (see CreateAttestationForm). Off-chain only -- the on-chain
+  /// `claimHash` (see CreateAttestationForm). Off-chain only — the on-chain
   /// contract only ever sees the hash. Nullable because attestations synced
   /// by the indexer from raw on-chain data (rather than created through the
   /// app) have no description available. Never overwritten by the indexer's
-  /// upsertAttestation, which only ever updates `status` -- see
+  /// upsertAttestation, which only ever updates `status` — see
   /// indexer/src/db/schema/attestations.ts and the matching write side in
   /// POST /api/attestations/[attestationId]/claim-description.
   claimDescription String?
@@ -182,7 +194,10 @@ model Attestation {
 
   event           FinancialEvent    @relation(fields: [eventId], references: [eventId], onDelete: Restrict)
 
-  @@index([eventId])
+  // Composite index on (eventId, status) — covers queries that filter by
+  // eventId alone, as well as the common "active attestations for event"
+  // pattern.
+  @@index([eventId, status])
   @@index([attesterAddress])
   @@map("attestations")
 }
@@ -190,7 +205,7 @@ model Attestation {
 // Off-chain profile for a registered attester, keyed by wallet address
 // rather than a HerLedger userId. Attester registration is admin-gated
 // on-chain (AttestationRegistry.register_attester requires the protocol
-// admin's signature, not the attester's own -- see contracts/attestation_registry/src/lib.rs),
+// admin's signature, not the attester's own — see contracts/attestation_registry/src/lib.rs),
 // so the party being registered does not need a HerLedger account at
 // registration time; the wallet address is the only identity that has to
 // exist. `active` mirrors the on-chain Attester.active flag and is what
@@ -212,14 +227,14 @@ model AttesterProfile {
 //
 // The on-chain `dispute_event` call only ever receives a hash of the
 // dispute reason (see `dispute_event(event_id, business_owner, reason_hash)`
-// in the FinancialLedger contract) -- the plaintext reason itself has no
+// in the FinancialLedger contract) — the plaintext reason itself has no
 // on-chain home. This model is that off-chain home: it lets the business
 // owner (and, in future, auditors) read back *why* a dispute was raised,
 // and lets them reproduce `reasonHash` to verify it against the on-chain
 // value on Stellar Expert.
 //
 // `reasonPlaintext` holds the AES-256-GCM ciphertext envelope, never the
-// raw plaintext -- see apps/web/lib/crypto/dispute-encryption.ts. The field
+// raw plaintext — see apps/web/lib/crypto/dispute-encryption.ts. The field
 // keeps the name "reasonPlaintext" (rather than e.g. "reasonCiphertext") to
 // make the encrypt-at-write / decrypt-at-read contract explicit at the call
 // site: every read of this column MUST go through decryptDisputeReason,
@@ -231,7 +246,7 @@ model Dispute {
   /// The HerLedger user (business owner) who raised the dispute
   userId           String
   /// AES-256-GCM ciphertext envelope of the dispute reason: "iv:authTag:ciphertext" (base64 segments).
-  /// Never plaintext at rest -- see apps/web/lib/crypto/dispute-encryption.ts.
+  /// Never plaintext at rest — see apps/web/lib/crypto/dispute-encryption.ts.
   reasonPlaintext  String
   /// Hash of the plaintext reason, matching the reason_hash submitted on-chain via dispute_event
   reasonHash       String
@@ -240,7 +255,7 @@ model Dispute {
   resolvedAt       DateTime?     @db.Timestamptz
   /// Stellar transaction hash of the on-chain resolve_dispute/revoke_event call, once known.
   /// Nothing in this PR populates it automatically (the indexer does not yet
-  /// listen for dispute resolution contract events -- a pre-existing gap,
+  /// listen for dispute resolution contract events — a pre-existing gap,
   /// see PR description); it is here so the "View resolution" UI action and
   /// a future indexer sync job have somewhere to read/write it.
   resolutionTxHash String?
@@ -254,6 +269,52 @@ model Dispute {
   @@index([userId])
   @@index([status])
   @@map("disputes")
+}
+
+// Infrastructure for a future notification system — one row per
+// (user, eventType), so each on-chain-triggered event a user cares about
+// (a new attestation, a dispute resolution, a business deactivation) can be
+// toggled independently per channel. Nothing sends notifications yet; this
+// is the data model a future dispatcher reads from.
+model NotificationPreference {
+  id        String                @id @default(cuid())
+  userId    String
+  eventType NotificationEventType
+  email     Boolean               @default(true)
+  inApp     Boolean               @default(true)
+  createdAt DateTime              @default(now()) @db.Timestamptz
+  updatedAt DateTime              @updatedAt @db.Timestamptz
+
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventType])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+// Long-lived API credential for read-only access to the indexer API
+// (Bearer scheme), so a business can let third-party tools (accounting
+// software, auditors) read its financial events without sharing its
+// session cookie. Only a SHA-256 (HMAC-peppered) hash of the token is ever
+// stored — see packages/config/src/tokens.ts. The plaintext value is
+// returned once, at creation time, and never again.
+model PersonalAccessToken {
+  id         String    @id @default(cuid())
+  userId     String
+  /// User-chosen label, e.g. "QuickBooks sync"
+  name       String
+  /// HMAC-SHA256(BETTER_AUTH_SECRET, token) hex digest — never the plaintext token
+  tokenHash  String    @unique
+  /// Non-secret display prefix (e.g. "hl_pat_ab12cd34") so a user can tell tokens apart in the UI
+  prefix     String
+  lastUsedAt DateTime? @db.Timestamptz
+  revokedAt  DateTime? @db.Timestamptz
+  createdAt  DateTime  @default(now()) @db.Timestamptz
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("personal_access_tokens")
 }
 
 model StellarTransaction {
@@ -281,7 +342,38 @@ model IndexerCheckpoint {
 }
 
 // ---------------------------------------------------------------------------
-// Enums ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â mirror on-chain definitions
+// Audit log — append-only record of state-changing operations
+// ---------------------------------------------------------------------------
+
+// Records every state-changing operation on BusinessProfile and FinancialEvent
+// for compliance, dispute resolution, and forensic reconstruction. The table
+// is append-only: no UPDATE or DELETE operations should target it in
+// application code.
+model AuditLog {
+  id            String   @id @default(cuid())
+  /// Entity type — "BusinessProfile" or "FinancialEvent"
+  entityType    String
+  /// Entity ID (the `id` or `businessId`/`eventId` of the target entity)
+  entityId      String
+  /// Action performed — "create", "update", "deactivate", "status_change", etc.
+  action        String
+  /// Stellar wallet address of the actor, or "system" for indexer operations
+  actorAddress  String
+  /// Timestamp when the action occurred
+  timestamp     DateTime @default(now()) @db.Timestamptz
+  /// Previous state (JSON) — null on create
+  oldValue      Json?
+  /// New state (JSON) — null on delete (not used in HerLedger since records are never deleted)
+  newValue      Json?
+
+  @@index([entityType, entityId])
+  @@index([actorAddress])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+// ---------------------------------------------------------------------------
+// Enums — mirror on-chain definitions
 // ---------------------------------------------------------------------------
 
 enum EventType {
@@ -310,7 +402,7 @@ enum AttestationStatus {
 /// replay; unresolved rows accumulate a `retryCount` on each failed retry.
 model IndexerError {
   id            String    @id @default(cuid())
-  /// Public identifier used in the replay API path -- distinct from `id`
+  /// Public identifier used in the replay API path — distinct from `id`
   /// so failed replays do not leak the internal cuid.
   errorId       String    @unique @default(cuid())
   /// Raw transaction XDR, needed to re-run parsing + indexing on replay.
@@ -348,4 +440,10 @@ model DataMigration {
   appliedAt DateTime @default(now()) @db.Timestamptz
 
   @@map("data_migrations")
+}
+
+enum NotificationEventType {
+  NewAttestation
+  DisputeResolution
+  BusinessDeactivation
 }

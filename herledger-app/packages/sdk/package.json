@@ -5,7 +5,12 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts",
+    "./contracts": "./src/contracts/index.ts",
+    "./errors": "./src/errors/index.ts",
+    "./wallet": "./src/wallet/index.ts",
+    "./rpc": "./src/rpc/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -17,16 +22,17 @@
   },
   "dependencies": {
     "@herledger/config": "workspace:*",
-    "@stellar/stellar-sdk": "16.2.0",
-    "@stellar/freighter-api": "6.0.1",
     "zod": "4.4.3"
+  },
+  "peerDependencies": {
+    "@stellar/freighter-api": "6.0.1",
+    "@stellar/stellar-sdk": "16.2.0"
   },
   "devDependencies": {
     "typescript": "7.0.2",
     "@types/node": "24.0.10",
     "vitest": "4.1.10",
     "vite": "6.3.5",
-    "@vitest/coverage-v8": "4.1.10",
-    "@types/node": "^24.0.10"
+    "@vitest/coverage-v8": "4.1.10"
   }
 }

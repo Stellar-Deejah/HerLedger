@@ -5,7 +5,13 @@ import { describe, it, expect } from "vitest";
 import { EmptyState } from "../empty-state";
 import { ErrorMessage } from "../error-message";
 import { FormField, Field } from "../form-field";
+import {
+  ActivityListSkeleton,
+  AttestationListSkeleton,
+  OverviewSkeleton,
+} from "../loading-skeletons";
 import { LoadingSpinner } from "../loading-spinner";
+import { SkeletonBlock, SkeletonRow, SkeletonCard, SkeletonTable } from "../skeleton";
 import { StatusBadge } from "../status-badge";
 import { SubmitButton } from "../submit-button";
 
@@ -123,6 +129,65 @@ describe("Design System UI Components & Primitives", () => {
       expect(html).toContain('value="123"');
       expect(html).toContain("Field error");
       expect(html).toContain('role="alert"');
+    });
+  });
+
+  describe("Skeleton", () => {
+    it("SkeletonBlock renders as an aria-hidden, reduced-motion-aware pulse block", () => {
+      const html = renderToString(<SkeletonBlock width="50%" height="1rem" />);
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain("skeleton");
+      expect(html).toContain("width:50%");
+      expect(html).toContain("height:1rem");
+    });
+
+    it("SkeletonRow renders one block per column", () => {
+      const html = renderToString(<SkeletonRow widths={["30%", "20%", "10%"]} />);
+      expect(html).toContain('aria-hidden="true"');
+      // Three blocks with the supplied widths, and no focusable children.
+      const blockCount = html.match(/class="skeleton"/g)?.length ?? 0;
+      expect(blockCount).toBe(3);
+      expect(html).toContain("width:30%");
+      expect(html).toContain("width:10%");
+    });
+
+    it("SkeletonCard renders a bordered card with a title bar and lines", () => {
+      const html = renderToString(<SkeletonCard lines={3} />);
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain("var(--border)");
+      expect(html).toContain("border-radius:var(--radius)");
+    });
+
+    it("SkeletonTable renders a header row plus the requested data rows", () => {
+      const html = renderToString(<SkeletonTable rows={4} columns={4} />);
+      expect(html).toContain('aria-hidden="true"');
+      // Header + 4 rows = 5 flex rows, each with 4 columns.
+      const blockCount = html.match(/class="skeleton"/g)?.length ?? 0;
+      expect(blockCount).toBe(20);
+      expect(html).toContain("border-bottom:2px solid var(--border)");
+    });
+  });
+
+  describe("Composite loading skeletons", () => {
+    it("OverviewSkeleton matches the dashboard spatial layout and is aria-hidden", () => {
+      const html = renderToString(<OverviewSkeleton />);
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain("var(--border)");
+      // Four KPI card frames plus the recent-activity table rows.
+      expect(html.match(/class="skeleton"/g)?.length ?? 0).toBeGreaterThan(10);
+    });
+
+    it("ActivityListSkeleton mirrors the date-range controls and table", () => {
+      const html = renderToString(<ActivityListSkeleton />);
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain("width:8rem");
+      expect(html).toContain("var(--border)");
+    });
+
+    it("AttestationListSkeleton renders a stack of bordered cards", () => {
+      const html = renderToString(<AttestationListSkeleton cards={2} />);
+      expect(html).toContain('aria-hidden="true"');
+      expect(html).toContain("border-radius:var(--radius)");
     });
   });
 });

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 import { AttestationListServer } from "@/components/attestations/attestation-list-server";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { AttestationListSkeleton } from "@/components/ui/loading-skeletons";
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
 
@@ -38,7 +38,7 @@ export default async function AttestationsPage() {
         <h1 style={{ fontSize: "1.5rem", fontWeight: 700 }}>Attestations</h1>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <Link
-            href={"/dashboard/attestations/create" as any}
+            href="/dashboard/attestations/create"
             style={{
               padding: "0.5rem 1rem",
               background: "var(--primary)",
@@ -52,7 +52,7 @@ export default async function AttestationsPage() {
             Create attestation
           </Link>
           <Link
-            href={"/dashboard/attestations/register" as any}
+            href="/dashboard/attestations/register"
             style={{
               padding: "0.5rem 1rem",
               border: "1px solid var(--border)",
@@ -67,7 +67,7 @@ export default async function AttestationsPage() {
           </Link>
         </div>
       </div>
-      <Suspense fallback={<LoadingSpinner />}>
+      <Suspense fallback={<AttestationListSkeleton />}>
         <AttestationListServer businessId={profile?.businessId ?? null} />
       </Suspense>
     </div>

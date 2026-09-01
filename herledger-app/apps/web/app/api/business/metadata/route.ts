@@ -1,13 +1,16 @@
+import { getDbClient } from "@herledger/db";
+import { updateBusinessMetadata } from "@herledger/sdk";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getAccount } from "@/lib/stellar/account";
 import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
-import { getDbClient } from "@herledger/db";
-import { updateBusinessMetadata } from "@herledger/sdk";
+
 
 const RequestSchema = z.object({
   businessId: z.string().min(1),
@@ -26,6 +29,10 @@ const idempotencyKeys = new Map<string, { status: string; result: unknown }>();
 
 export async function PUT(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<MetadataUpdateResponse>(
       { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
@@ -96,7 +103,7 @@ export async function PUT(req: NextRequest) {
     // Get Stellar account for signing
     const networkConfig = getStellarNetworkConfig();
     const contractConfig = getContractConfig();
-    const sourceAccount = await getAccount(dbBusiness.walletAddress);
+    const sourceAccount = await getAccount(dbBusiness.walletAddress ?? "");
 
     // Call on-chain update
     await updateBusinessMetadata(

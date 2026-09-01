@@ -1,7 +1,11 @@
+import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.hoisted(() => {
+  process.env.DATABASE_URL = "postgresql://user:pass@localhost:5432/db";
+});
+
 import { auth } from "@/lib/auth/server";
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
 
 import { GET } from "./route";
 
@@ -34,15 +38,12 @@ describe("GET /api/events/stream", () => {
 
   it("returns 401 when not authenticated", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce(null);
-    setDbClient(createMockDbClient());
 
-    const res = await GET(req() as never);
+    const res = await GET(req());
     expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toBe("Unauthorized");
   });
 
-  it("returns 400 when the caller has no business profile", async () => {
+  it("returns 404 when user has no business profile", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
     setDbClient(
       createMockDbClient({
@@ -58,14 +59,13 @@ describe("GET /api/events/stream", () => {
       })
     );
 
-    const res = await GET(req() as never);
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error).toBe("No business profile");
+    const res = await GET(req());
+    expect(res.status).toBe(404);
   });
 
-  it("opens an SSE stream with the expected headers for an authenticated business", async () => {
+  it("returns an SSE stream of updated financial events", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "u_1" } } as never);
+
     setDbClient(
       createMockDbClient({
         businesses: {
@@ -85,23 +85,17 @@ describe("GET /api/events/stream", () => {
           findById: vi.fn(),
           findUpdatedAfter: vi.fn().mockResolvedValue([]),
           findAttestableEvents: vi.fn(),
+          summarize: vi.fn(),
         },
       })
     );
 
-    const controller = new AbortController();
-    const request = new Request("http://localhost/api/events/stream", {
-      signal: controller.signal,
-    });
-
-    const res = await GET(request as never);
+    const res = await GET(req());
     expect(res.status).toBe(200);
-    expect(res.headers.get("Content-Type")).toBe("text/event-stream");
-    expect(res.headers.get("Cache-Control")).toBe("no-cache");
+    expect(res.headers.get("content-type")).toBe("text/event-stream");
 
-    // Close the stream immediately so the background timers this route sets
-    // up don't keep the test process alive.
-    controller.abort();
-    await res.body?.cancel();
+    // Close the stream reader immediately to finish test
+    const reader = res.body?.getReader();
+    await reader?.cancel();
   });
 });

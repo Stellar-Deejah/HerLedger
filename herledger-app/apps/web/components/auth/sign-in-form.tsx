@@ -37,7 +37,7 @@ export function SignInForm() {
         } else {
           const rawCallback = searchParams?.get("callbackUrl");
           const targetUrl = validateCallbackUrl(rawCallback) || "/dashboard";
-          router.push(targetUrl);
+          router.push(targetUrl as unknown as Parameters<typeof router.push>[0]);
         }
       } catch {
         setError("An unexpected error occurred. Please try again.");
@@ -72,7 +72,7 @@ export function SignInForm() {
 
       {error === EMAIL_NOT_VERIFIED_ERROR && (
         <p style={{ fontSize: "0.875rem", marginBottom: "1rem" }}>
-          <Link href={`/auth/verify-email?email=${encodeURIComponent(email)}`}>
+          <Link href={{ pathname: "/auth/verify-email", query: { email } }}>
             Resend verification email
           </Link>
         </p>

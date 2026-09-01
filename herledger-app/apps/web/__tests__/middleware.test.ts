@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
+
 import { middleware } from "../middleware";
 
 vi.mock("server-only", () => ({}));

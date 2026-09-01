@@ -10,11 +10,30 @@ import {
   DatabaseError,
 } from "../types.js";
 
+const VALID_AMOUNT_RE = /^-?\d+$/;
+
+/**
+ * Validate that an amount string is a valid i128 integer representation.
+ * Must match /^-?\d+$/ — no decimals, no scientific notation, no whitespace.
+ * Called before every DB write to prevent non-numeric strings from corrupting
+ * the ledger.
+ */
+function validateAmount(amountStr: string): void {
+  if (!VALID_AMOUNT_RE.test(amountStr)) {
+    throw new DatabaseError(
+      `Invalid amount format: "${amountStr}" does not match /^-?\d+$/`
+    );
+  }
+}
+
 export async function upsertFinancialEvent(
   prisma: PrismaClient,
   input: CreateFinancialEventInput
 ): Promise<void> {
   try {
+    const amountStr = input.amount.toString();
+    validateAmount(amountStr);
+
     await prisma.financialEvent.upsert({
       where: { eventId: input.eventId },
       create: {
@@ -22,7 +41,7 @@ export async function upsertFinancialEvent(
         eventId: input.eventId,
         eventType: input.eventType,
         assetAddress: input.assetAddress,
-        amount: input.amount.toString(),
+        amount: amountStr,
         stellarReference: input.stellarReference,
         metadataHash: input.metadataHash,
         status: input.status,

@@ -13,16 +13,23 @@ const bodySchema = z.object({
   metadataHash: z.string().length(64),
   txHash: z.string().min(1),
 });
+import { rateLimitKey } from "@/lib/api/rate-limit";
+import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
+import { withRateLimit } from "@/lib/rate-limit";
 
 import { RequestSchema, type BusinessRegisterResponse } from "./schema";
 
-export async function POST(req: NextRequest) {
+export const POST = withRateLimit(async (req: NextRequest) => {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  const limited = writeLimiter.check(rateLimitKey(req, session?.user?.id));
+  if (limited) return limited;
+
   if (!session) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" }, meta: null },
       { status: 401 }
     );
   }
@@ -32,7 +39,7 @@ export async function POST(req: NextRequest) {
     body = await req.json();
   } catch {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "INVALID_BODY", message: "Invalid request body" } },
+      { data: null, error: { code: "INVALID_BODY", message: "Invalid request body" }, meta: null },
       { status: 400 }
     );
   }
@@ -40,23 +47,13 @@ export async function POST(req: NextRequest) {
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid registration data" } },
-      { status: 400 }
+      { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid registration data" }, meta: null },
+      { status: 422 }
     );
   }
 
   const { businessId, walletAddress, displayName, metadataHash } = parsed.data;
 
-  // businessId is the idempotency key here: it's generated client-side once
-  // per submission attempt (see generateBusinessId in
-  // apps/web/hooks/use-registration-flow.ts) and is unique in the DB, so a
-  // retried POST for the *same* submission (double-click, a resumed
-  // registration replaying after a tab close — see
-  // lib/business/pending-registration.ts) always carries the same
-  // businessId. We treat an exact replay of that submission as a 200
-  // (nothing new to do, hand back the same result) and reserve 409 for a
-  // genuine conflict: this businessId or wallet already belongs to a
-  // *different* registration.
   try {
     const db = getDbClient();
     const existingForUser = await db.businesses.findByUserId(session.user.id);
@@ -70,6 +67,7 @@ export async function POST(req: NextRequest) {
         return typedJson<BusinessRegisterResponse>({
           data: { businessId: existingForUser.businessId },
           error: null,
+          meta: null,
         });
       }
 
@@ -80,6 +78,7 @@ export async function POST(req: NextRequest) {
             code: "ALREADY_REGISTERED",
             message: `Business already registered for this account (businessId: ${existingForUser.businessId})`,
           },
+          meta: null,
         },
         { status: 409 }
       );
@@ -94,6 +93,7 @@ export async function POST(req: NextRequest) {
             code: "WALLET_ALREADY_REGISTERED",
             message: `This wallet is already registered (businessId: ${existingWallet.businessId})`,
           },
+          meta: null,
         },
         { status: 409 }
       );
@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
             code: "BUSINESS_ID_CONFLICT",
             message: `businessId already registered (businessId: ${existingBusinessId.businessId})`,
           },
+          meta: null,
         },
         { status: 409 }
       );
@@ -125,12 +126,13 @@ export async function POST(req: NextRequest) {
     return typedJson<BusinessRegisterResponse>({
       data: { businessId: profile.businessId },
       error: null,
+      meta: null,
     });
   } catch (err) {
     console.error({ operation: "register-business", userId: session.user.id, error: err });
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "INTERNAL_ERROR", message: "Registration failed" } },
+      { data: null, error: { code: "INTERNAL_ERROR", message: "Registration failed" }, meta: null },
       { status: 500 }
     );
   }
-}
+});

@@ -7,6 +7,22 @@ import { DatabaseError } from "../../types/index.js";
 // Amount stored as string to preserve i128 precision — never cast to Number.
 // ---------------------------------------------------------------------------
 
+const VALID_AMOUNT_RE = /^-?\d+$/;
+
+/**
+ * Validate that an amount string is a valid i128 integer representation.
+ * Must match /^-?\d+$/ — no decimals, no scientific notation, no whitespace.
+ * Called before every DB write to prevent non-numeric strings from corrupting
+ * the ledger.
+ */
+export function validateAmount(amountStr: string): void {
+  if (!VALID_AMOUNT_RE.test(amountStr)) {
+    throw new DatabaseError(
+      `Invalid amount format: "${amountStr}" does not match /^-?\d+$/`
+    );
+  }
+}
+
 /** Prisma client or an interactive-transaction client (both expose the same model API). */
 export type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -31,6 +47,11 @@ export async function upsertFinancialEvent(
   input: CreateFinancialEventInput
 ): Promise<void> {
   try {
+    // Validate amount format before DB write — prevents non-numeric strings
+    // from reaching the database and corrupting the ledger.
+    const amountStr = input.amount.toString();
+    validateAmount(amountStr);
+
     await prisma.financialEvent.upsert({
       where: { eventId: input.eventId },
       create: {
@@ -38,8 +59,7 @@ export async function upsertFinancialEvent(
         eventId: input.eventId,
         eventType: input.eventType,
         assetAddress: input.assetAddress,
-        // Store as string — never Number
-        amount: input.amount.toString(),
+        amount: amountStr,
         stellarReference: input.stellarReference,
         metadataHash: input.metadataHash,
         status: input.status,
@@ -74,18 +94,21 @@ export async function batchUpsertFinancialEvents(
   if (inputs.length === 0) return;
   try {
     await prisma.financialEvent.createMany({
-      data: inputs.map((input) => ({
-        businessId: input.businessId,
-        eventId: input.eventId,
-        eventType: input.eventType,
-        assetAddress: input.assetAddress,
-        // Store as string — never Number
-        amount: input.amount.toString(),
-        stellarReference: input.stellarReference,
-        metadataHash: input.metadataHash,
-        status: input.status,
-        ledgerSequence: input.ledgerSequence,
-      })),
+      data: inputs.map((input) => {
+        const amountStr = input.amount.toString();
+        validateAmount(amountStr);
+        return {
+          businessId: input.businessId,
+          eventId: input.eventId,
+          eventType: input.eventType,
+          assetAddress: input.assetAddress,
+          amount: amountStr,
+          stellarReference: input.stellarReference,
+          metadataHash: input.metadataHash,
+          status: input.status,
+          ledgerSequence: input.ledgerSequence,
+        };
+      }),
       skipDuplicates: true,
     });
   } catch (cause) {
