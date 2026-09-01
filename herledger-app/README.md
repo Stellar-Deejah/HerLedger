@@ -988,4 +988,1164 @@ test(indexer): cover payment classification
 
 ## License
 
+# See [LICENSE](../herledger-contract/LICENSE).
+
+# HerLedger Ã¢â‚¬â€ Application Layer
+
+HerLedger is a financial-history platform for women-owned businesses built on
+the Stellar blockchain. It records recognized Stellar transactions and verified
+attestations so a business can build a portable, auditable financial history Ã¢â‚¬â€
+without storing unnecessary private information on-chain.
+
+> **HerLedger does not** issue loans, calculate credit scores, make lending
+> decisions, or claim that Stellar transactions are private.
+
+---
+
+## Table of Contents
+
+1. [What HerLedger Does](#what-herledger-does)
+2. [Architecture](#architecture)
+3. [Repository Structure](#repository-structure)
+4. [Tech Stack](#tech-stack)
+5. [Prerequisites](#prerequisites)
+6. [Local Setup](#local-setup)
+7. [Environment Variables](#environment-variables)
+8. [Database](#database)
+9. [Running Locally](#running-locally)
+10. [Building](#building)
+11. [Testing](#testing)
+12. [Deployment](#deployment)
+13. [Contract Integration](#contract-integration)
+14. [SDK Reference](#sdk-reference)
+15. [Indexer Reference](#indexer-reference)
+16. [API Reference](#api-reference)
+17. [Onboarding Flow](#onboarding-flow)
+18. [Financial Event Classification](#financial-event-classification)
+19. [Dispute Flow](#dispute-flow)
+20. [Privacy Model](#privacy-model)
+21. [Security](#security)
+22. [Contributing](#contributing)
+
+---
+
+## What HerLedger Does
+
+| Feature               | Description                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| Business registration | Register a woman-owned business on-chain via the BusinessRegistry Soroban contract |
+| Wallet association    | Link a Stellar wallet address to a business identity                               |
+| Financial activity    | Detect and index supported Stellar payment transactions                            |
+| Event verification    | Track Pending → Verified → Disputed → Revoked lifecycle                            |
+| Attestations          | Display third-party claims linked to financial events                              |
+| Dispute flow          | Allow a business owner to challenge an incorrect record on-chain                   |
+| Privacy               | Keep private metadata off-chain; commit only cryptographic hashes                  |
+
+**Not supported:** loans, credit scores, lending decisions, unsupported asset classification, private Stellar transactions.
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                        User                              │
+└──────────┬──────────────────────────┬────────────────────┘
+           │                          │
+           ▼                          ▼
+┌──────────────────┐       ┌──────────────────────┐
+│  Next.js 16 Web  │       │   Freighter Wallet   │
+│  (App Router)    │       │   (browser ext.)     │
+│                  │       └──────────┬───────────┘
+│  Better Auth     │                  │ signs txns
+│  (app sessions)  │                  ▼
+│                  │       ┌──────────────────────┐
+│  Server Actions  │       │  Stellar Network     │
+│  API Routes      │       │  Soroban Contracts   │
+└──────┬───────────┘       └──────────────────────┘
+       │ reads                        ▲
+       ▼                              │ observes
+┌──────────────────┐       ┌──────────────────────┐
+│  Indexer API     │◄──────│  Indexer Process     │
+│  (Fastify)       │       │  (ledger sync job)   │
+└──────┬───────────┘       └──────────────────────┘
+       │
+       ▼
+┌──────────────────┐
+│   PostgreSQL     │
+│   (derived       │
+│    index only)   │
+└──────────────────┘
+```
+
+### Key principles
+
+- **User wallets sign everything.** The app never holds or uses private keys.
+- **The indexer observes.** It does not initiate contract writes.
+- **The database is an index.** Stellar is the source of truth.
+- **Blockchain-derived records are immutable** after indexing (no silent rewrites).
+- **Application auth is separate from wallet auth.** Signing in ≠ wallet connected.
+
+---
+
+## Repository Structure
+
+```
+HerLedger/
+├── herledger-contract/          Soroban smart contracts (Rust)
+│   ├── contracts/
+│   │   ├── business_registry/
+│   │   ├── financial_ledger/
+│   │   └── attestation_registry/
+│   └── target/wasm32v1-none/release/   Built WASM artifacts
+│
+└── herledger-app/               Application layer (this directory)
+    ├── apps/
+    │   └── web/                 Next.js 16 frontend
+    │       ├── app/
+    │       │   ├── (marketing)/ Public landing page
+    │       │   ├── dashboard/   Authenticated dashboard
+    │       │   ├── auth/        Sign in / sign up
+    │       │   └── api/         API route handlers
+    │       ├── components/      React components
+    │       │   ├── ui/          Design system primitives
+    │       │   ├── wallet/      Freighter integration
+    │       │   ├── business/    Business profile & registration
+    │       │   ├── activity/    Financial activity display
+    │       │   ├── attestations/Attestation display
+    │       │   ├── disputes/    Dispute submission
+    │       │   ├── navigation/  App shell navigation
+    │       │   └── settings/    Account & privacy settings
+    │       ├── lib/
+    │       │   ├── auth/        Better Auth client & server
+    │       │   ├── stellar/     Network configuration helpers
+    │       │   └── utils/       Formatting utilities
+    │       ├── middleware.ts     Route protection
+    │       └── next.config.ts
+    │
+    ├── packages/
+    │   ├── config/              Typed environment validation (Zod)
+    │   └── sdk/                 Stellar/Soroban TypeScript SDK
+    │       └── src/
+    │           ├── contracts/   Contract clients + XDR encoding
+    │           ├── rpc/         Soroban RPC client factory
+    │           ├── wallet/      Freighter adapter
+    │           ├── types/       Shared TypeScript types
+    │           └── errors/      Typed error classes
+    │
+    ├── indexer/                 Transaction indexer + HTTP API
+    │   └── src/
+    │       ├── api/             Fastify routes
+    │       ├── config/          Env config
+    │       ├── db/              Prisma client + repositories
+    │       ├── index/           Indexing business logic
+    │       ├── jobs/            Sync job (ledger polling)
+    │       ├── stellar/         Horizon + RPC helpers
+    │       └── types/           Indexer-specific types
+    │
+    ├── prisma/
+    │   ├── schema.prisma        Database schema
+    │   └── migrations/          Applied migrations
+    │
+    ├── scripts/
+    │   ├── dev.sh               Start all services
+    │   ├── test.sh              Run test suite
+    │   └── generate-client.sh   Regenerate Prisma client
+    │
+    ├── .env.example             Required environment variables
+    ├── pnpm-workspace.yaml      Monorepo workspace config
+    └── README.md                This file
+```
+
+---
+
+## Tech Stack
+
+| Layer              | Technology             | Version |
+| ------------------ | ---------------------- | ------- |
+| Runtime            | Node.js                | ≥20.9.0 |
+| Package manager    | pnpm                   | 9+      |
+| Frontend framework | Next.js                | 16.3.1  |
+| UI library         | React                  | 19.2.8  |
+| Language           | TypeScript             | 7.0.2   |
+| Stellar SDK        | @stellar/stellar-sdk   | 16.2.0  |
+| Wallet             | @stellar/freighter-api | 6.0.1   |
+| Validation         | Zod                    | 4.4.3   |
+| Authentication     | Better Auth            | 1.6.28  |
+| Database           | PostgreSQL             | 16+     |
+| ORM                | Prisma                 | 7.9.1   |
+| API server         | Fastify                | 5.12.0  |
+| Testing            | Vitest                 | 4.1.10  |
+| E2E testing        | Playwright             | 1.51.1  |
+
+---
+
+## Prerequisites
+
+### Node.js
+
+```sh
+# Check version
+node --version   # requires >=20.9.0
+```
+
+Install via [nvm](https://github.com/nvm-sh/nvm) or the [official installer](https://nodejs.org).
+
+### pnpm
+
+```sh
+npm install -g pnpm@9
+```
+
+### PostgreSQL 16+
+
+```sh
+# macOS
+brew install postgresql@16
+brew services start postgresql@16
+
+# Ubuntu/Debian
+sudo apt install postgresql-16
+```
+
+### Stellar CLI (for contract deployment only)
+
+```sh
+cargo install --locked stellar-cli@26.1.0
+```
+
+> The Stellar CLI is only needed when deploying contracts. It is **not** required for running the application layer.
+
+### Rust + wasm32v1-none (for contract development only)
+
+```sh
+rustup target add wasm32v1-none
+```
+
+---
+
+## Local Setup
+
+Two supported paths: **Option A** installs Node/pnpm/PostgreSQL directly on
+your machine; **Option B** runs the whole stack (Postgres + web + indexer)
+in Docker Compose and only requires Docker itself. Both end up at the same
+place — a running app at http://localhost:3000 with a seeded database.
+
+### Option A: Manual
+
+#### 1. Clone and enter the repo
+
+```sh
+git clone https://github.com/Stellar-Deejah/HerLedger.git
+cd HerLedger/herledger-app
+```
+
+#### 2. Install dependencies
+
+```sh
+pnpm install
+```
+
+#### 3. Configure environment
+
+`pnpm db:generate`/`pnpm db:migrate*` (run from the workspace root) read
+`.env.local` from the workspace root, while the Next.js dev server reads
+`apps/web/.env.local` — symlinking the second to the first keeps a single
+file as the source of truth instead of two copies to keep in sync:
+
+```sh
+cp .env.example .env.local
+ln -s ../.env.local apps/web/.env.local
+```
+
+Open `.env.local` and fill in all values. See [Environment Variables](#environment-variables) for details.
+
+#### 4. Create the database
+
+```sh
+createdb herledger_dev
+```
+
+#### 5. Generate Prisma client and run migrations
+
+```sh
+pnpm db:generate
+pnpm db:migrate:dev
+```
+
+#### 6. Seed representative data (optional)
+
+```sh
+pnpm db:seed
+```
+
+Inserts 3 users, 3 business profiles, 20 financial events (covering every
+`EventType`/`EventStatus` combination), and 10 attestations. Safe to
+re-run — rows are upserted on their natural key, not duplicated. See
+[Database](#database) for what's seeded and CONTRIBUTING.md#database-seeding
+for design notes.
+
+#### 7. Start development
+
+```sh
+bash scripts/dev.sh
+```
+
+`dev.sh` checks that `DATABASE_URL` is set and runs `pnpm db:generate`
+automatically before starting either service — if you see an error about
+`DATABASE_URL`, step 3 above wasn't completed.
+
+Or run each service separately:
+
+```sh
+# Terminal 1 — web app
+pnpm --filter web dev
+
+# Terminal 2 — indexer
+pnpm --filter indexer dev
+```
+
+- Web: http://localhost:3000
+- Indexer API: http://localhost:4000
+
+### Option B: Docker Compose
+
+Requires only [Docker](https://docs.docker.com/get-docker/) (with Compose
+V2, bundled with current Docker Desktop and `docker-ce`). No local Node,
+pnpm, or PostgreSQL install needed.
+
+```sh
+cp .env.example .env
+docker compose up
+```
+
+This builds the `web` and `indexer` images, starts Postgres, waits for it
+to be healthy, generates the Prisma client and applies migrations (the
+one-shot `migrate` service), then starts `web` and `indexer` with hot
+reload — edits to any source file under `apps/web/`, `indexer/`, or
+`packages/*/` take effect without a rebuild. Once `web` reports healthy:
+
+```sh
+docker compose exec web pnpm db:seed
+```
+
+- Web: http://localhost:3000
+- Indexer API: http://localhost:4000
+- Postgres: `localhost:5432` (user/password/db: `herledger`/`herledger`/`herledger_dev`)
+
+**Volume strategy**: source directories are bind-mounted for hot reload,
+but each service's `node_modules` is a separate Docker-managed named
+volume layered on top (see the comment block at the top of
+`docker-compose.yml`) — this is not a production image, since Prisma's
+query engine ships as a platform-specific native binary and a bind-mounted
+host `node_modules` would silently break inside the Linux container.
+
+**Platform notes**:
+
+- If you already have a local PostgreSQL bound to port 5432, either stop
+  it or remap the `postgres` service's port in `docker-compose.yml` before
+  running `docker compose up`.
+- On macOS and Windows, Docker Desktop's bind-mount I/O is noticeably
+  slower than native Linux — expect slower cold starts and file-watch
+  latency than the manual (Option A) path on those platforms; this is a
+  Docker Desktop characteristic, not something this Compose file can work
+  around.
+- No platform-specific issues were found on Linux (native bind mounts, no
+  virtualization layer).
+
+---
+
+## Environment Variables
+
+All required variables are documented in `.env.example`.
+
+```env
+# ── Application ────────────────────────────────────────────
+NODE_ENV=development
+APP_URL=http://localhost:3000
+
+# ── Database ───────────────────────────────────────────────
+DATABASE_URL=postgresql://user:password@localhost:5432/herledger_dev
+
+# ── Authentication ─────────────────────────────────────────
+# Generate with: openssl rand -hex 32
+BETTER_AUTH_SECRET=
+
+# ── Stellar (server-side) ──────────────────────────────────
+STELLAR_NETWORK=testnet
+STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+STELLAR_HORIZON_URL=https://horizon-testnet.stellar.org
+STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+
+# ── Contract IDs (populate after deployment) ───────────────
+BUSINESS_REGISTRY_CONTRACT_ID=
+FINANCIAL_LEDGER_CONTRACT_ID=
+ATTESTATION_REGISTRY_CONTRACT_ID=
+
+# ── Indexer ────────────────────────────────────────────────
+INDEXER_API_URL=http://localhost:4000
+
+# ── Browser-safe (NEXT_PUBLIC_*) ───────────────────────────
+NEXT_PUBLIC_STELLAR_NETWORK=testnet
+NEXT_PUBLIC_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_BUSINESS_REGISTRY_CONTRACT_ID=
+NEXT_PUBLIC_FINANCIAL_LEDGER_CONTRACT_ID=
+NEXT_PUBLIC_ATTESTATION_REGISTRY_CONTRACT_ID=
+```
+
+### Variable rules
+
+- `DATABASE_URL` and `BETTER_AUTH_SECRET` are **server-only**. Never prefix them with `NEXT_PUBLIC_`.
+- `NEXT_PUBLIC_*` variables are safe for browser exposure.
+- The application fails at startup with a descriptive error if required variables are missing.
+- Contract IDs are populated after deploying `herledger-contract`. **Never invent values.**
+
+---
+
+## Database
+
+### Schema overview
+
+| Model                | Purpose                                 |
+| -------------------- | --------------------------------------- |
+| `User`               | Application user account (Better Auth)  |
+| `Session`            | Auth session (Better Auth)              |
+| `Account`            | OAuth/password account (Better Auth)    |
+| `Verification`       | Email verification tokens (Better Auth) |
+| `BusinessProfile`    | Registered business linked to a user    |
+| `FinancialEvent`     | Indexed on-chain financial events       |
+| `Attestation`        | Third-party attestations on events      |
+| `StellarTransaction` | Raw Stellar transaction records         |
+| `IndexerCheckpoint`  | Ledger sync progress per stream         |
+
+### Key database rules
+
+- `amount` is stored as `String` — never cast to `Number`.
+- Blockchain-derived fields (`stellarReference`, `amount`, `assetAddress`) are **immutable** after first insert.
+- Only `status` is updated by the indexer after initial indexing.
+- UUIDs / cuid for application IDs; hex strings for on-chain IDs.
+
+### Seed data
+
+`pnpm db:seed` (`prisma/seed.ts`) populates a fresh database with 3 users,
+3 business profiles, 20 financial events spanning every `EventType`/
+`EventStatus` combination, and 10 attestations (mixed active/revoked, with
+and without a `claimDescription`) — enough to exercise every dashboard view
+without a real Stellar transaction history. All rows use deterministic IDs
+and are upserted, so re-running it is safe and does not create duplicates.
+It does not create Better Auth `Account`/`Session` rows, so seeded users
+cannot sign in through the UI — it's for browsing/inspecting data, not for
+testing the auth flow itself.
+
+### Commands
+
+```sh
+# Generate Prisma client after schema changes
+pnpm db:generate
+
+# Create a new migration (dev only)
+pnpm db:migrate:dev
+
+# Apply migrations (production / CI)
+pnpm db:migrate
+
+# Seed representative data (safe to re-run)
+pnpm db:seed
+```
+
+---
+
+## Running Locally
+
+```sh
+# All services (manual setup)
+bash scripts/dev.sh
+
+# All services (Docker Compose)
+docker compose up
+
+# Web only
+pnpm --filter web dev
+
+# Indexer only
+pnpm --filter indexer dev
+
+# Type check everything
+pnpm typecheck
+
+# Format check
+pnpm format
+
+# Format write
+pnpm format:write
+```
+
+---
+
+## Building
+
+```sh
+# Full monorepo build (packages first, then web)
+pnpm build
+
+# Web app only
+pnpm --filter web build
+
+# Indexer only
+pnpm --filter indexer build
+```
+
+---
+
+## Testing
+
+```sh
+# All unit/integration tests
+pnpm test
+
+# SDK tests only
+pnpm --filter @herledger/sdk test
+
+# Indexer tests only
+pnpm --filter indexer test
+
+# Web tests only
+pnpm --filter web test
+
+# E2E tests (requires running app)
+pnpm test:e2e
+```
+
+Tests use **Vitest** for unit/integration and **Playwright** for E2E.
+E2E tests must not depend on Mainnet — use Testnet or mocks.
+
+---
+
+## Deployment
+
+> **Indexer data quality:** the indexer runs a nightly reconciliation job (RECONCILIATION_CRON_SCHEDULE, default   2 \* \* \*) that samples indexed events (RECONCILIATION_SAMPLE_SIZE, default 50) and cross-checks them against on-chain state, logging any discrepancies. Events that fail to index are written to a dead-letter table instead of being lost, and can be retried via `POST /v1/admin/replay/:errorId` (requires the `x-admin-token` header to match `ADMIN_API_TOKEN` -- set this to a strong secret in production, since the endpoint is admin-only and fails closed if the token is unset). Per-cycle sync counts (indexed/failed/skipped/deadLettered) are available at `GET /indexer/status`.
+
+> **Statement timeout:** the indexer connects to Postgres with a statement_timeout (default 10s) appended to DATABASE_URL at runtime, configurable via DB_STATEMENT_TIMEOUT_MS. This kills a slow or locked query instead of holding its connection (and pool slot) indefinitely. Timed-out queries are logged as errors -- see indexer/src/db/client.ts.
+
+> **Connection pool configuration:** the indexer sizes its Postgres connection pool explicitly. `DB_CONNECTION_LIMIT` (default 10) caps the number of concurrent connections -- the sync job is single-writer, so 10 is a deliberate balance that lets a batch of `createMany`/`$transaction` writes overlap without reserving more connections than the workload can use. `DB_POOL_TIMEOUT_MS` (default 10s) is how long a query waits for a free connection before failing fast. Raise `DB_CONNECTION_LIMIT` only if you observe pool exhaustion during a large catch-up sync; lower it when sharing a database with other services. See indexer/src/db/client.ts.
+
+> **Per-ledger batch writes:** the indexer batches `StellarTransaction` and `FinancialEvent` writes per ledger using `createMany` with `skipDuplicates: true` (PostgreSQL only) instead of issuing per-row `upsert`s -- a single DB round-trip per model per ledger. `skipDuplicates` also makes re-indexing already-synced ledgers safe (duplicates are silently ignored rather than raising unique-constraint errors). Each payment's Stellar transaction plus its derived financial events are written inside a single `prisma.$transaction(...)`, so a partial write failure rolls back the whole payment and the raw ledger never diverges from the events derived from it. Status transitions (Pending → Verified) still flow through the explicit status-update path -- see indexer/src/db/schema/financial-events.ts and indexer/src/index/financial-events.ts.
+
+### Frontend — Vercel (or equivalent)
+
+| Setting        | Value                     |
+| -------------- | ------------------------- |
+| Root directory | `herledger-app/apps/web`  |
+| Build command  | `pnpm --filter web build` |
+| Start command  | `pnpm --filter web start` |
+| Node version   | 20.x or 22.x              |
+
+Set all environment variables in the Vercel dashboard.
+
+- Never expose `DATABASE_URL` or `BETTER_AUTH_SECRET` as `NEXT_PUBLIC_*`.
+- All NEXT*PUBLIC*`*` variables must also be set.
+
+> **Network/passphrase consistency:** `STELLAR_NETWORK`, `STELLAR_RPC_URL`, and `STELLAR_NETWORK_PASSPHRASE` (and their `NEXT_PUBLIC_*` equivalents) must all agree. A `mainnet` network with a `testnet` passphrase, or an RPC URL pointing at the wrong network, will fail startup validation (`validateNetworkConsistency` in `@herledger/config`) with a descriptive error. Double-check all three values together whenever switching networks -- a mismatch here is a real-money risk on mainnet.
+
+Run Prisma migrations before deploying:
+
+```sh
+pnpm db:migrate
+```
+
+### Indexer — Render (or equivalent long-running service)
+
+| Setting        | Value                         |
+| -------------- | ----------------------------- |
+| Root directory | `herledger-app/indexer`       |
+| Build command  | `pnpm --filter indexer build` |
+| Start command  | `pnpm --filter indexer start` |
+
+The indexer requires access to `DATABASE_URL` and all Stellar environment variables.
+It does **not** need `BETTER_AUTH_SECRET` or any `NEXT_PUBLIC_*` variables.
+
+#### Graceful shutdown
+
+When the container platform sends **SIGTERM** (rolling deploy, scale-down, or manual stop),
+the indexer follows this shutdown sequence:
+
+1. The `AbortController` signals the sync loop to stop scheduling new batches.
+2. If a `syncCycle()` is running (actively writing to the database), the shutdown handler
+   waits for it to complete — up to `SHUTDOWN_GRACE_MS` milliseconds (default **10\u202f000 ms**).
+   If the cycle finishes first, the process moves on immediately; if the grace period
+   expires first, the process proceeds and logs a warning.
+3. The Fastify HTTP server is closed, draining any open keep-alive connections.
+4. `prisma.$disconnect()` is called to flush the connection pool cleanly.
+5. The process exits with code `0`.
+
+**SIGINT** (Ctrl-C in development) runs the same sequence.
+
+Set the container stop timeout to at least `SHUTDOWN_GRACE_MS` plus a few seconds for HTTP
+drain time. On Render this is the **Graceful Shutdown Timeout** field; on Kubernetes it is
+`terminationGracePeriodSeconds`.
+
+```env
+# Tunable via environment variables (defaults shown):
+SHUTDOWN_GRACE_MS=10000        # ms to wait for an in-progress sync batch
+DB_CONNECT_MAX_RETRIES=5       # retry attempts before fatal exit on startup
+DB_CONNECT_RETRY_DELAY_MS=2000 # ms between connect attempts
+DB_STATEMENT_TIMEOUT_MS=10000  # PostgreSQL statement_timeout per query
+```
+
+#### Startup DB connection retry
+
+Before accepting HTTP requests or starting the sync job, the indexer calls
+`prisma.$connect()`. If the database is temporarily unreachable, it retries up to
+`DB_CONNECT_MAX_RETRIES` times (default **5**) with `DB_CONNECT_RETRY_DELAY_MS`
+back-off (default **2 s**) between attempts. If all retries are exhausted, the
+process exits with code `1`, which triggers an orchestrator restart. This integrates
+naturally with Render health checks and Kubernetes readiness probes.
+
+#### Prisma connection pool — singleton guard (Next.js)
+
+Next.js hot-module replacement in development re-executes every module on each file
+save. Without a guard, each reload creates a new `PrismaClient` and opens a new
+connection pool. `apps/web/lib/db.ts` stores the single instance on
+`globalThis.__prisma`, which survives HMR reloads. In production this guard is
+a no-op because module caching is sufficient for a long-lived process.
+
+### Database Ã¢â‚¬â€ PostgreSQL
+### Database — PostgreSQL
+
+- Provision PostgreSQL 16 in the same region as the indexer.
+- Use an internal/private connection string between indexer and database.
+- Do not expose PostgreSQL directly to the public internet.
+- Always run `pnpm db:migrate` before starting a new deployment.
+
+---
+
+## Contract Integration
+
+The application layer communicates with three Soroban contracts deployed on Stellar:
+
+| Contract              | Responsibility                                                |
+| --------------------- | ------------------------------------------------------------- |
+| `BusinessRegistry`    | Business registration, ownership, wallet association          |
+| `FinancialLedger`     | Financial event recording, verification, disputes, revocation |
+| `AttestationRegistry` | Attester management and attestation lifecycle                 |
+
+### After deploying contracts
+
+1. Copy the deployed contract IDs from the Stellar CLI output.
+2. Set in `apps/web/.env.local` (and production environment):
+   ```
+   BUSINESS_REGISTRY_CONTRACT_ID=C...
+   FINANCIAL_LEDGER_CONTRACT_ID=C...
+   ATTESTATION_REGISTRY_CONTRACT_ID=C...
+   NEXT_PUBLIC_BUSINESS_REGISTRY_CONTRACT_ID=C...
+   NEXT_PUBLIC_FINANCIAL_LEDGER_CONTRACT_ID=C...
+   NEXT_PUBLIC_ATTESTATION_REGISTRY_CONTRACT_ID=C...
+   ```
+3. Restart the indexer and web app.
+
+The application will throw a descriptive startup error if contract IDs are missing.
+
+> **Do not invent contract IDs.** The application cannot be considered fully
+> integrated until all three contracts are deployed and real IDs are configured.
+
+---
+
+## Contract ABI Management
+
+HerLedger's SDK (`packages/sdk`) hand-writes TypeScript clients
+(`contracts/business-registry.ts`, `financial-ledger.ts`,
+`attestation-registry.ts`) that construct XDR-encoded calls against the
+deployed Soroban contracts. Nothing prevents those hand-written clients from
+drifting out of sync with what a contract actually expects — a redeployed
+contract with a renamed field or reordered parameter would previously fail
+silently or with an inscrutable RPC error, discovered only at runtime. Two
+mechanisms close that gap:
+
+### 1. `ContractAddress` — compile-time contract-address safety
+
+Contract addresses are no longer plain `string`. `ContractConfig` requires
+the branded `ContractAddress` type (`packages/sdk/src/types/branded.ts`),
+which can only be produced by validating a raw address against the
+`CONTRACT_ADDRESSES` registry (`packages/sdk/src/contracts/registry.ts`):
+
+```typescript
+import { registerCurrentNetworkAddresses, buildContractConfig } from "@herledger/sdk";
+import { getServerEnv } from "@herledger/config";
+
+const env = getServerEnv();
+
+const network = env.STELLAR_NETWORK; // "testnet" | "mainnet"
+
+const registry = registerCurrentNetworkAddresses(network, {
+  businessRegistryId: env.BUSINESS_REGISTRY_CONTRACT_ID,
+  financialLedgerId: env.FINANCIAL_LEDGER_CONTRACT_ID,
+  attestationRegistryId: env.ATTESTATION_REGISTRY_CONTRACT_ID,
+});
+
+const contracts = buildContractConfig(registry, network, {
+  businessRegistryId: env.BUSINESS_REGISTRY_CONTRACT_ID,
+  financialLedgerId: env.FINANCIAL_LEDGER_CONTRACT_ID,
+  attestationRegistryId: env.ATTESTATION_REGISTRY_CONTRACT_ID,
+});
+
+// contracts is now a validated ContractConfig — safe to pass to any SDK function.
+```
+
+`buildContractConfig` throws `ValidationError` immediately if an address is
+malformed or doesn't match the registry — e.g. the `FinancialLedger` address
+accidentally passed where `AttestationRegistry` was expected. Do this once at
+your app's composition root (e.g. `apps/web/lib/stellar/network.ts`) and pass
+the resulting `ContractConfig` through; don't construct one from raw strings
+inline — the type system will refuse it.
+
+### 2. Generated ABI types — catching upgrades at build time
+
+`packages/sdk/src/contracts/__generated__/` contains TypeScript interfaces
+generated directly from each contract's on-chain interface (via
+`stellar contract inspect`), not from the hand-written clients. They're the
+independent source of truth the hand-written clients are checked against.
+
+```sh
+# Regenerate after rebuilding contracts (requires herledger-contract WASM built):
+cd herledger-app
+pnpm --filter @herledger/sdk generate:abi
+
+# CI-style check — fails if committed types are stale, doesn't write:
+pnpm --filter @herledger/sdk generate:abi:check
+```
+
+CI runs `generate:abi:check` on every PR (job: `abi-check` in
+`.github/workflows/ci.yml`). If a contract's interface changed — a renamed
+method, a reordered parameter, a new required argument — the generated
+output will differ from what's committed and the build fails with an
+explicit diff, rather than the mismatch surfacing later as a runtime
+encoding error.
+
+**Handling a contract upgrade:**
+
+1. Rebuild the contract (`herledger-contract/scripts/build.sh`).
+2. Run `pnpm --filter @herledger/sdk generate:abi` and review the diff in
+   `__generated__/`.
+3. Cross-check the diff against the corresponding hand-written client in
+   `contracts/`. Update the `.call()` arguments, types, and any encode/decode
+   logic in `encoding.ts` to match.
+4. Update `CONTRACT_ADDRESSES` (via your env/config) if the deployment
+   address changed.
+5. Commit both the regenerated `__generated__/` files and the hand-written
+   client changes together — a PR that updates one without the other is
+   exactly the drift this workflow exists to prevent.
+
+This process itself surfaced two pre-existing bugs during development of
+this feature: `FinancialLedger.dispute_event` and
+`AttestationRegistry.create_attestation` were each missing a required
+`Address` argument in the hand-written client. Both are fixed as part of
+this same change.
+
+### 3. Testnet smoke tests
+
+`packages/sdk/src/contracts/__tests__/smoke.testnet.test.ts` calls one read
+method per contract against the real deployed testnet contracts, guarded by
+`TEST_AGAINST_TESTNET=true` so it never runs in normal `pnpm test`:
+
+```sh
+# Requires BUSINESS_REGISTRY_CONTRACT_ID, FINANCIAL_LEDGER_CONTRACT_ID,
+# ATTESTATION_REGISTRY_CONTRACT_ID set to real testnet contract IDs.
+pnpm --filter @herledger/sdk test:smoke
+```
+
+CI runs this nightly and on manual dispatch (job: `testnet-smoke`), using
+`TESTNET_BUSINESS_REGISTRY_CONTRACT_ID` / `TESTNET_FINANCIAL_LEDGER_CONTRACT_ID`
+/ `TESTNET_ATTESTATION_REGISTRY_CONTRACT_ID` repo secrets — configure these
+under **Settings → Secrets and variables → Actions**. These are read-only
+calls; no funded account or signing key is required.
+
+===
+
+## SDK Reference
+
+`packages/sdk` is the single source of truth for all Stellar/Soroban client interactions.
+React components must not construct contract calls directly.
+
+### Constructing a ContractConfig
+
+Every SDK contract function takes a `ContractConfig`, whose fields are the
+branded `ContractAddress` type rather than raw `string` — see
+[Contract ABI Management](#contract-abi-management) for why. Build one once
+at startup:
+
+```typescript
+import { registerCurrentNetworkAddresses, buildContractConfig } from "@herledger/sdk";
+
+const network = env.STELLAR_NETWORK; // "testnet" | "mainnet"
+
+const registry = registerCurrentNetworkAddresses(network, {
+  businessRegistryId: env.BUSINESS_REGISTRY_CONTRACT_ID,
+  financialLedgerId: env.FINANCIAL_LEDGER_CONTRACT_ID,
+  attestationRegistryId: env.ATTESTATION_REGISTRY_CONTRACT_ID,
+});
+
+const contracts = buildContractConfig(registry, network, {
+  businessRegistryId: env.BUSINESS_REGISTRY_CONTRACT_ID,
+  financialLedgerId: env.FINANCIAL_LEDGER_CONTRACT_ID,
+  attestationRegistryId: env.ATTESTATION_REGISTRY_CONTRACT_ID,
+});
+```
+
+In practice, don't call this inline at every use site — both `apps/web/lib/stellar/network.ts` (`getContractConfig()`, browser-safe) and `indexer/src/config/index.ts` (`getContractConfig()`, server-side) already do this once and export the result. Import from there rather than duplicating the registry construction in a component or route handler.
+
+### BusinessRegistry
+
+```typescript
+import {
+  getBusiness,
+  getBusinessByWallet,
+  registerBusiness,
+  updateBusinessMetadata,
+  deactivateBusiness,
+} from "@herledger/sdk";
+
+// Read a business by on-chain ID (hex)
+const business = await getBusiness(businessId, stellarConfig, contractConfig);
+// Returns: Business | null
+
+// Read by wallet address
+const business = await getBusinessByWallet(walletAddress, stellarConfig, contractConfig);
+
+// Register — requires Freighter to be connected, returns tx hash
+const result = await registerBusiness(
+  { businessId, owner, wallet, metadataHash, sourceAccount },
+  stellarConfig,
+  contractConfig
+);
+// Returns: { hash: string, success: boolean, ledger?: number }
+```
+
+### FinancialLedger
+
+```typescript
+import {
+  getFinancialEvent,
+  getBusinessEvents,
+  isSupportedAsset,
+  recordFinancialEvent,
+  disputeFinancialEvent,
+  verifyFinancialEvent,
+  resolveFinancialEvent,
+  revokeFinancialEvent,
+} from "@herledger/sdk";
+```
+
+### AttestationRegistry
+
+```typescript
+import {
+  getAttestation,
+  isValidAttestation,
+  registerAttester,
+  deactivateAttester,
+  createAttestation,
+  revokeAttestation,
+} from "@herledger/sdk";
+```
+
+### Amount handling
+
+```typescript
+// Amounts are always bigint — never Number
+const event: FinancialEvent = await getFinancialEvent(eventId, config, contracts);
+console.log(event.amount); // bigint, e.g. 100_000_000n (= 10 XLM in stroops)
+
+// Format at the display boundary only
+import { formatAmount } from "@/lib/utils/format";
+const display = formatAmount(event.amount); // "10.0000000"
+```
+
+### Error types
+
+```typescript
+import { WalletError, RpcError, ContractError, ValidationError } from "@herledger/sdk";
+
+try {
+  await registerBusiness(params, config, contracts);
+} catch (err) {
+  if (err instanceof WalletError) {
+    // User rejected, extension unavailable, etc.
+  } else if (err instanceof ContractError) {
+    // Contract returned an error code
+  } else if (err instanceof RpcError) {
+    // Network/RPC issue
+  }
+}
+```
+
+---
+
+## Indexer Reference
+
+The indexer is a long-running Node.js process that:
+
+1. Reads all registered HerLedger business wallets from the database.
+2. Polls Horizon for new transactions on those wallets.
+3. Classifies supported asset transfers as `PaymentReceived` or `PaymentSent`.
+4. Inserts records idempotently (same transaction processed twice = no duplicate).
+5. Persists a ledger checkpoint after each successful sync cycle.
+6. Recovers from interruption by reading the checkpoint on restart.
+
+### Ledger checkpoint
+
+The indexer stores a `IndexerCheckpoint` record per stream (e.g. `"main"`).
+On restart it resumes from `lastLedger`. On first run it starts from ledger 0
+(fetching all available history for registered wallets).
+
+### Idempotency
+
+All database writes use `upsert` with the on-chain event ID as the unique key.
+Processing the same transaction twice is safe — the second pass is a no-op for
+blockchain-derived fields, and only updates mutable status fields.
+
+### Payment classification rules
+
+| Rule                         | PaymentReceived | PaymentSent |
+| ---------------------------- | --------------- | ----------- |
+| Transaction succeeded        | ✓ required      | ✓ required  |
+| Business wallet is recipient | ✓               | —           |
+| Business wallet is sender    | —               | ✓           |
+| Asset is supported           | ✓ required      | ✓ required  |
+
+Failed transactions are **never** classified.
+Unsupported assets are **never** classified.
+
+---
+
+## API Reference
+
+The indexer exposes a read-only HTTP API on port 4000.
+
+All responses follow:
+
+```json
+{ "data": { ... }, "error": null }
+// or on failure:
+{ "data": null, "error": { "code": "ERROR_CODE", "message": "Human message" } }
+```
+
+### Endpoints
+
+| Method | Path                                   | Description                          |
+| ------ | -------------------------------------- | ------------------------------------ |
+| `GET`  | `/health`                              | Health check with DB connectivity    |
+| `GET`  | `/businesses/:businessId`              | Get indexed business by on-chain ID  |
+| `GET`  | `/businesses/:businessId/events`       | Paginated financial events (max 100) |
+| `GET`  | `/businesses/:businessId/attestations` | All attestations for a business      |
+| `GET`  | `/transactions/:hash`                  | Get a Stellar transaction by hash    |
+| `GET`  | `/supported-assets`                    | Supported asset info                 |
+| `GET`  | `/indexer/status`                      | Current sync checkpoint              |
+
+### Pagination
+
+```
+GET /businesses/:id/events?offset=0&limit=20
+```
+
+- `offset`: integer ≥ 0, default 0
+- `limit`: integer 1–100, default 20
+- Response includes `pagination.count` for next-page detection
+
+---
+
+## Onboarding Flow
+
+```
+1. Sign up / sign in (Better Auth — email + password)
+        ↓
+2. Connect Stellar wallet (Freighter browser extension)
+        ↓
+3. Freighter confirms wallet ownership (no secret key transmitted)
+        ↓
+4. Enter business name
+        ↓
+5. App derives deterministic business ID from wallet + name + timestamp
+        ↓
+6. App hashes private metadata (name committed as hash only)
+        ↓
+7. App builds BusinessRegistry.register_business() transaction
+        ↓
+8. Freighter prompts user to sign
+        ↓
+9. App submits signed transaction to Stellar, and immediately persists a
+   PendingRegistration (businessId, wallet, display name, metadata hash,
+   tx hash) to localStorage — the earliest point a closed tab would
+   otherwise lose track of an in-flight registration
+        ↓
+10. App polls for confirmation (up to 60 seconds)
+        ↓
+11. On-chain success → app POSTs to /api/business/register to save the
+    BusinessProfile, then clears the pending-registration entry
+        ↓
+12. Redirect to dashboard
+        ↓
+13. Indexer begins detecting activity for the registered wallet
+```
+
+The business is **not** marked registered in the database until the on-chain
+transaction is confirmed. If the transaction fails, the flow returns to step 7.
+
+### Recovery: tab-close, retries, and wallet disconnects
+
+**Resuming after a closed tab.** If the browser closes (or crashes) between
+step 9 and step 11, the transaction may already be in flight or confirmed
+on-chain with no local record of it. On the next load of the registration
+page, `useRegistrationFlow` checks localStorage for a `PendingRegistration`
+left by a previous session; if one exists, it skips straight to polling that
+same transaction hash (`pollTransactionStatus`) instead of restarting the
+flow, then finishes the DB write once confirmed. Nothing is re-signed or
+resubmitted — Freighter is never involved in a resume. The pending entry is
+cleared once the DB write succeeds (or once the resumed poll confirms the
+transaction failed on-chain, which is treated as terminal — the user's own
+retry, not another silent resume, is the recovery path there).
+
+**Idempotent retries.** `businessId` is generated once per submission
+attempt and is unique in the database, so it doubles as the idempotency key
+for `POST /api/business/register`: a retried POST for the exact same
+submission (a double-click, or a resumed registration replaying after a
+tab close) is recognized as the same attempt and returns `200` with the
+existing record rather than erroring or creating a duplicate. A `409`
+is reserved for a genuine conflict — this account already has a different
+business registered, or this wallet is already registered under a
+different `businessId` — and its error message names the existing
+`businessId` so the client (or a developer reading the response) can look
+up what's already there.
+
+**Wallet disconnect mid-flow.** If Freighter becomes unreachable between
+connecting (step 2) and signing (step 8) — locked, or access revoked — the
+signing call throws a `WalletError` from `packages/sdk/src/wallet/freighter.ts`.
+`useRegistrationFlow` recognizes that error type specifically (as opposed to
+a generic submission failure) and clears the stored wallet address before
+showing an inline error, so the retry control routes back to the
+wallet-connect step and prompts a reconnect, rather than looping on the
+business-details step with a wallet that's no longer there to sign anything.
+
+---
+
+## Financial Event Classification
+
+HerLedger only classifies events from **supported assets** in **successful transactions**.
+
+### PaymentReceived
+
+A Stellar payment operation where:
+
+- the transaction succeeded
+- the destination address matches a registered HerLedger business wallet
+- the asset is in the supported asset list
+
+### PaymentSent
+
+A Stellar payment operation where:
+
+- the transaction succeeded
+- the source address matches a registered HerLedger business wallet
+- the asset is in the supported asset list
+
+### What is NOT classified
+
+- Failed transactions (regardless of amount)
+- Unsupported tokens
+- Non-payment operations
+- Transactions where neither sender nor recipient is a registered business
+
+HerLedger does **not** claim that every incoming payment is revenue.
+
+---
+
+## Dispute Flow
+
+A business owner can challenge an incorrect HerLedger record:
+
+```
+Dashboard → Activity → Select event → Challenge record
+        ↓
+Enter reason for dispute (kept off-chain; only hash committed)
+        ↓
+App hashes the reason text
+        ↓
+App builds FinancialLedger.dispute_event() transaction
+        ↓
+Freighter prompts owner to sign
+        ↓
+Transaction submitted and confirmed
+        ↓
+Event status changes to Disputed on-chain and in the index
+```
+
+**The owner cannot:**
+
+- Delete the financial event
+- Edit the Stellar transaction reference
+- Change the amount, sender, or recipient
+- Directly mark the event Verified or Revoked
+
+Dispute changes HerLedger application state, **not** Stellar history.
+Revoked and disputed events remain visible in the UI — they are never hidden.
+
+---
+
+## Privacy Model
+
+| Data                      | Storage                   | Visibility                   |
+| ------------------------- | ------------------------- | ---------------------------- |
+| Stellar transactions      | Stellar blockchain        | Public — anyone can query    |
+| Business ID               | On-chain (hash)           | Public                       |
+| Metadata hash             | On-chain (hash only)      | Public hash, private content |
+| Business name             | Off-chain database        | Private to the application   |
+| Dispute reason            | Off-chain; hash on-chain  | Reason text is private       |
+| Claim/attestation content | Off-chain; hash on-chain  | Content is private           |
+| Auth session              | Server-side secure cookie | Private                      |
+| Stellar private key       | **Never stored anywhere** | N/A                          |
+
+The application does not claim Stellar wallet balances or transactions are private.
+Blockchain data is public. HerLedger minimizes additional personal information
+stored on-chain by committing only cryptographic hashes.
+
+---
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for the full security policy.
+
+Key properties:
+
+- **No private key storage.** The app never requests, stores, or logs Stellar private keys.
+- **Freighter signs everything.** All contract writes are user-authorized via Freighter.
+- **Server secrets never reach the browser.** `DATABASE_URL` and `BETTER_AUTH_SECRET` are never in `NEXT_PUBLIC_*`.
+- **Input validation.** All API inputs validated with Zod. No `as any` bypasses.
+- **Immutable blockchain records.** Stellar-derived fields cannot be changed by API requests.
+- **Auth ≠ wallet.** Signing into HerLedger and connecting a Stellar wallet are independent steps.
+
+> ⚠️ **These contracts have not been audited.** Do not deploy with real financial data without a professional security review.
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+```sh
+# Before committing
+pnpm typecheck
+pnpm format
+pnpm test
+
+# Commit format (Conventional Commits)
+feat(sdk): add business registry reads
+fix(web): correct wallet disconnect state
+chore(repo): update dependencies
+test(indexer): cover payment classification
+```
+
+---
+
+## License
+
+# See [LICENSE](../herledger-contract/LICENSE).
 See [LICENSE](../herledger-contract/LICENSE).
