@@ -1,0 +1,147 @@
+{
+  "meta": {
+    "description": "Build a verifiable financial history for your business on Stellar."
+  },
+  "nav": {
+    "aria": "Dashboard navigation",
+    "overview": "Overview",
+    "activity": "Activity",
+    "business": "Business",
+    "attestations": "Attestations",
+    "disputes": "Disputes",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "notifications": "Notifications",
+    "recentNotifications": "Recent Notifications",
+    "noNewNotifications": "No new notifications"
+  },
+  "ui": {
+    "loading": "Loading…",
+    "pleaseWait": "Please wait…",
+    "statusAria": "Status: {status}",
+    "status": {
+      "Pending": "Pending",
+      "Verified": "Verified",
+      "Disputed": "Disputed",
+      "Revoked": "Revoked",
+      "Active": "Active"
+    }
+  },
+  "auth": {
+    "signInTitle": "Sign in to HerLedger",
+    "signInSubtitle": "Access your business financial history",
+    "signUpTitle": "Create your HerLedger account",
+    "signUpSubtitle": "Register your business and start building your financial history",
+    "verifyEmailTitle": "Verify your email",
+    "email": "Email",
+    "password": "Password",
+    "name": "Your name",
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "noAccount": "No account?",
+    "createOne": "Create one",
+    "haveAccount": "Already have an account?",
+    "minPassword": "Minimum {count} characters",
+    "passwordTooShort": "Password must be at least {count} characters.",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "accountCreationFailed": "Account creation failed.",
+    "resendVerification": "Resend verification email",
+    "passwordStrength": "Password strength: {label}",
+    "strengthLabels": {
+      "veryWeak": "Very weak",
+      "weak": "Weak",
+      "fair": "Fair",
+      "good": "Good",
+      "strong": "Strong"
+    },
+    "verifyEmailSent": "We sent a verification link to {email}. Click the link in that email to finish setting up your account.",
+    "verifyEmailCheck": "Check your inbox for a verification link to finish setting up your account.",
+    "verificationEmailSent": "Verification email sent.",
+    "resendCooldown": "Resend available in {seconds}s",
+    "resendFailed": "Couldn't resend the verification email.",
+    "redirecting": "Redirecting…"
+  },
+  "activity": {
+    "loading": "Loading activity…",
+    "loadingOverview": "Loading overview…",
+    "loadError": "Could not load activity. Please try again.",
+    "loadRecentError": "Could not load recent activity. Please try again.",
+    "signInAgain": "Please sign in again to view your activity.",
+    "emptyTitle": "No financial activity yet.",
+    "emptyDescription": "Supported Stellar transactions involving your registered wallet will appear here.",
+    "emptyVerifiedTitle": "No verified financial activity yet.",
+    "emptyVerifiedDescription": "Once your business is registered and supported Stellar transactions are detected, your activity will appear here.",
+    "financialActivity": "Financial Activity",
+    "tableAria": "Financial activity",
+    "type": "Type",
+    "amount": "Amount",
+    "status": "Status",
+    "ledger": "Ledger",
+    "stellarRef": "Stellar ref",
+    "date": "Date",
+    "viewTxAria": "View transaction {reference} on Stellar Expert",
+    "previous": "Previous",
+    "next": "Next",
+    "previousAria": "Previous page",
+    "nextAria": "Next page",
+    "recentActivity": "Recent activity",
+    "business": "Business",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activeAttestations": "Active attestations",
+    "ledgerLabel": "Ledger {sequence}",
+    "eventType": {
+      "PaymentReceived": "Payment received",
+      "PaymentSent": "Payment sent",
+      "InvoiceSettled": "Invoice settled",
+      "CommitmentFulfilled": "Commitment fulfilled"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "account": "Account",
+    "name": "Name",
+    "email": "Email",
+    "loading": "Loading…",
+    "privacy": "Privacy",
+    "privacyBody1": "Stellar transaction data is publicly visible on the Stellar blockchain. HerLedger minimizes additional personal information stored on-chain. Private application metadata — such as your business name and contact details — remains off-chain and is not published to any blockchain. Only cryptographic hashes are committed on-chain for integrity verification.",
+    "privacyBody2": "HerLedger does not claim that your Stellar wallet balance or transaction history is private. Blockchain transactions are public.",
+    "dangerZone": "Danger Zone",
+    "deleteWarning": "Once you delete your account, there is no going back. Please be certain.",
+    "deleteAccount": "Delete Account",
+    "deleteConfirmTitle": "Are you sure you want to delete your account?",
+    "deleteConfirmBody": "This will revoke all active sessions and anonymize your personal data immediately. Hard deletion will occur after a 30-day grace period.",
+    "confirmPassword": "Confirm Password",
+    "cancel": "Cancel",
+    "deleting": "Deleting...",
+    "confirmDeletion": "Confirm Deletion",
+    "deleteFailed": "Failed to delete account",
+    "language": "Language",
+    "locales": {
+      "en": "English",
+      "es": "Español"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "business": "Business Profile",
+    "attestations": "Attestations",
+    "disputes": "Disputes",
+    "createAttestation": "Create attestation",
+    "registerAttester": "Register attester"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "The page you were looking for does not exist.",
+    "home": "Return to home"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "body": "This page couldn't load. Please try again.",
+    "retry": "Try again"
+  },
+  "marketing": {
+    "signIn": "Sign in",
+    "getStarted": "Get started"
+  }
+}

@@ -1,20 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { useState } from "react";
 
+import { usePathname, useRouter } from "@/i18n/navigation";
+import { routing, type Locale } from "@/i18n/routing";
 import { useSession, signOut } from "@/lib/auth/client";
-import { LinkedWallet } from "./linked-wallet";
-import { NotificationPreferences } from "./notification-preferences";
-import { PersonalAccessTokens } from "./personal-access-tokens";
 
 export function SettingsPanel() {
+  const t = useTranslations("settings");
   const { data: session } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
+  const locale = useLocale();
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  function handleLocaleChange(nextLocale: string) {
+    if (nextLocale === locale || !routing.locales.includes(nextLocale as Locale)) return;
+    // Keeps the user on the same page, just in the new locale (e.g.
+    // /dashboard/settings -> /es/dashboard/settings).
+    router.replace(pathname, { locale: nextLocale as Locale });
+  }
 
   const handleDelete = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +39,13 @@ export function SettingsPanel() {
 
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
-        throw new Error(data.error || "Failed to delete account");
+        throw new Error(data.error || t("deleteFailed"));
       }
 
       await signOut();
       router.push("/");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to delete account");
+      setError(err instanceof Error ? err.message : t("deleteFailed"));
       setIsDeleting(false);
     }
   };
@@ -51,20 +60,22 @@ export function SettingsPanel() {
           marginBottom: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>Account</h2>
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
+          {t("account")}
+        </h2>
         {session ? (
           <dl style={{ fontSize: "0.9375rem" }}>
             <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
-              <dt style={{ color: "var(--muted)", minWidth: "80px" }}>Name</dt>
+              <dt style={{ color: "var(--muted)", minWidth: "80px" }}>{t("name")}</dt>
               <dd>{session.user.name ?? "—"}</dd>
             </div>
             <div style={{ display: "flex", gap: "0.75rem" }}>
-              <dt style={{ color: "var(--muted)", minWidth: "80px" }}>Email</dt>
+              <dt style={{ color: "var(--muted)", minWidth: "80px" }}>{t("email")}</dt>
               <dd>{session.user.email}</dd>
             </div>
           </dl>
         ) : (
-          <p style={{ color: "var(--muted)" }}>Loading…</p>
+          <p style={{ color: "var(--muted)" }}>{t("loading")}</p>
         )}
       </section>
 
@@ -76,10 +87,38 @@ export function SettingsPanel() {
           marginBottom: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
-          Linked Wallet
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+          {t("language")}
         </h2>
-        <LinkedWallet />
+        <label
+          htmlFor="locale-switcher"
+          style={{
+            display: "block",
+            fontSize: "0.875rem",
+            color: "var(--muted)",
+            marginBottom: "0.5rem",
+          }}
+        >
+          {t("language")}
+        </label>
+        <select
+          id="locale-switcher"
+          value={locale}
+          onChange={(e) => handleLocaleChange(e.target.value)}
+          style={{
+            padding: "0.5rem 0.75rem",
+            borderRadius: "var(--radius)",
+            border: "1px solid var(--border)",
+            backgroundColor: "var(--background)",
+            fontSize: "0.9375rem",
+          }}
+        >
+          {routing.locales.map((l) => (
+            <option key={l} value={l}>
+              {t(`locales.${l}`)}
+            </option>
+          ))}
+        </select>
       </section>
 
       <section
@@ -90,40 +129,11 @@ export function SettingsPanel() {
           marginBottom: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
-          Notification Preferences
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem" }}>
+          {t("privacy")}
         </h2>
-        <NotificationPreferences />
-      </section>
-
-      <section
-        style={{
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "1.5rem",
-          marginBottom: "1.5rem",
-        }}
-      >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
-          Personal Access Tokens
-        </h2>
-        <PersonalAccessTokens />
-      </section>
-
-      <section
-        style={{
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius)",
-          padding: "1.5rem",
-        }}
-      >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Privacy</h2>
         <p style={{ color: "var(--muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
-          Stellar transaction data is publicly visible on the Stellar blockchain. HerLedger
-          minimizes additional personal information stored on-chain. Private application metadata —
-          such as your business name and contact details — remains off-chain and is not published to
-          any blockchain. Only cryptographic hashes are committed on-chain for integrity
-          verification.
+          {t("privacyBody1")}
         </p>
         <p
           style={{
@@ -133,8 +143,7 @@ export function SettingsPanel() {
             lineHeight: 1.6,
           }}
         >
-          HerLedger does not claim that your Stellar wallet balance or transaction history is
-          private. Blockchain transactions are public.
+          {t("privacyBody2")}
         </p>
       </section>
 
@@ -153,10 +162,10 @@ export function SettingsPanel() {
             color: "var(--destructive)",
           }}
         >
-          Danger Zone
+          {t("dangerZone")}
         </h2>
         <p style={{ color: "var(--muted)", fontSize: "0.9375rem", marginBottom: "1rem" }}>
-          Once you delete your account, there is no going back. Please be certain.
+          {t("deleteWarning")}
         </p>
 
         {!showConfirm ? (
@@ -171,7 +180,7 @@ export function SettingsPanel() {
               cursor: "pointer",
             }}
           >
-            Delete Account
+            {t("deleteAccount")}
           </button>
         ) : (
           <form
@@ -185,12 +194,9 @@ export function SettingsPanel() {
                 borderRadius: "var(--radius)",
               }}
             >
-              <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>
-                Are you sure you want to delete your account?
-              </p>
+              <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>{t("deleteConfirmTitle")}</p>
               <p style={{ fontSize: "0.875rem", color: "var(--muted)" }}>
-                This will revoke all active sessions and anonymize your personal data immediately.
-                Hard deletion will occur after a 30-day grace period.
+                {t("deleteConfirmBody")}
               </p>
             </div>
 
@@ -199,7 +205,7 @@ export function SettingsPanel() {
                 htmlFor="password"
                 style={{ display: "block", marginBottom: "0.5rem", fontSize: "0.875rem" }}
               >
-                Confirm Password
+                {t("confirmPassword")}
               </label>
               <input
                 id="password"
@@ -232,7 +238,7 @@ export function SettingsPanel() {
                   cursor: "pointer",
                 }}
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 type="submit"
@@ -247,7 +253,7 @@ export function SettingsPanel() {
                   opacity: isDeleting || !password ? 0.7 : 1,
                 }}
               >
-                {isDeleting ? "Deleting..." : "Confirm Deletion"}
+                {isDeleting ? t("deleting") : t("confirmDeletion")}
               </button>
             </div>
           </form>

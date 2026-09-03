@@ -125,11 +125,14 @@ describe("GET /api/activity/recent", () => {
         upsert: vi.fn(),
         updateStatus: vi.fn(),
         findByBusiness: vi.fn(),
-        findRecentByBusiness: vi
-          .fn()
-          .mockResolvedValue([
-            { eventId: "ev_1", businessId: "biz_1", ledgerSequence: 100 },
-          ] as never),
+        findRecentByBusiness: vi.fn().mockResolvedValue([
+          {
+            eventId: "ev_1",
+            businessId: "biz_1",
+            ledgerSequence: 100,
+            createdAt: new Date("2026-08-22T10:00:00.000Z"),
+          },
+        ] as never),
         findById: vi.fn(),
         findUpdatedAfter: vi.fn(),
         findAttestableEvents: vi.fn(),

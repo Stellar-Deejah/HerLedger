@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { getRecentActivity } from "@/lib/data/activity";
 
 import { ActivityList, PAGE_SIZE } from "./activity-list";
@@ -14,6 +16,7 @@ interface ActivityListServerProps {
  * lib/data/activity.getRecentActivity used here.
  */
 export async function ActivityListServer({ businessId }: ActivityListServerProps) {
+  const t = await getTranslations("activity");
   let data: Awaited<ReturnType<typeof getRecentActivity>> | null = null;
   try {
     data = await getRecentActivity(businessId, { offset: 0, limit: PAGE_SIZE });
@@ -24,12 +27,15 @@ export async function ActivityListServer({ businessId }: ActivityListServerProps
   if (!data) {
     return (
       <div role="alert" style={{ color: "var(--danger)" }}>
-        Could not load activity. Please try again.
+        {t("loadError")}
       </div>
     );
   }
 
   return (
-    <ActivityList initialEvents={data.events} initialHasMore={data.pagination.count === PAGE_SIZE} />
+    <ActivityList
+      initialEvents={data.events}
+      initialHasMore={data.pagination.count === PAGE_SIZE}
+    />
   );
 }

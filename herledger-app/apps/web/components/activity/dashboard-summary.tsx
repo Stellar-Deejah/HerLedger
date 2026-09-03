@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
@@ -8,7 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient } from "@/lib/api/client";
-import { formatAmount } from "@/lib/utils/format";
+import { formatAmount, formatLedger } from "@/lib/utils/format";
 
 import { KpiSummary } from "./kpi-summary";
 
@@ -31,6 +32,8 @@ export function DashboardSummary({
   attestationCount,
   businessProfile,
 }: DashboardSummaryProps) {
+  const t = useTranslations("activity");
+  const locale = useLocale();
   const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const [summary, setSummary] = useState<ActivitySummaryData>(initialSummary);
   const [error, setError] = useState<string | null>(null);
@@ -49,14 +52,14 @@ export function DashboardSummary({
         setEvents(activity.events);
         setSummary(kpis);
       } catch {
-        setError("Could not load recent activity. Please try again.");
+        setError(t("loadRecentError"));
       }
     }
 
     if (newEvents.length > 0) {
       void refetchSummary();
     }
-  }, [newEvents]);
+  }, [newEvents, t]);
 
   return (
     <div>
@@ -74,11 +77,11 @@ export function DashboardSummary({
           }}
         >
           <div>
-            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Business</div>
+            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>{t("business")}</div>
             <div style={{ fontWeight: 500 }}>{businessProfile.displayName}</div>
           </div>
           <div>
-            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Status</div>
+            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>{t("status")}</div>
             <div
               style={{
                 fontWeight: 500,
@@ -87,11 +90,13 @@ export function DashboardSummary({
                   : "var(--color-error-text)",
               }}
             >
-              {businessProfile.active ? "Active" : "Inactive"}
+              {businessProfile.active ? t("active") : t("inactive")}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>Active attestations</div>
+            <div style={{ fontSize: "0.8125rem", color: "var(--muted)" }}>
+              {t("activeAttestations")}
+            </div>
             <div style={{ fontWeight: 500 }}>{attestationCount}</div>
           </div>
         </div>
@@ -104,14 +109,11 @@ export function DashboardSummary({
       )}
 
       {events.length === 0 ? (
-        <EmptyState
-          title="No verified financial activity yet."
-          description="Once your business is registered and supported Stellar transactions are detected, your activity will appear here."
-        />
+        <EmptyState title={t("emptyVerifiedTitle")} description={t("emptyVerifiedDescription")} />
       ) : (
         <div>
           <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
-            Recent activity
+            {t("recentActivity")}
           </h2>
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {events.map((event) => (
@@ -127,17 +129,17 @@ export function DashboardSummary({
               >
                 <div>
                   <span style={{ fontWeight: 500, fontSize: "0.9375rem" }}>
-                    {formatEventType(event.eventType)}
+                    {formatEventType(event.eventType, t)}
                   </span>
                   <div
                     style={{ fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.125rem" }}
                   >
-                    Ledger {event.ledgerSequence}
+                    {t("ledgerLabel", { sequence: formatLedger(event.ledgerSequence, locale) })}
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
                   <span style={{ fontFamily: "monospace", fontSize: "0.9375rem" }}>
-                    {formatAmount(BigInt(event.amount))}
+                    {formatAmount(BigInt(event.amount), locale)}
                   </span>
                   <StatusBadge status={event.status} />
                 </div>
@@ -150,12 +152,15 @@ export function DashboardSummary({
   );
 }
 
-function formatEventType(type: string): string {
-  const labels: Record<string, string> = {
-    PaymentReceived: "Payment received",
-    PaymentSent: "Payment sent",
-    InvoiceSettled: "Invoice settled",
-    CommitmentFulfilled: "Commitment fulfilled",
-  };
-  return labels[type] ?? type;
+const EVENT_TYPE_KEYS = new Set([
+  "PaymentReceived",
+  "PaymentSent",
+  "InvoiceSettled",
+  "CommitmentFulfilled",
+]);
+
+function formatEventType(type: string, t: (key: string) => string): string {
+  // Unknown/legacy event types render as-is rather than throwing on a
+  // missing message key.
+  return EVENT_TYPE_KEYS.has(type) ? t(`eventType.${type}`) : type;
 }

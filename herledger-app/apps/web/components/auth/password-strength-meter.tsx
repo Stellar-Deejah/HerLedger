@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo } from "react";
 
 import { scorePassword, STRENGTH_LABELS } from "@/lib/auth/password-strength";
@@ -11,6 +12,12 @@ const SEGMENT_COLORS = [
   "var(--color-success, #16a34a)",
   "var(--color-success, #16a34a)",
 ];
+
+// Strength label message keys, indexed by score (0 = weakest, 4 = strongest).
+// The score itself comes from zxcvbn; only the display label is localized —
+// zxcvbn's feedback suggestions stay in the dictionary's language until a
+// localized dictionary is added (see lib/auth/password-strength.ts).
+const STRENGTH_KEYS = ["veryWeak", "weak", "fair", "good", "strong"] as const;
 
 export interface PasswordStrengthMeterProps {
   password: string;
@@ -25,9 +32,12 @@ export interface PasswordStrengthMeterProps {
  * reads as an error before the user has done anything.
  */
 export function PasswordStrengthMeter({ password, userInputs = [] }: PasswordStrengthMeterProps) {
+  const t = useTranslations("auth");
   const strength = useMemo(() => scorePassword(password, userInputs), [password, userInputs]);
 
   if (password.length === 0) return null;
+
+  const label = t(`strengthLabels.${STRENGTH_KEYS[strength.score]}`);
 
   return (
     <div style={{ marginTop: "0.5rem", marginBottom: "1rem" }}>
@@ -54,7 +64,7 @@ export function PasswordStrengthMeter({ password, userInputs = [] }: PasswordStr
           marginBottom: 0,
         }}
       >
-        Password strength: {strength.label}
+        {t("passwordStrength", { label })}
         {strength.suggestions.length > 0 && ` — ${strength.suggestions.join(" ")}`}
       </p>
     </div>

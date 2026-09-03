@@ -1,6 +1,27 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Marketing components link through @/i18n/navigation; mocking the Link
+// wrapper keeps these tests focused on the sections' content.
+vi.mock("@/i18n/navigation", async () => {
+  const React = await import("react");
+  return {
+    Link: ({
+      href,
+      children,
+      ...props
+    }: {
+      href: string | { pathname: string };
+      children: React.ReactNode;
+    }) =>
+      React.createElement(
+        "a",
+        { href: typeof href === "string" ? href : href.pathname, ...props },
+        children
+      ),
+  };
+});
 
 import { CtaSection } from "../CtaSection";
 import { FeaturesSection } from "../FeaturesSection";
