@@ -1,3 +1,6 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth/server";
+import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
@@ -10,6 +13,7 @@ import { getAttestations } from "@/lib/data/attestations";
 import { getPrismaClient } from "@/lib/db/client";
 import { withRateLimit } from "@/lib/rate-limit";
 
+export async function GET() {
 import { RequestSchema } from "./schema";
 import type { AttestationsResponse, AttestationDto } from "./schema";
 

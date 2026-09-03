@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
@@ -8,7 +9,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient, ApiRequestError } from "@/lib/api/client";
-import { formatAmount } from "@/lib/utils/format";
+import { formatAmount, formatDate } from "@/lib/utils/format";
 
 export const PAGE_SIZE = 20;
 
@@ -19,6 +20,8 @@ interface ActivityListProps {
 }
 
 export function ActivityList({ initialEvents, initialHasMore }: ActivityListProps) {
+  const t = useTranslations("activity");
+  const locale = useLocale();
   const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const { newEvents } = useEventStream();
   const [offset, setOffset] = useState(0);
@@ -55,9 +58,9 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
       } catch (err) {
         if (ignore) return;
         if (err instanceof ApiRequestError && err.code === "UNAUTHORIZED") {
-          setError("Please sign in again to view your activity.");
+          setError(t("signInAgain"));
         } else {
-          setError("Could not load activity. Please try again.");
+          setError(t("loadError"));
         }
       } finally {
         if (!ignore) setLoading(false);
@@ -68,7 +71,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
     return () => {
       ignore = true;
     };
-  }, [offset, startDate, endDate]);
+  }, [offset, t, startDate, endDate]);
 
   // Real-time events from the stream are overlaid onto the fetched page
   // (rather than merged into `events` via an effect) so this is a plain
@@ -175,7 +178,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
     return (
       <div>
         {rangeControls}
-        <LoadingSpinner label="Loading activity…" />
+        <LoadingSpinner label={t("loading")} />
       </div>
     );
   }
@@ -196,10 +199,8 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
       <div>
         {rangeControls}
         <EmptyState
-          title={
-            startDate || endDate ? "No activity in this date range." : "No financial activity yet."
-          }
-          description="Supported Stellar transactions involving your registered wallet will appear here."
+          title={t(startDate || endDate ? "emptyDateRangeTitle" : "emptyTitle")}
+          description={t("emptyDescription")}
         />
       </div>
     );
@@ -210,23 +211,27 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
       {rangeControls}
       <table
         style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9375rem" }}
-        aria-label="Financial activity"
+        aria-label={t("tableAria")}
       >
         <thead>
           <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Type</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Amount</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Status</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Ledger</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>Stellar ref</th>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("date")}</th>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("type")}</th>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("amount")}</th>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("status")}</th>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("ledger")}</th>
+            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("stellarRef")}</th>
           </tr>
         </thead>
         <tbody>
           {displayedEvents.map((event) => (
             <tr key={event.id} style={{ borderBottom: "1px solid var(--border)" }}>
-              <td style={{ padding: "0.75rem" }}>{formatEventType(event.eventType)}</td>
+              <td style={{ padding: "0.75rem", whiteSpace: "nowrap", color: "var(--muted)" }}>
+                {formatDate(event.createdAt, locale)}
+              </td>
+              <td style={{ padding: "0.75rem" }}>{formatEventType(event.eventType, t)}</td>
               <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
-                {formatAmount(BigInt(event.amount))}
+                {formatAmount(BigInt(event.amount), locale)}
               </td>
               <td style={{ padding: "0.75rem" }}>
                 <StatusBadge status={event.status} />
@@ -247,7 +252,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
                   href={`https://stellar.expert/explorer/testnet/tx/${event.stellarReference}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`View transaction ${event.stellarReference} on Stellar Expert`}
+                  aria-label={t("viewTxAria", { reference: event.stellarReference })}
                 >
                   {event.stellarReference.slice(0, 12)}…
                 </a>
@@ -277,9 +282,9 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
             cursor: offset === 0 ? "not-allowed" : "pointer",
             color: offset === 0 ? "var(--muted)" : "inherit",
           }}
-          aria-label="Previous page"
+          aria-label={t("previousAria")}
         >
-          Previous
+          {t("previous")}
         </button>
         <button
           onClick={() => setOffset(offset + PAGE_SIZE)}
@@ -293,21 +298,24 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
             cursor: !hasMore ? "not-allowed" : "pointer",
             color: !hasMore ? "var(--muted)" : "inherit",
           }}
-          aria-label="Next page"
+          aria-label={t("nextAria")}
         >
-          Next
+          {t("next")}
         </button>
       </div>
     </div>
   );
 }
 
-function formatEventType(type: string): string {
-  const labels: Record<string, string> = {
-    PaymentReceived: "Payment received",
-    PaymentSent: "Payment sent",
-    InvoiceSettled: "Invoice settled",
-    CommitmentFulfilled: "Commitment fulfilled",
-  };
-  return labels[type] ?? type;
+const EVENT_TYPE_KEYS = new Set([
+  "PaymentReceived",
+  "PaymentSent",
+  "InvoiceSettled",
+  "CommitmentFulfilled",
+]);
+
+function formatEventType(type: string, t: (key: string) => string): string {
+  // Unknown/legacy event types render as-is rather than throwing on a
+  // missing message key.
+  return EVENT_TYPE_KEYS.has(type) ? t(`eventType.${type}`) : type;
 }

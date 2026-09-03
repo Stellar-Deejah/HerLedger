@@ -1,7 +1,9 @@
+import { NextIntlClientProvider } from "next-intl";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it, expect } from "vitest";
 
+import messages from "../../../messages/en.json";
 import { EmptyState } from "../empty-state";
 import { ErrorMessage } from "../error-message";
 import { FormField, Field } from "../form-field";
@@ -14,6 +16,19 @@ import { LoadingSpinner } from "../loading-spinner";
 import { SkeletonBlock, SkeletonRow, SkeletonCard, SkeletonTable } from "../skeleton";
 import { StatusBadge } from "../status-badge";
 import { SubmitButton } from "../submit-button";
+
+/**
+ * StatusBadge / LoadingSpinner / SubmitButton resolve their labels through
+ * next-intl's useTranslations, so they need a provider carrying the English
+ * catalog (the same messages the app ships for the default locale).
+ */
+function WithIntl({ children }: { children: React.ReactNode }) {
+  return (
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {children}
+    </NextIntlClientProvider>
+  );
+}
 
 describe("Design System UI Components & Primitives", () => {
   describe("EmptyState", () => {
@@ -41,31 +56,61 @@ describe("Design System UI Components & Primitives", () => {
 
   describe("LoadingSpinner", () => {
     it("renders status role, spinning element, and screen-reader label", () => {
-      const html = renderToString(<LoadingSpinner label="Fetching data…" />);
+      const html = renderToString(
+        <WithIntl>
+          <LoadingSpinner label="Fetching data…" />
+        </WithIntl>
+      );
       expect(html).toContain('role="status"');
       expect(html).toContain('aria-label="Fetching data…"');
       expect(html).toContain("Fetching data…");
       expect(html).toContain("var(--color-brand)");
     });
+
+    it("defaults the label to the locale's loading message", () => {
+      const html = renderToString(
+        <WithIntl>
+          <LoadingSpinner />
+        </WithIntl>
+      );
+      expect(html).toContain("Loading…");
+      expect(html).toContain('aria-label="Loading…"');
+    });
   });
 
   describe("StatusBadge", () => {
     it("renders semantic status badges including Revoked matching error color tokens", () => {
-      const revokedHtml = renderToString(<StatusBadge status="Revoked" />);
+      const revokedHtml = renderToString(
+        <WithIntl>
+          <StatusBadge status="Revoked" />
+        </WithIntl>
+      );
       expect(revokedHtml).toContain("Revoked");
       expect(revokedHtml).toContain("var(--color-error-bg)");
       expect(revokedHtml).toContain("var(--color-error-text)");
 
-      const verifiedHtml = renderToString(<StatusBadge status="Verified" />);
+      const verifiedHtml = renderToString(
+        <WithIntl>
+          <StatusBadge status="Verified" />
+        </WithIntl>
+      );
       expect(verifiedHtml).toContain("Verified");
       expect(verifiedHtml).toContain("var(--color-success-bg)");
       expect(verifiedHtml).toContain("var(--color-success-text)");
 
-      const pendingHtml = renderToString(<StatusBadge status="Pending" />);
+      const pendingHtml = renderToString(
+        <WithIntl>
+          <StatusBadge status="Pending" />
+        </WithIntl>
+      );
       expect(pendingHtml).toContain("Pending");
       expect(pendingHtml).toContain("var(--color-warning-bg)");
 
-      const disputedHtml = renderToString(<StatusBadge status="Disputed" />);
+      const disputedHtml = renderToString(
+        <WithIntl>
+          <StatusBadge status="Disputed" />
+        </WithIntl>
+      );
       expect(disputedHtml).toContain("Disputed");
       expect(disputedHtml).toContain("var(--color-disputed-bg)");
     });
@@ -73,16 +118,28 @@ describe("Design System UI Components & Primitives", () => {
 
   describe("SubmitButton", () => {
     it("renders normal, loading, and disabled states with tokens", () => {
-      const normalHtml = renderToString(<SubmitButton>Save</SubmitButton>);
+      const normalHtml = renderToString(
+        <WithIntl>
+          <SubmitButton>Save</SubmitButton>
+        </WithIntl>
+      );
       expect(normalHtml).toContain("Save");
       expect(normalHtml).toContain("var(--color-brand)");
 
-      const loadingHtml = renderToString(<SubmitButton loading>Save</SubmitButton>);
+      const loadingHtml = renderToString(
+        <WithIntl>
+          <SubmitButton loading>Save</SubmitButton>
+        </WithIntl>
+      );
       expect(loadingHtml).toContain("Please wait…");
       expect(loadingHtml).toContain('aria-busy="true"');
       expect(loadingHtml).toContain("disabled");
 
-      const disabledHtml = renderToString(<SubmitButton disabled>Save</SubmitButton>);
+      const disabledHtml = renderToString(
+        <WithIntl>
+          <SubmitButton disabled>Save</SubmitButton>
+        </WithIntl>
+      );
       expect(disabledHtml).toContain("disabled");
       expect(disabledHtml).toContain("var(--color-muted-text)");
     });

@@ -7,6 +7,20 @@ import { tryClaimWallet, releaseWallet, DEFAULT_LEASE_MS } from "../db/schema/sy
 import { processTransactionForWallet } from "./process-transaction.js";
 import { fetchTransactionsForAccount, fetchLatestLedger } from "../stellar/rpc.js";
 import { isSuccessfulTransaction, getTransactionLedger } from "../stellar/verification.js";
+import { indexPayment } from "../index/financial-events.js";
+import { getStellarNetworkConfig, getContractConfig as getRawContractConfig, validateNetworkConsistency } from "@herledger/config";
+import { registerCurrentNetworkAddresses, buildContractConfig, type ContractConfig } from "@herledger/sdk";
+import { IndexerError } from "../types/index.js";
+import type { ParsedPayment } from "../types/index.js";
+import { setInflightSyncPromise } from "../main.js";
+
+// ---------------------------------------------------------------------------
+// Main ledger sync job
+// Restartable, idempotent, checkpoint-driven.
+//
+// Accepts an AbortSignal from the shutdown controller so that the graceful
+// shutdown handler can drain the current in-progress syncCycle() before
+// closing the server and disconnecting Prisma.
 import {
   getStellarNetworkConfig,
   getContractConfig as getRawContractConfig,
@@ -47,7 +61,7 @@ interface ActiveWallet {
   walletAddress: string;
 }
 
-export async function runSyncJob(): Promise<void> {
+export async function runSyncJob(signal: AbortSignal): Promise<void> {
   const prisma = getPrismaClient();
   const stellarConfig = getStellarNetworkConfig();
   const rawContractConfig = getRawContractConfig();
@@ -65,6 +79,27 @@ export async function runSyncJob(): Promise<void> {
     "Starting sync ledger job"
   );
 
+  while (!signal.aborted) {
+    // Track the in-flight sync cycle so the shutdown handler can await it.
+    const cyclePromise = syncCycle(prisma, stellarConfig, contractConfig);
+    setInflightSyncPromise(cyclePromise);
+
+    try {
+      await cyclePromise;
+    } catch (err) {
+      console.error({
+        job: "sync-ledger",
+        event: "cycle-error",
+        error: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setInflightSyncPromise(null);
+    }
+
+    // Interruptible sleep: wake up early if shutdown is requested rather
+    // than blocking the grace period for a full 30 s interval.
+    if (!signal.aborted) {
+      await abortableSleep(SYNC_INTERVAL_MS, signal);
   while (true) {
     const correlationId = generateCorrelationId();
     try {
@@ -82,8 +117,9 @@ export async function runSyncJob(): Promise<void> {
         "Error during sync cycle"
       );
     }
-    await sleep(SYNC_INTERVAL_MS);
   }
+
+  console.log({ job: "sync-ledger", event: "stopped" });
 }
 
 async function syncCycle(
@@ -294,29 +330,19 @@ async function syncCycle(
   }
 }
 
-function getSyncConcurrency(): number {
-  const raw = process.env["SYNC_CONCURRENCY"];
-  if (!raw) return DEFAULT_SYNC_CONCURRENCY;
-  const parsed = Number(raw);
-  if (!Number.isInteger(parsed) || parsed < 1) {
-    console.warn({ job: "sync-ledger", event: "invalid-sync-concurrency", value: raw });
-    return DEFAULT_SYNC_CONCURRENCY;
-  }
-  return parsed;
-}
-
-function getLeaseMs(): number {
-  const raw = process.env["SYNC_LEASE_MS"];
-  if (!raw) return DEFAULT_LEASE_MS;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_LEASE_MS;
-  return parsed;
-}
-
-function getInstanceId(): string {
-  return process.env["INDEXER_INSTANCE_ID"] ?? `indexer-${process.pid}`;
-}
-
+/**
+ * Sleep for `ms` milliseconds, but resolve early if the AbortSignal fires.
+ * This keeps the shutdown grace period tight — the sync loop wakes immediately
+ * on SIGTERM instead of waiting out the full 30 s inter-cycle gap.
+ */
+function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener("abort", () => {
+      clearTimeout(timer);
+      resolve();
+    }, { once: true });
+  });
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

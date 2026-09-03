@@ -1,32 +1,30 @@
+"use client";
+
 import type { EventStatus, AttestationStatus } from "@herledger/sdk";
+import { useTranslations } from "next-intl";
 
 export type Status = EventStatus | AttestationStatus;
 
-const STATUS_STYLES: Record<Status, { background: string; color: string; label: string }> = {
+const STATUS_STYLES: Record<Status, { background: string; color: string }> = {
   Pending: {
     background: "var(--color-warning-bg)",
     color: "var(--color-warning-text)",
-    label: "Pending",
   },
   Verified: {
     background: "var(--color-success-bg)",
     color: "var(--color-success-text)",
-    label: "Verified",
   },
   Disputed: {
     background: "var(--color-disputed-bg)",
     color: "var(--color-disputed-text)",
-    label: "Disputed",
   },
   Revoked: {
     background: "var(--color-error-bg)",
     color: "var(--color-error-text)",
-    label: "Revoked",
   },
   Active: {
     background: "var(--color-success-bg)",
     color: "var(--color-success-text)",
-    label: "Active",
   },
 };
 
@@ -37,14 +35,17 @@ export interface StatusBadgeProps {
 
 /**
  * StatusBadge renders a pill badge representing the state of an event or attestation.
- * Uses semantic color tokens (Warning, Success, Disputed, Error).
+ * Uses semantic color tokens (Warning, Success, Disputed, Error) and the active
+ * locale's message catalog for the status label.
  */
 export function StatusBadge({ status }: StatusBadgeProps) {
+  const t = useTranslations("ui");
+
   const style = STATUS_STYLES[status] ?? {
     background: "var(--color-muted-bg)",
     color: "var(--color-muted-text)",
-    label: status,
   };
+  const label = status in STATUS_STYLES ? t(`status.${status}`) : status;
 
   return (
     <span
@@ -57,9 +58,9 @@ export function StatusBadge({ status }: StatusBadgeProps) {
         background: style.background,
         color: style.color,
       }}
-      aria-label={`Status: ${style.label}`}
+      aria-label={t("statusAria", { status: label })}
     >
-      {style.label}
+      {label}
     </span>
   );
 }

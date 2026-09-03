@@ -1,7 +1,18 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { auth } from "@/lib/auth/server";
+import { prisma } from "@/lib/db";
 import { getDbClient } from "@herledger/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
+const bodySchema = z.object({
+  businessId: z.string().length(64),
+  walletAddress: z.string().min(56).max(56),
+  displayName: z.string().min(1).max(200),
+  metadataHash: z.string().length(64),
+  txHash: z.string().min(1),
+});
 import { rateLimitKey } from "@/lib/api/rate-limit";
 import { writeLimiter } from "@/lib/api/rate-limit-config";
 import { typedJson } from "@/lib/api/route-handler";

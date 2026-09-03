@@ -10,7 +10,6 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // which runs first. See use-registration-flow.test.tsx for the full note.
 import { clearPendingRegistration } from "@/lib/business/pending-registration";
 import { mockPublicEnv } from "@/tests/utils/mock-public-env";
-
 vi.mock("@herledger/config", () => ({
   getPublicEnv: mockPublicEnv,
 }));
@@ -26,8 +25,7 @@ vi.mock("@/components/wallet/wallet-connect", () => ({
       if (mockWalletConnectionState.connected) {
         onConnected(TEST_WALLET_ADDRESS);
       }
-       
-    }, []);
+    }, [onConnected]);
 
     if (mockWalletConnectionState.connected) {
       return <p>Connected wallet: {TEST_WALLET_ADDRESS}</p>;
@@ -58,6 +56,7 @@ import {
   mockWalletConnectionState,
   resetMockWalletConnectionState,
 } from "@/tests/utils/mock-wallet";
+import { WithIntl } from "@/tests/utils/with-intl";
 
 import { BusinessRegistrationForm } from "../business-registration-form";
 
@@ -69,9 +68,11 @@ beforeEach(() => {
 
 function renderForm(overrides: Parameters<typeof MockSdkProvider>[0]["overrides"]) {
   return render(
-    <MockSdkProvider overrides={overrides}>
-      <BusinessRegistrationForm />
-    </MockSdkProvider>
+    <WithIntl>
+      <MockSdkProvider overrides={overrides}>
+        <BusinessRegistrationForm />
+      </MockSdkProvider>
+    </WithIntl>
   );
 }
 
@@ -104,7 +105,9 @@ describe("BusinessRegistrationForm", () => {
     await user.click(screen.getByRole("button", { name: /register on stellar/i }));
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { name: /business registered on stellar/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole("heading", { name: /business registered on stellar/i })
+      ).toBeInTheDocument()
     );
     expect(screen.getByText(/tx-e2e-1/)).toBeInTheDocument();
   });
