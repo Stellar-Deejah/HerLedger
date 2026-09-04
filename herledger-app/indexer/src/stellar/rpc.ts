@@ -3,7 +3,6 @@ import { getSorobanRpcServer } from "@herledger/sdk";
 import type { StellarNetworkConfig } from "@herledger/sdk";
 import { rpcRequestDurationSeconds } from "../observability/index.js";
 import { retryWithBackoff } from "./retry.js";
-import { IndexerError } from "../types/index.js";
 
 // ---------------------------------------------------------------------------
 // Stellar RPC helpers for the indexer
@@ -17,7 +16,7 @@ import { IndexerError } from "../types/index.js";
 export async function fetchTransactionsForAccount(
   address: string,
   horizonUrl: string,
-  cursor?: string
+  options: { cursor?: string; minLedger?: number } = {}
 ): Promise<{
   transactions: Horizon.ServerApi.TransactionRecord[];
   nextCursor: string | undefined;

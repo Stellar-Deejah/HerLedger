@@ -9,7 +9,8 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --max-warnings 0",
-    "test": "vitest run"
+    "test": "vitest run",
+    "benchmark": "tsx scripts/benchmark-sync.ts"
   },
   "dependencies": {
     "@herledger/config": "workspace:*",
