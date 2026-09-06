@@ -38,7 +38,10 @@ export async function GET(req: NextRequest) {
   });
 
   if (!profile) {
-    return NextResponse.json({ data: { events: [], pagination: { offset: 0, limit: parsed.data.limit, count: 0 } }, error: null });
+    return NextResponse.json({
+      data: { events: [], pagination: { offset: 0, limit: parsed.data.limit, count: 0 } },
+      error: null,
+    });
   }
 
   const events = await prisma.financialEvent.findMany({

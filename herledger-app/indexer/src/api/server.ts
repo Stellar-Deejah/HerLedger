@@ -9,10 +9,7 @@ export function buildServer() {
   const app = Fastify({
     logger: {
       level: process.env["NODE_ENV"] === "production" ? "warn" : "info",
-      transport:
-        process.env["NODE_ENV"] !== "production"
-          ? { target: "pino-pretty" }
-          : undefined,
+      transport: process.env["NODE_ENV"] !== "production" ? { target: "pino-pretty" } : undefined,
     },
   });
 

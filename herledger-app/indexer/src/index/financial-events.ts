@@ -32,11 +32,7 @@ export async function indexPayment(
   if (!payment.successful) return;
 
   // Verify asset support
-  const supported = await isSupportedAsset(
-    payment.assetAddress,
-    config,
-    contracts
-  );
+  const supported = await isSupportedAsset(payment.assetAddress, config, contracts);
   if (!supported) return;
 
   // Always record the raw transaction first (idempotent)
@@ -48,10 +44,7 @@ export async function indexPayment(
   });
 
   // Check if the recipient is a registered HerLedger business wallet
-  const recipientBusiness = await findBusinessByWallet(
-    prisma,
-    payment.destinationAddress
-  );
+  const recipientBusiness = await findBusinessByWallet(prisma, payment.destinationAddress);
   if (recipientBusiness) {
     const eventId = deriveEventId(payment.transactionHash, "recv");
     await upsertFinancialEvent(prisma, {
@@ -68,10 +61,7 @@ export async function indexPayment(
   }
 
   // Check if the sender is a registered HerLedger business wallet
-  const senderBusiness = await findBusinessByWallet(
-    prisma,
-    payment.sourceAddress
-  );
+  const senderBusiness = await findBusinessByWallet(prisma, payment.sourceAddress);
   if (senderBusiness) {
     const eventId = deriveEventId(payment.transactionHash, "sent");
     await upsertFinancialEvent(prisma, {

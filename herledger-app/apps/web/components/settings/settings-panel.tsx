@@ -15,9 +15,7 @@ export function SettingsPanel() {
           marginBottom: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>
-          Account
-        </h2>
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "1rem" }}>Account</h2>
         {session ? (
           <dl style={{ fontSize: "0.9375rem" }}>
             <div style={{ display: "flex", gap: "0.75rem", marginBottom: "0.5rem" }}>
@@ -41,15 +39,12 @@ export function SettingsPanel() {
           padding: "1.5rem",
         }}
       >
-        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem" }}>
-          Privacy
-        </h2>
+        <h2 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.75rem" }}>Privacy</h2>
         <p style={{ color: "var(--muted)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
-          Stellar transaction data is publicly visible on the Stellar blockchain.
-          HerLedger minimizes additional personal information stored on-chain.
-          Private application metadata — such as your business name and contact
-          details — remains off-chain and is not published to any blockchain.
-          Only cryptographic hashes are committed on-chain for integrity
+          Stellar transaction data is publicly visible on the Stellar blockchain. HerLedger
+          minimizes additional personal information stored on-chain. Private application metadata —
+          such as your business name and contact details — remains off-chain and is not published to
+          any blockchain. Only cryptographic hashes are committed on-chain for integrity
           verification.
         </p>
         <p
@@ -60,8 +55,8 @@ export function SettingsPanel() {
             lineHeight: 1.6,
           }}
         >
-          HerLedger does not claim that your Stellar wallet balance or
-          transaction history is private. Blockchain transactions are public.
+          HerLedger does not claim that your Stellar wallet balance or transaction history is
+          private. Blockchain transactions are public.
         </p>
       </section>
     </div>

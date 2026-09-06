@@ -45,9 +45,7 @@ export function DashboardNav() {
       <ul style={{ listStyle: "none", padding: 0, margin: 0, flex: 1 }}>
         {NAV_ITEMS.map(({ href, label }) => {
           const isActive =
-            href === "/dashboard"
-              ? pathname === "/dashboard"
-              : pathname.startsWith(href);
+            href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
           return (
             <li key={href}>
               <Link

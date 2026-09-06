@@ -39,15 +39,15 @@ without storing unnecessary private information on-chain.
 
 ## What HerLedger Does
 
-| Feature | Description |
-|---------|-------------|
+| Feature               | Description                                                                        |
+| --------------------- | ---------------------------------------------------------------------------------- |
 | Business registration | Register a woman-owned business on-chain via the BusinessRegistry Soroban contract |
-| Wallet association | Link a Stellar wallet address to a business identity |
-| Financial activity | Detect and index supported Stellar payment transactions |
-| Event verification | Track Pending → Verified → Disputed → Revoked lifecycle |
-| Attestations | Display third-party claims linked to financial events |
-| Dispute flow | Allow a business owner to challenge an incorrect record on-chain |
-| Privacy | Keep private metadata off-chain; commit only cryptographic hashes |
+| Wallet association    | Link a Stellar wallet address to a business identity                               |
+| Financial activity    | Detect and index supported Stellar payment transactions                            |
+| Event verification    | Track Pending → Verified → Disputed → Revoked lifecycle                            |
+| Attestations          | Display third-party claims linked to financial events                              |
+| Dispute flow          | Allow a business owner to challenge an incorrect record on-chain                   |
+| Privacy               | Keep private metadata off-chain; commit only cryptographic hashes                  |
 
 **Not supported:** loans, credit scores, lending decisions, unsupported asset classification, private Stellar transactions.
 
@@ -169,22 +169,22 @@ HerLedger/
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Runtime | Node.js | ≥20.9.0 |
-| Package manager | pnpm | 9+ |
-| Frontend framework | Next.js | 16.3.1 |
-| UI library | React | 19.2.8 |
-| Language | TypeScript | 7.0.2 |
-| Stellar SDK | @stellar/stellar-sdk | 16.2.0 |
-| Wallet | @stellar/freighter-api | 6.0.1 |
-| Validation | Zod | 4.4.3 |
-| Authentication | Better Auth | 1.6.28 |
-| Database | PostgreSQL | 16+ |
-| ORM | Prisma | 7.9.1 |
-| API server | Fastify | 5.12.0 |
-| Testing | Vitest | 4.1.10 |
-| E2E testing | Playwright | 1.51.1 |
+| Layer              | Technology             | Version |
+| ------------------ | ---------------------- | ------- |
+| Runtime            | Node.js                | ≥20.9.0 |
+| Package manager    | pnpm                   | 9+      |
+| Frontend framework | Next.js                | 16.3.1  |
+| UI library         | React                  | 19.2.8  |
+| Language           | TypeScript             | 7.0.2   |
+| Stellar SDK        | @stellar/stellar-sdk   | 16.2.0  |
+| Wallet             | @stellar/freighter-api | 6.0.1   |
+| Validation         | Zod                    | 4.4.3   |
+| Authentication     | Better Auth            | 1.6.28  |
+| Database           | PostgreSQL             | 16+     |
+| ORM                | Prisma                 | 7.9.1   |
+| API server         | Fastify                | 5.12.0  |
+| Testing            | Vitest                 | 4.1.10  |
+| E2E testing        | Playwright             | 1.51.1  |
 
 ---
 
@@ -340,17 +340,17 @@ NEXT_PUBLIC_ATTESTATION_REGISTRY_CONTRACT_ID=
 
 ### Schema overview
 
-| Model | Purpose |
-|-------|---------|
-| `User` | Application user account (Better Auth) |
-| `Session` | Auth session (Better Auth) |
-| `Account` | OAuth/password account (Better Auth) |
-| `Verification` | Email verification tokens (Better Auth) |
-| `BusinessProfile` | Registered business linked to a user |
-| `FinancialEvent` | Indexed on-chain financial events |
-| `Attestation` | Third-party attestations on events |
-| `StellarTransaction` | Raw Stellar transaction records |
-| `IndexerCheckpoint` | Ledger sync progress per stream |
+| Model                | Purpose                                 |
+| -------------------- | --------------------------------------- |
+| `User`               | Application user account (Better Auth)  |
+| `Session`            | Auth session (Better Auth)              |
+| `Account`            | OAuth/password account (Better Auth)    |
+| `Verification`       | Email verification tokens (Better Auth) |
+| `BusinessProfile`    | Registered business linked to a user    |
+| `FinancialEvent`     | Indexed on-chain financial events       |
+| `Attestation`        | Third-party attestations on events      |
+| `StellarTransaction` | Raw Stellar transaction records         |
+| `IndexerCheckpoint`  | Ledger sync progress per stream         |
 
 ### Key database rules
 
@@ -441,14 +441,15 @@ E2E tests must not depend on Mainnet — use Testnet or mocks.
 
 ### Frontend — Vercel (or equivalent)
 
-| Setting | Value |
-|---------|-------|
-| Root directory | `herledger-app/apps/web` |
-| Build command | `pnpm --filter web build` |
-| Start command | `pnpm --filter web start` |
-| Node version | 20.x or 22.x |
+| Setting        | Value                     |
+| -------------- | ------------------------- |
+| Root directory | `herledger-app/apps/web`  |
+| Build command  | `pnpm --filter web build` |
+| Start command  | `pnpm --filter web start` |
+| Node version   | 20.x or 22.x              |
 
 Set all environment variables in the Vercel dashboard.
+
 - Never expose `DATABASE_URL` or `BETTER_AUTH_SECRET` as `NEXT_PUBLIC_*`.
 - All `NEXT_PUBLIC_*` variables must also be set.
 
@@ -460,11 +461,11 @@ pnpm db:migrate
 
 ### Indexer — Render (or equivalent long-running service)
 
-| Setting | Value |
-|---------|-------|
-| Root directory | `herledger-app/indexer` |
-| Build command | `pnpm --filter indexer build` |
-| Start command | `pnpm --filter indexer start` |
+| Setting        | Value                         |
+| -------------- | ----------------------------- |
+| Root directory | `herledger-app/indexer`       |
+| Build command  | `pnpm --filter indexer build` |
+| Start command  | `pnpm --filter indexer start` |
 
 The indexer requires access to `DATABASE_URL` and all Stellar environment variables.
 It does **not** need `BETTER_AUTH_SECRET` or any `NEXT_PUBLIC_*` variables.
@@ -482,11 +483,11 @@ It does **not** need `BETTER_AUTH_SECRET` or any `NEXT_PUBLIC_*` variables.
 
 The application layer communicates with three Soroban contracts deployed on Stellar:
 
-| Contract | Responsibility |
-|----------|---------------|
-| `BusinessRegistry` | Business registration, ownership, wallet association |
-| `FinancialLedger` | Financial event recording, verification, disputes, revocation |
-| `AttestationRegistry` | Attester management and attestation lifecycle |
+| Contract              | Responsibility                                                |
+| --------------------- | ------------------------------------------------------------- |
+| `BusinessRegistry`    | Business registration, ownership, wallet association          |
+| `FinancialLedger`     | Financial event recording, verification, disputes, revocation |
+| `AttestationRegistry` | Attester management and attestation lifecycle                 |
 
 ### After deploying contracts
 
@@ -626,12 +627,12 @@ blockchain-derived fields, and only updates mutable status fields.
 
 ### Payment classification rules
 
-| Rule | PaymentReceived | PaymentSent |
-|------|----------------|-------------|
-| Transaction succeeded | ✓ required | ✓ required |
-| Business wallet is recipient | ✓ | — |
-| Business wallet is sender | — | ✓ |
-| Asset is supported | ✓ required | ✓ required |
+| Rule                         | PaymentReceived | PaymentSent |
+| ---------------------------- | --------------- | ----------- |
+| Transaction succeeded        | ✓ required      | ✓ required  |
+| Business wallet is recipient | ✓               | —           |
+| Business wallet is sender    | —               | ✓           |
+| Asset is supported           | ✓ required      | ✓ required  |
 
 Failed transactions are **never** classified.
 Unsupported assets are **never** classified.
@@ -643,6 +644,7 @@ Unsupported assets are **never** classified.
 The indexer exposes a read-only HTTP API on port 4000.
 
 All responses follow:
+
 ```json
 { "data": { ... }, "error": null }
 // or on failure:
@@ -651,15 +653,15 @@ All responses follow:
 
 ### Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/health` | Health check with DB connectivity |
-| `GET` | `/businesses/:businessId` | Get indexed business by on-chain ID |
-| `GET` | `/businesses/:businessId/events` | Paginated financial events (max 100) |
-| `GET` | `/businesses/:businessId/attestations` | All attestations for a business |
-| `GET` | `/transactions/:hash` | Get a Stellar transaction by hash |
-| `GET` | `/supported-assets` | Supported asset info |
-| `GET` | `/indexer/status` | Current sync checkpoint |
+| Method | Path                                   | Description                          |
+| ------ | -------------------------------------- | ------------------------------------ |
+| `GET`  | `/health`                              | Health check with DB connectivity    |
+| `GET`  | `/businesses/:businessId`              | Get indexed business by on-chain ID  |
+| `GET`  | `/businesses/:businessId/events`       | Paginated financial events (max 100) |
+| `GET`  | `/businesses/:businessId/attestations` | All attestations for a business      |
+| `GET`  | `/transactions/:hash`                  | Get a Stellar transaction by hash    |
+| `GET`  | `/supported-assets`                    | Supported asset info                 |
+| `GET`  | `/indexer/status`                      | Current sync checkpoint              |
 
 ### Pagination
 
@@ -715,6 +717,7 @@ HerLedger only classifies events from **supported assets** in **successful trans
 ### PaymentReceived
 
 A Stellar payment operation where:
+
 - the transaction succeeded
 - the destination address matches a registered HerLedger business wallet
 - the asset is in the supported asset list
@@ -722,6 +725,7 @@ A Stellar payment operation where:
 ### PaymentSent
 
 A Stellar payment operation where:
+
 - the transaction succeeded
 - the source address matches a registered HerLedger business wallet
 - the asset is in the supported asset list
@@ -758,6 +762,7 @@ Event status changes to Disputed on-chain and in the index
 ```
 
 **The owner cannot:**
+
 - Delete the financial event
 - Edit the Stellar transaction reference
 - Change the amount, sender, or recipient
@@ -770,16 +775,16 @@ Revoked and disputed events remain visible in the UI — they are never hidden.
 
 ## Privacy Model
 
-| Data | Storage | Visibility |
-|------|---------|------------|
-| Stellar transactions | Stellar blockchain | Public — anyone can query |
-| Business ID | On-chain (hash) | Public |
-| Metadata hash | On-chain (hash only) | Public hash, private content |
-| Business name | Off-chain database | Private to the application |
-| Dispute reason | Off-chain; hash on-chain | Reason text is private |
-| Claim/attestation content | Off-chain; hash on-chain | Content is private |
-| Auth session | Server-side secure cookie | Private |
-| Stellar private key | **Never stored anywhere** | N/A |
+| Data                      | Storage                   | Visibility                   |
+| ------------------------- | ------------------------- | ---------------------------- |
+| Stellar transactions      | Stellar blockchain        | Public — anyone can query    |
+| Business ID               | On-chain (hash)           | Public                       |
+| Metadata hash             | On-chain (hash only)      | Public hash, private content |
+| Business name             | Off-chain database        | Private to the application   |
+| Dispute reason            | Off-chain; hash on-chain  | Reason text is private       |
+| Claim/attestation content | Off-chain; hash on-chain  | Content is private           |
+| Auth session              | Server-side secure cookie | Private                      |
+| Stellar private key       | **Never stored anywhere** | N/A                          |
 
 The application does not claim Stellar wallet balances or transactions are private.
 Blockchain data is public. HerLedger minimizes additional personal information

@@ -6,8 +6,7 @@ export const metadata: Metadata = {
     default: "HerLedger",
     template: "%s | HerLedger",
   },
-  description:
-    "Build a verifiable financial history for your business on Stellar.",
+  description: "Build a verifiable financial history for your business on Stellar.",
   robots: { index: true, follow: true },
 };
 
@@ -16,11 +15,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>{children}</body>

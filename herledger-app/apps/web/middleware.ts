@@ -12,9 +12,7 @@ const AUTH_ROUTES = ["/auth/sign-in", "/auth/sign-up"];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix)
-  );
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   if (isProtected) {
     // Better Auth stores the session in a cookie named "better-auth.session_token"
@@ -30,7 +28,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api/).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"],
 };

@@ -40,7 +40,8 @@ function decodeBusiness(val: xdr.ScVal): Business {
 
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
-    fields[entry.key().sym()] = entry.val();
+    const key = entry.key().sym().toString();
+    fields[key] = entry.val();
   }
 
   return {

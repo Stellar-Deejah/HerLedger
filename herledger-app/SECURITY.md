@@ -48,6 +48,7 @@ If you discover a security vulnerability, please do not open a public issue.
 Contact the maintainers privately at the email listed in the repository.
 
 Provide:
+
 - Description of the vulnerability
 - Steps to reproduce
 - Potential impact assessment

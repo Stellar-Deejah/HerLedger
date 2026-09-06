@@ -32,9 +32,6 @@ export async function upsertStellarTransaction(
       update: {},
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to upsert Stellar transaction ${input.hash}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to upsert Stellar transaction ${input.hash}`, cause);
   }
 }

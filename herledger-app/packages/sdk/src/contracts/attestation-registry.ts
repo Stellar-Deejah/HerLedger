@@ -46,7 +46,8 @@ function decodeAttestation(val: xdr.ScVal): Attestation {
   if (!map) throw new ContractError("Expected struct map for Attestation");
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
-    fields[entry.key().sym()] = entry.val();
+    const key = entry.key().sym().toString();
+    fields[key] = entry.val();
   }
   return {
     id: decodeBytes32(fields["id"]!),

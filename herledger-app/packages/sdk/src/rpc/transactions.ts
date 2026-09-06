@@ -1,8 +1,4 @@
-import {
-  rpc as StellarRpc,
-  Transaction,
-  TransactionBuilder,
-} from "@stellar/stellar-sdk";
+import { rpc as StellarRpc, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
 import type { StellarNetworkConfig, TransactionResult } from "../types/index.js";
 import { RpcError, ContractError } from "../errors/index.js";
 import { getSorobanRpcServer } from "./client.js";
@@ -27,10 +23,7 @@ export async function simulateAndPrepare(
   }
 
   if (StellarRpc.Api.isSimulationError(simResult)) {
-    throw new ContractError(
-      `Simulation error: ${simResult.error}`,
-      simResult.error
-    );
+    throw new ContractError(`Simulation error: ${simResult.error}`, simResult.error);
   }
 
   const prepared = StellarRpc.assembleTransaction(tx, simResult).build();

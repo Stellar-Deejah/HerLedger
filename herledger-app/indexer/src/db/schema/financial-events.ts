@@ -48,10 +48,7 @@ export async function upsertFinancialEvent(
       },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to upsert financial event ${input.eventId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to upsert financial event ${input.eventId}`, cause);
   }
 }
 
@@ -70,10 +67,7 @@ export async function updateEventStatus(
       data: { status },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to update status for event ${eventId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to update status for event ${eventId}`, cause);
   }
 }
 
@@ -91,9 +85,6 @@ export async function findEventsByBusiness(
       take: limit,
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to query events for business ${businessId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to query events for business ${businessId}`, cause);
   }
 }

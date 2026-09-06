@@ -72,9 +72,7 @@ export function AttestationList() {
               marginBottom: "0.5rem",
             }}
           >
-            <span style={{ fontWeight: 500, fontSize: "0.9375rem" }}>
-              Attestation
-            </span>
+            <span style={{ fontWeight: 500, fontSize: "0.9375rem" }}>Attestation</span>
             <StatusBadge status={att.status as "Active" | "Revoked"} />
           </div>
           <dl style={{ fontSize: "0.875rem", color: "var(--muted)", margin: 0 }}>

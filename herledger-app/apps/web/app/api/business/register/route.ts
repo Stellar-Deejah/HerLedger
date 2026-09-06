@@ -51,7 +51,13 @@ export async function POST(req: NextRequest) {
     });
     if (existing) {
       return NextResponse.json(
-        { data: null, error: { code: "ALREADY_REGISTERED", message: "Business already registered for this account" } },
+        {
+          data: null,
+          error: {
+            code: "ALREADY_REGISTERED",
+            message: "Business already registered for this account",
+          },
+        },
         { status: 409 }
       );
     }

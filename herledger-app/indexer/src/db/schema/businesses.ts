@@ -18,34 +18,22 @@ export async function findAllActiveBusinessWallets(
   }
 }
 
-export async function findBusinessByWallet(
-  prisma: PrismaClient,
-  walletAddress: string
-) {
+export async function findBusinessByWallet(prisma: PrismaClient, walletAddress: string) {
   try {
     return await prisma.businessProfile.findUnique({
       where: { walletAddress },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to find business by wallet ${walletAddress}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to find business by wallet ${walletAddress}`, cause);
   }
 }
 
-export async function findBusinessById(
-  prisma: PrismaClient,
-  businessId: string
-) {
+export async function findBusinessById(prisma: PrismaClient, businessId: string) {
   try {
     return await prisma.businessProfile.findUnique({
       where: { businessId },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to find business by id ${businessId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to find business by id ${businessId}`, cause);
   }
 }

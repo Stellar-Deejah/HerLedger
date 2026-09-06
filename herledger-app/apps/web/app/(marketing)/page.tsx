@@ -52,9 +52,9 @@ export default function HomePage() {
             lineHeight: 1.6,
           }}
         >
-          HerLedger records recognized Stellar transactions and verified
-          attestations so your business can build a portable, auditable
-          financial history — without sharing unnecessary private information.
+          HerLedger records recognized Stellar transactions and verified attestations so your
+          business can build a portable, auditable financial history — without sharing unnecessary
+          private information.
         </p>
         <Link
           href="/auth/sign-up"
@@ -128,8 +128,7 @@ export default function HomePage() {
             textAlign: "center",
           }}
         >
-          HerLedger does not issue loans, calculate credit scores, or make
-          lending decisions.
+          HerLedger does not issue loans, calculate credit scores, or make lending decisions.
         </p>
       </section>
     </main>

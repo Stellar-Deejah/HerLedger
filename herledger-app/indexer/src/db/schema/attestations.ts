@@ -36,26 +36,17 @@ export async function upsertAttestation(
       },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to upsert attestation ${input.attestationId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to upsert attestation ${input.attestationId}`, cause);
   }
 }
 
-export async function findAttestationsByEvent(
-  prisma: PrismaClient,
-  eventId: string
-) {
+export async function findAttestationsByEvent(prisma: PrismaClient, eventId: string) {
   try {
     return await prisma.attestation.findMany({
       where: { eventId },
       orderBy: { ledgerSequence: "asc" },
     });
   } catch (cause) {
-    throw new DatabaseError(
-      `Failed to find attestations for event ${eventId}`,
-      cause
-    );
+    throw new DatabaseError(`Failed to find attestations for event ${eventId}`, cause);
   }
 }

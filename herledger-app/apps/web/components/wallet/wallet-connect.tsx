@@ -125,11 +125,7 @@ export function WalletConnect({ onConnected }: WalletConnectProps) {
         }}
       >
         You need the{" "}
-        <a
-          href="https://freighter.app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a href="https://freighter.app" target="_blank" rel="noopener noreferrer">
           Freighter browser extension
         </a>{" "}
         to connect a Stellar wallet.

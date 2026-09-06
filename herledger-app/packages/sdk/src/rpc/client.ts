@@ -19,7 +19,9 @@ export function getSorobanRpcServer(config: StellarNetworkConfig): StellarRpc.Se
     return _server;
   }
   try {
-    _server = new StellarRpc.Server(config.rpcUrl, { allowHttp: config.rpcUrl.startsWith("http://") });
+    _server = new StellarRpc.Server(config.rpcUrl, {
+      allowHttp: config.rpcUrl.startsWith("http://"),
+    });
     _configuredUrl = config.rpcUrl;
     return _server;
   } catch (cause) {

@@ -28,7 +28,11 @@ export function DisputeList() {
         const json = (await res.json()) as { data: { events: DisputedEvent[] } | null };
         const all = json.data?.events ?? [];
         // Show events eligible for dispute (Pending or Verified)
-        setEvents(all.filter((e) => e.status === "Pending" || e.status === "Verified" || e.status === "Disputed"));
+        setEvents(
+          all.filter(
+            (e) => e.status === "Pending" || e.status === "Verified" || e.status === "Disputed"
+          )
+        );
       } catch {
         // silently degrade
       } finally {

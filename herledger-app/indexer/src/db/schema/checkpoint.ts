@@ -12,10 +12,7 @@ export const EVENTS_STREAM = "contract-events";
  * Read the last processed ledger for a stream.
  * Returns 0 if no checkpoint exists (start from beginning).
  */
-export async function getCheckpoint(
-  prisma: PrismaClient,
-  stream: string
-): Promise<number> {
+export async function getCheckpoint(prisma: PrismaClient, stream: string): Promise<number> {
   try {
     const checkpoint = await prisma.indexerCheckpoint.findUnique({
       where: { stream },

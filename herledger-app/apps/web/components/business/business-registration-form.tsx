@@ -142,9 +142,7 @@ export function BusinessRegistrationForm() {
         <div style={{ marginBottom: "1rem" }}>
           <StatusBadge status="Verified" />
         </div>
-        <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>
-          Business registered on Stellar
-        </p>
+        <p style={{ fontWeight: 500, marginBottom: "0.5rem" }}>Business registered on Stellar</p>
         <p style={{ color: "var(--muted)", fontSize: "0.875rem", marginBottom: "0.5rem" }}>
           Your registration has been confirmed on the Stellar network.
         </p>
@@ -178,9 +176,7 @@ export function BusinessRegistrationForm() {
 
           {step === "details" && walletAddress && (
             <form onSubmit={(e) => void handleSubmit(e)}>
-              <h3
-                style={{ fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.75rem" }}
-              >
+              <h3 style={{ fontSize: "0.9375rem", fontWeight: 500, marginBottom: "0.75rem" }}>
                 Step 2: Business details
               </h3>
               {error && <ErrorMessage message={error} />}
@@ -192,9 +188,7 @@ export function BusinessRegistrationForm() {
                 onChange={setBusinessName}
                 required
               />
-              <SubmitButton loading={false}>
-                Register on Stellar
-              </SubmitButton>
+              <SubmitButton loading={false}>Register on Stellar</SubmitButton>
             </form>
           )}
         </>

@@ -5,7 +5,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatAmount } from "@/lib/utils/format";
-import { getServerEnv } from "@herledger/config";
 
 interface EventSummary {
   eventId: string;
@@ -26,7 +25,10 @@ export function DashboardSummary() {
       try {
         const res = await fetch("/api/activity/recent");
         if (!res.ok) throw new Error("Failed to fetch activity");
-        const json = (await res.json()) as { data: { events: EventSummary[] } | null; error: unknown };
+        const json = (await res.json()) as {
+          data: { events: EventSummary[] } | null;
+          error: unknown;
+        };
         setEvents(json.data?.events ?? []);
       } catch {
         setError("Could not load recent activity. Please try again.");
@@ -82,7 +84,9 @@ export function DashboardSummary() {
               <span style={{ fontFamily: "monospace", fontSize: "0.9375rem" }}>
                 {formatAmount(BigInt(event.amount))}
               </span>
-              <StatusBadge status={event.status as "Pending" | "Verified" | "Disputed" | "Revoked"} />
+              <StatusBadge
+                status={event.status as "Pending" | "Verified" | "Disputed" | "Revoked"}
+              />
             </div>
           </li>
         ))}

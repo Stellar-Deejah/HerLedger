@@ -10,7 +10,10 @@ export interface IndexerError extends Error {
 
 export class DatabaseError extends Error {
   readonly kind = "DatabaseError" as const;
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public readonly cause?: unknown
+  ) {
     super(message);
     this.name = "DatabaseError";
   }
@@ -18,7 +21,10 @@ export class DatabaseError extends Error {
 
 export class IndexerError extends Error {
   readonly kind = "IndexerError" as const;
-  constructor(message: string, public readonly cause?: unknown) {
+  constructor(
+    message: string,
+    public readonly cause?: unknown
+  ) {
     super(message);
     this.name = "IndexerError";
   }

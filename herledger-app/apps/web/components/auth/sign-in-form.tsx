@@ -66,8 +66,7 @@ export function SignInForm() {
           color: "var(--muted)",
         }}
       >
-        No account?{" "}
-        <Link href="/auth/sign-up">Create one</Link>
+        No account? <Link href="/auth/sign-up">Create one</Link>
       </p>
     </form>
   );

@@ -66,7 +66,10 @@ export function FormField({
       />
 
       {description && !error && (
-        <p id={descId} style={{ fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.25rem" }}>
+        <p
+          id={descId}
+          style={{ fontSize: "0.8125rem", color: "var(--muted)", marginTop: "0.25rem" }}
+        >
           {description}
         </p>
       )}

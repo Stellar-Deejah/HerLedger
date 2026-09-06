@@ -71,7 +71,8 @@ function decodeFinancialEvent(val: xdr.ScVal): FinancialEvent {
 
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
-    fields[entry.key().sym()] = entry.val();
+    const key = entry.key().sym().toString();
+    fields[key] = entry.val();
   }
 
   return {
@@ -345,11 +346,7 @@ export async function revokeFinancialEvent(
     networkPassphrase: config.networkPassphrase,
   })
     .addOperation(
-      contract.call(
-        "revoke_event",
-        encodeBytes32(params.eventId),
-        encodeBytes32(params.reasonHash)
-      )
+      contract.call("revoke_event", encodeBytes32(params.eventId), encodeBytes32(params.reasonHash))
     )
     .setTimeout(300)
     .build();

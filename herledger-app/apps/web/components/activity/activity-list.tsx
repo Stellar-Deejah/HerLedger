@@ -31,9 +31,7 @@ export function ActivityList() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/activity/recent?offset=${pageOffset}&limit=${PAGE_SIZE}`
-      );
+      const res = await fetch(`/api/activity/recent?offset=${pageOffset}&limit=${PAGE_SIZE}`);
       if (!res.ok) throw new Error("Failed to load activity");
       const json = (await res.json()) as {
         data: { events: FinancialEventRow[]; pagination: { count: number } } | null;
@@ -98,9 +96,7 @@ export function ActivityList() {
                   status={event.status as "Pending" | "Verified" | "Disputed" | "Revoked"}
                 />
               </td>
-              <td style={{ padding: "0.75rem", color: "var(--muted)" }}>
-                {event.ledgerSequence}
-              </td>
+              <td style={{ padding: "0.75rem", color: "var(--muted)" }}>{event.ledgerSequence}</td>
               <td
                 style={{
                   padding: "0.75rem",

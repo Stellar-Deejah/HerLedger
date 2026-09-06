@@ -29,8 +29,8 @@ export function BusinessProfile() {
           Register your business
         </h2>
         <p style={{ color: "var(--muted)", fontSize: "0.9375rem", marginBottom: "1.5rem" }}>
-          Connect your Stellar wallet and register your business on HerLedger.
-          Your business ID and registration will be confirmed on the Stellar network.
+          Connect your Stellar wallet and register your business on HerLedger. Your business ID and
+          registration will be confirmed on the Stellar network.
         </p>
         <BusinessRegistrationForm />
       </section>

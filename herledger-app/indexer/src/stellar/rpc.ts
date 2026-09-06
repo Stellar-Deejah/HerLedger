@@ -36,16 +36,11 @@ export async function fetchTransactionsForAccount(
     const page = await builder.call();
     const records = page.records;
     const nextCursor =
-      records.length > 0
-        ? (records[records.length - 1]?.paging_token ?? undefined)
-        : undefined;
+      records.length > 0 ? (records[records.length - 1]?.paging_token ?? undefined) : undefined;
 
     return { transactions: records, nextCursor };
   } catch (cause) {
-    throw new IndexerError(
-      `Failed to fetch transactions for account ${address}`,
-      cause
-    );
+    throw new IndexerError(`Failed to fetch transactions for account ${address}`, cause);
   }
 }
 

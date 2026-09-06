@@ -83,8 +83,7 @@ export function SignUpForm() {
           color: "var(--muted)",
         }}
       >
-        Already have an account?{" "}
-        <Link href="/auth/sign-in">Sign in</Link>
+        Already have an account? <Link href="/auth/sign-in">Sign in</Link>
       </p>
     </form>
   );

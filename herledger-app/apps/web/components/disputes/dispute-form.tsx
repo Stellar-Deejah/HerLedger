@@ -96,9 +96,8 @@ export function DisputeForm({ eventId, onSuccess }: DisputeFormProps) {
         Challenge this record
       </h2>
       <p style={{ color: "var(--muted)", fontSize: "0.9375rem", marginBottom: "1rem" }}>
-        Submitting a dispute changes the HerLedger record state to Disputed.
-        It does not alter the original Stellar transaction — blockchain history
-        cannot be modified.
+        Submitting a dispute changes the HerLedger record state to Disputed. It does not alter the
+        original Stellar transaction — blockchain history cannot be modified.
       </p>
 
       {error && <ErrorMessage message={error} />}
