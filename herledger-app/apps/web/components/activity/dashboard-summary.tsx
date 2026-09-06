@@ -5,7 +5,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatAmount } from "@/lib/utils/format";
-import { getServerEnv } from "@herledger/config";
 
 interface EventSummary {
   eventId: string;
