@@ -1,4 +1,3 @@
-
 # HerLedger ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Application Layer
 
 HerLedger is a financial-history platform for women-owned businesses built on
@@ -779,11 +778,11 @@ Each replica claims a wallet before processing it by atomically writing
 UPDATE guarded by the lease). A replica that loses the claim skips the wallet,
 so two replicas never process the same wallet in the same sync window.
 
-| Env var              | Default        | Purpose                                      |
-| -------------------- | -------------- | -------------------------------------------- |
-| `SYNC_CONCURRENCY`   | `5`            | Wallets processed concurrently per replica   |
-| `SYNC_LEASE_MS`      | `60000`        | Wallet claim lease duration (ms)             |
-| `INDEXER_INSTANCE_ID`| `indexer-<pid>`| Unique replica identifier                    |
+| Env var               | Default         | Purpose                                    |
+| --------------------- | --------------- | ------------------------------------------ |
+| `SYNC_CONCURRENCY`    | `5`             | Wallets processed concurrently per replica |
+| `SYNC_LEASE_MS`       | `60000`         | Wallet claim lease duration (ms)           |
+| `INDEXER_INSTANCE_ID` | `indexer-<pid>` | Unique replica identifier                  |
 
 ### Idempotency
 
@@ -999,6 +998,7 @@ test(indexer): cover payment classification
 # See [LICENSE](../herledger-contract/LICENSE).
 
 # HerLedger Ã¢â‚¬â€ Application Layer
+
 without storing unnecessary private information on-chain.
 
 > **HerLedger does not** issue loans, calculate credit scores, make lending
@@ -2555,6 +2555,7 @@ connection pool. `apps/web/lib/db.ts` stores the single instance on
 a no-op because module caching is sufficient for a long-lived process.
 
 ### Database Ã¢â‚¬â€ PostgreSQL
+
 ### Database — PostgreSQL
 
 - Provision PostgreSQL 16 in the same region as the indexer.
@@ -3093,4 +3094,5 @@ test(indexer): cover payment classification
 ## License
 
 # See [LICENSE](../herledger-contract/LICENSE).
+
 See [LICENSE](../herledger-contract/LICENSE).

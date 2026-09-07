@@ -11,12 +11,16 @@ interface FakeCreateManyCall {
 
 function makeFakePrisma(): {
   prisma: PrismaClient;
-  createManyCalls: { financialEvent: FakeCreateManyCall[]; stellarTransaction: FakeCreateManyCall[] };
-} {
-  const calls: { financialEvent: FakeCreateManyCall[]; stellarTransaction: FakeCreateManyCall[] } = {
-    financialEvent: [],
-    stellarTransaction: [],
+  createManyCalls: {
+    financialEvent: FakeCreateManyCall[];
+    stellarTransaction: FakeCreateManyCall[];
   };
+} {
+  const calls: { financialEvent: FakeCreateManyCall[]; stellarTransaction: FakeCreateManyCall[] } =
+    {
+      financialEvent: [],
+      stellarTransaction: [],
+    };
   const prisma = {
     financialEvent: {
       createMany: vi.fn(async (args: FakeCreateManyCall) => {

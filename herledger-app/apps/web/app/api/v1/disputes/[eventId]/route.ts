@@ -143,7 +143,12 @@ export async function GET(req: NextRequest, context: RouteContext) {
       error: null,
     });
   } catch (err) {
-    console.error({ operation: "get-dispute", userId: session.user.id, eventId: parsed.data.eventId, error: err });
+    console.error({
+      operation: "get-dispute",
+      userId: session.user.id,
+      eventId: parsed.data.eventId,
+      error: err,
+    });
     return NextResponse.json(
       { data: null, error: { code: "INTERNAL_ERROR", message: "Failed to load dispute" } },
       { status: 500 }

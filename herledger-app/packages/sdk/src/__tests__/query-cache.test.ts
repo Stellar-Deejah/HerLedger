@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { QueryCache, buildCacheKey, defaultQueryCache, clearQueryCache } from "../cache/query-cache.js";
+import {
+  QueryCache,
+  buildCacheKey,
+  defaultQueryCache,
+  clearQueryCache,
+} from "../cache/query-cache.js";
 
 describe("QueryCache", () => {
   it("caches a result and serves subsequent calls from cache (no second loader call)", async () => {

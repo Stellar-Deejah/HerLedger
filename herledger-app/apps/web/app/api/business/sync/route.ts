@@ -10,7 +10,6 @@ import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
 
-
 const RequestSchema = z.object({
   businessId: z.string().min(1),
 });

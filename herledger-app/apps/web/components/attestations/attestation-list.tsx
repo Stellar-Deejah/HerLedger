@@ -144,7 +144,10 @@ export function AttestationList({ initialAttestations }: AttestationListProps) {
             </div>
             <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.25rem" }}>
               <dt style={{ fontWeight: 500, minWidth: "80px" }}>Attester</dt>
-              <dd style={{ fontFamily: "monospace", wordBreak: "break-all" }} title={att.attesterAddress}>
+              <dd
+                style={{ fontFamily: "monospace", wordBreak: "break-all" }}
+                title={att.attesterAddress}
+              >
                 {resolveAttesterName(att.attesterAddress)}
               </dd>
             </div>

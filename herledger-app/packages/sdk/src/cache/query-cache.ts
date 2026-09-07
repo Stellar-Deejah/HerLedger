@@ -115,7 +115,11 @@ export function clearQueryCache(): void {
  * list. Args are JSON-stringified with `bigint` support so callers don't
  * need to pre-serialize.
  */
-export function buildCacheKey(contractId: string, method: string, args: readonly unknown[]): string {
+export function buildCacheKey(
+  contractId: string,
+  method: string,
+  args: readonly unknown[]
+): string {
   return `${contractId}:${method}:${hashArgs(args)}`;
 }
 

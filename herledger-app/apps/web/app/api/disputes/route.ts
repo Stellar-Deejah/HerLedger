@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
   const searchParams = Object.fromEntries(req.nextUrl.searchParams);
   const parsed = QuerySchema.safeParse(searchParams);
-  
+
   if (!parsed.success) {
     return typedJson<DisputesResponse>(
       { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid query parameters" } },

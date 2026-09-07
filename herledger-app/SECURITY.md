@@ -91,6 +91,7 @@ production for real financial data without a professional security review.
 - **Edge Session Validation & DB Liveness Enforcement**: `apps/web/middleware.ts`
   protects `/dashboard/*` routes by calling `auth.api.getSession({ headers: request.headers })`
   on every request.
+
   - **Cryptographic HMAC & DB verification**: Forged session cookies, invalid tokens, and
     sessions revoked in the database are rejected with an explicit HTTP 302 redirect to `/auth/sign-in`.
   - **Edge-compatible session caching**: `apps/web/lib/auth/server.ts` configures
@@ -100,12 +101,12 @@ production for real financial data without a professional security review.
 
 - **Open-Redirect Defense**: The `callbackUrl` query parameter on `/auth/sign-in` is
   sanitized with `validateCallbackUrl` (`apps/web/lib/auth/callback-url.ts`).
+
   - **Allowlisting**: Only same-origin relative paths (e.g. `/dashboard`) or absolute URLs
     matching `APP_URL` are permitted.
   - **Payload dropping**: Protocol-relative URLs (`//evil.com`), external domains
     (`https://evil.com`), script URIs (`javascript:alert(1)`), URL-encoded variants,
     and backslash traversal tricks (`/\evil.com`) are dropped silently.
-
 
   - **Email provider**: [Resend](https://resend.com) (`apps/web/lib/email/`).
     A single `RESEND_API_KEY` env var is enough in development against
@@ -178,7 +179,7 @@ production for real financial data without a professional security review.
 
 `apps/web/middleware.ts` gates every `/dashboard/*` request and the
 `/auth/sign-in` / `/auth/sign-up` routes. It used to only check whether a
-`better-auth.session_token` cookie was *present* — it never verified the
+`better-auth.session_token` cookie was _present_ — it never verified the
 cookie cryptographically or checked whether the session it names still
 exists in the database, so a forged or DB-revoked cookie sailed through.
 
@@ -225,7 +226,7 @@ exists in the database, so a forged or DB-revoked cookie sailed through.
   token/id index, not a scan; (3) the cache TTL (30s) caps how often a
   given browser session pays the DB-lookup cost to at most once per 30
   seconds of active use, regardless of navigation frequency. These bound
-  the *added* latency structurally; they are not a substitute for measuring
+  the _added_ latency structurally; they are not a substitute for measuring
   it against a real Postgres instance under load.
 - **Open redirect on `callbackUrl`**: `apps/web/lib/auth/validate-callback-url.ts`
   exports `validateCallbackUrl(url, allowedOrigins)`, used by the

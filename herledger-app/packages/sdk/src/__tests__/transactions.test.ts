@@ -51,9 +51,10 @@ describe("simulateAndPrepare", () => {
     mockSimulateTransaction.mockReturnValue(new Promise(() => {})); // never resolves
     const tx = buildTx();
 
-    await expect(
-      simulateAndPrepare(tx, CONFIG, { timeoutMs: 20 })
-    ).rejects.toMatchObject({ name: "RpcError", code: "TIMEOUT" });
+    await expect(simulateAndPrepare(tx, CONFIG, { timeoutMs: 20 })).rejects.toMatchObject({
+      name: "RpcError",
+      code: "TIMEOUT",
+    });
   });
 
   it("throws RpcError with code TIMEOUT immediately given an already-aborted signal", async () => {
@@ -98,9 +99,10 @@ describe("submitAndWait", () => {
       .build();
     const signedXdr = tx.toXDR();
 
-    await expect(
-      submitAndWait(signedXdr, CONFIG, { timeoutMs: 20 })
-    ).rejects.toMatchObject({ name: "RpcError", code: "TIMEOUT" });
+    await expect(submitAndWait(signedXdr, CONFIG, { timeoutMs: 20 })).rejects.toMatchObject({
+      name: "RpcError",
+      code: "TIMEOUT",
+    });
   });
 
   it("invokes onSubmitted with the transaction hash once submission succeeds", async () => {

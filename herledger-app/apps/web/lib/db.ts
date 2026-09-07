@@ -22,17 +22,13 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient(): PrismaClient {
   const client = new PrismaClient({
-    log:
-      process.env["NODE_ENV"] === "development"
-        ? ["query", "warn", "error"]
-        : ["warn", "error"],
+    log: process.env["NODE_ENV"] === "development" ? ["query", "warn", "error"] : ["warn", "error"],
   });
   return client;
 }
 
 // Re-use the existing instance (HMR-safe) or create a new one.
-export const prisma: PrismaClient =
-  globalForPrisma.__prisma ?? createPrismaClient();
+export const prisma: PrismaClient = globalForPrisma.__prisma ?? createPrismaClient();
 
 // Pin the instance to `globalThis` in non-production environments only.
 // In production, the process is long-lived and module caching is sufficient.

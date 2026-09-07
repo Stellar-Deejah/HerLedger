@@ -118,8 +118,14 @@ describe("encodeBytes32 / decodeBytes32 round-trip", () => {
 
 describe("encodeAddress / decodeAddress round-trip", () => {
   it.each([
-    ["a well-formed G... account address", "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"],
-    ["a well-formed C... contract address", "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526"],
+    [
+      "a well-formed G... account address",
+      "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+    ],
+    [
+      "a well-formed C... contract address",
+      "CAAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQCAIBAEAQC526",
+    ],
   ])("round-trips %s", (_label, address) => {
     const scval = encodeAddress(address);
     expect(decodeAddress(scval)).toBe(address);

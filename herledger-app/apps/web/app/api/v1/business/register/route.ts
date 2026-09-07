@@ -20,9 +20,7 @@ export const POST = withRateLimit(async (req: NextRequest) => {
 
   if (!session) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" },
-          meta: null
-        },
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" }, meta: null },
       { status: 401 }
     );
   }
@@ -40,7 +38,11 @@ export const POST = withRateLimit(async (req: NextRequest) => {
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) {
     return typedJson<BusinessRegisterResponse>(
-      { data: null, error: { code: "VALIDATION_ERROR", message: "Invalid registration data" }, meta: null },
+      {
+        data: null,
+        error: { code: "VALIDATION_ERROR", message: "Invalid registration data" },
+        meta: null,
+      },
       { status: 422 }
     );
   }

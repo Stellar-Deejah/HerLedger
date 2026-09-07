@@ -56,9 +56,9 @@ describe("connectWithRetry", () => {
   it("throws after exhausting all retries", async () => {
     const connect = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
 
-    await expect(
-      runConnectWithRetry(connect, { maxRetries: 3, retryDelayMs: 0 })
-    ).rejects.toThrow(/unreachable after 3 attempts/i);
+    await expect(runConnectWithRetry(connect, { maxRetries: 3, retryDelayMs: 0 })).rejects.toThrow(
+      /unreachable after 3 attempts/i
+    );
 
     expect(connect).toHaveBeenCalledTimes(3);
   });
@@ -113,7 +113,9 @@ describe("shutdown handler — in-flight sync drain", () => {
     const events: string[] = [];
 
     // A cycle that never completes
-    const neverResolves = new Promise<void>(() => {/* intentionally pending */});
+    const neverResolves = new Promise<void>(() => {
+      /* intentionally pending */
+    });
 
     // Use a very short grace period (20 ms) so the test runs fast
     const shutdownPromise = (async () => {
@@ -139,7 +141,10 @@ describe("shutdown handler — in-flight sync drain", () => {
     const shutdownPromise = (async () => {
       if (inflightPromise) {
         const timeout = new Promise<void>((resolve) =>
-          setTimeout(() => { events.push("grace-expired"); resolve(); }, 500)
+          setTimeout(() => {
+            events.push("grace-expired");
+            resolve();
+          }, 500)
         );
         await Promise.race([inflightPromise, timeout]);
       }
@@ -300,11 +305,18 @@ async function runConnectWithRetry(
  */
 function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
-    if (signal.aborted) { resolve(); return; }
-    const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => {
-      clearTimeout(timer);
+    if (signal.aborted) {
       resolve();
-    }, { once: true });
+      return;
+    }
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
   });
 }

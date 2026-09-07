@@ -94,8 +94,7 @@ export async function getSupportedAssets(
 ): Promise<Set<string>> {
   const interval = cacheConfig?.refreshIntervalLedgers ?? 1000;
   const needsRefresh =
-    _cache.lastRefreshLedger === 0 ||
-    currentLedger - _cache.lastRefreshLedger >= interval;
+    _cache.lastRefreshLedger === 0 || currentLedger - _cache.lastRefreshLedger >= interval;
 
   if (needsRefresh && !_cache.refreshInProgress) {
     _cache.refreshInProgress = true;

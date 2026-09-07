@@ -7,10 +7,16 @@ function makeFakePrisma() {
 
   const prisma = {
     indexerCheckpoint: {
-      findUnique: vi.fn(async ({ where }: { where: { stream_walletAddress: { stream: string; walletAddress: string } } }) => {
-        const key = `${where.stream_walletAddress.stream}:${where.stream_walletAddress.walletAddress}`;
-        return rows.get(key) ?? null;
-      }),
+      findUnique: vi.fn(
+        async ({
+          where,
+        }: {
+          where: { stream_walletAddress: { stream: string; walletAddress: string } };
+        }) => {
+          const key = `${where.stream_walletAddress.stream}:${where.stream_walletAddress.walletAddress}`;
+          return rows.get(key) ?? null;
+        }
+      ),
       upsert: vi.fn(
         async ({
           where,

@@ -38,9 +38,7 @@ async function main() {
     const files = fs.readdirSync(migrationsDir);
 
     // Numbered typescript files like 0001_description.ts
-    const migrationFiles = files
-      .filter((file) => /^\d{4}_.*\.ts$/.test(file))
-      .sort();
+    const migrationFiles = files.filter((file) => /^\d{4}_.*\.ts$/.test(file)).sort();
 
     console.log(`📂 Found ${migrationFiles.length} data migration files in directory.`);
 
@@ -60,11 +58,11 @@ async function main() {
 
       console.log(`🏃 Running data migration: ${file}...`);
       const filePath = path.join(migrationsDir, file);
-      
+
       // Dynamic import of the typescript migration file
       // In Node/tsx, we can import ES modules directly
       const migrationModule = await import(filePath);
-      
+
       if (typeof migrationModule.up !== "function") {
         throw new Error(`Migration ${file} does not export an 'up' function.`);
       }

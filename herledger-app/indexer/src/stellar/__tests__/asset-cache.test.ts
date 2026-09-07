@@ -7,10 +7,7 @@ vi.mock("@herledger/sdk", () => ({
     simulateTransaction: vi.fn().mockResolvedValue({
       result: {
         retval: {
-          vec: () => [
-            { address: () => "CABC" },
-            { address: () => "CXYZ" },
-          ],
+          vec: () => [{ address: () => "CABC" }, { address: () => "CXYZ" }],
         },
       },
     }),

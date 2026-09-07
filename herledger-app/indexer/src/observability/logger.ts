@@ -14,10 +14,7 @@ export const environment = process.env["NODE_ENV"] ?? "development";
  * stellarReference) at INFO level and higher; full un-redacted values are only
  * logged when log level is DEBUG.
  */
-export function createLogger(
-  options: LoggerOptions = {},
-  destination?: DestinationStream
-): Logger {
+export function createLogger(options: LoggerOptions = {}, destination?: DestinationStream): Logger {
   const level = process.env["LOG_LEVEL"] ?? options.level ?? "info";
   const isDebug = level === "debug";
 

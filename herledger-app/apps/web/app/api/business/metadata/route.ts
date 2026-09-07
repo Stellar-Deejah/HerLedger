@@ -11,7 +11,6 @@ import { auth } from "@/lib/auth/server";
 import { getAccount } from "@/lib/stellar/account";
 import { getContractConfig, getStellarNetworkConfig } from "@/lib/stellar/config";
 
-
 const RequestSchema = z.object({
   businessId: z.string().min(1),
   metadataHash: z
