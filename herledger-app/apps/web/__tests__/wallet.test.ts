@@ -105,7 +105,6 @@ describe("WalletProvider error propagation", () => {
             WalletErrorCode.NOT_INSTALLED,
             "Freighter wallet extension is not installed"
           )
-          new WalletError(WalletErrorCode.NOT_INSTALLED, "Freighter wallet extension is not installed")
         ),
     });
 
