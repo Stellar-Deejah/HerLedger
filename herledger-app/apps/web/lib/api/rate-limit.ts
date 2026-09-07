@@ -91,9 +91,7 @@ export function rateLimit(config: RateLimitConfig = {}) {
               "Retry-After": String(retryAfterSec),
               "X-RateLimit-Limit": String(maxRequests),
               "X-RateLimit-Remaining": "0",
-              "X-RateLimit-Reset": String(
-                Math.ceil((entry.timestamps[0]! + windowMs) / 1000)
-              ),
+              "X-RateLimit-Reset": String(Math.ceil((entry.timestamps[0]! + windowMs) / 1000)),
             },
           }
         );
@@ -142,9 +140,6 @@ export function getClientIp(req: NextRequest | Request): string {
  * user ID (so the limit follows the user across IPs / VPNs). Otherwise
  * fall back to IP.
  */
-export function rateLimitKey(
-  req: NextRequest | Request,
-  userId?: string | null
-): string {
+export function rateLimitKey(req: NextRequest | Request, userId?: string | null): string {
   return userId ? `user:${userId}` : `ip:${getClientIp(req)}`;
 }

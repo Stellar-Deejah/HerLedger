@@ -118,11 +118,13 @@ The CI pipeline (`.github/workflows/ci.yml`) runs on every push and pull request
 7. **testnet-smoke** - Nightly testnet smoke tests (schedule-triggered only).
 
 **Job Dependencies:**
+
 - `lint-typecheck` and `unit-tests` run in parallel after `setup` completes
 - `build` and `e2e` run in parallel after `unit-tests` passes
 - This ensures fast feedback for lint/type errors while blocking expensive operations on test failures
 
 **Caching Strategy:**
+
 - pnpm store is cached using `actions/cache` with key: `${{ runner.os }}-pnpm-store-${{ hashFiles('herledger-app/pnpm-lock.yaml') }}`
 - Cache key includes the lockfile hash to avoid stale cache when dependencies change
 - Fallback restore key `${{ runner.os }}-pnpm-store-` allows partial cache hits on lockfile changes
@@ -132,21 +134,25 @@ The CI pipeline (`.github/workflows/ci.yml`) runs on every push and pull request
 The E2E job (`pnpm test:e2e`) runs Playwright tests against a real PostgreSQL database:
 
 **Environment Setup:**
+
 - PostgreSQL 16 service container with health checks
 - Database migrations applied via `pnpm db.generate` and `pnpm db:migrate`
 - Playwright browsers installed via `pnpm exec playwright install --with-deps chromium`
 
 **Database Seeding:**
+
 - Tests use `e2e/helpers/seed.ts` to create test data directly via Prisma
 - Seeded data includes authenticated users with proper session cookies signed with `BETTER_AUTH_SECRET`
 - Each test cleans up its seeded data via `cleanupSeed()` to avoid test pollution
 
 **Mocking Strategy:**
+
 - Stellar RPC calls are mocked via `page.route()` in test specs (see `business-registration.spec.ts`)
 - Freighter wallet interactions are mocked - tests never require actual wallet signing
 - This allows E2E tests to validate full user flows without depending on external blockchain services
 
 **Test Coverage:**
+
 - Auth hardening (password policy, email verification, rate limiting)
 - Business registration resume-on-reload flow
 - Dashboard rendering with real SSR data
@@ -154,6 +160,7 @@ The E2E job (`pnpm test:e2e`) runs Playwright tests against a real PostgreSQL da
 - Event lifecycle and attestations
 
 **Branch Protection:**
+
 - Configure branch protection rules to require the `e2e` job to pass before merging to `main`
 - This ensures all multi-step user flows are validated automatically
 
@@ -242,6 +249,7 @@ Both are executed automatically in the correct order when running `pnpm db:migra
 ### 1. Structural Migrations & Baselining
 
 Prisma schema changes are tracked as SQL files in `prisma/migrations/`.
+
 - **Local Development:** When making schema changes to `prisma/schema.prisma`, run:
   ```bash
   pnpm db:migrate:dev
@@ -254,11 +262,14 @@ Prisma schema changes are tracked as SQL files in `prisma/migrations/`.
 When a data shape transformation is required alongside a structural schema change (e.g., backfilling newly added columns), write a data migration.
 
 #### Directory Structure
+
 Data migrations reside in `prisma/data-migrations/` and must follow a sequential numbered naming convention:
+
 - `0001_sample_backfill.ts`
 - `0002_split_event_type.ts`
 
 Each migration file must export an `up` function accepting a `PrismaClient` instance:
+
 ```typescript
 import { PrismaClient } from "@prisma/client";
 
@@ -268,6 +279,7 @@ export async function up(prisma: PrismaClient): Promise<void> {
 ```
 
 #### Execution and Idempotency
+
 - Structural migrations must run first, followed by data migrations.
 - The migration runner (`prisma/data-migrations/runner.ts`) tracks applied migrations in the `data_migrations` database table.
 - Each migration is executed once. If a data migration fails, the runner aborts immediately (fail-fast), keeping the database consistent.
@@ -276,6 +288,7 @@ export async function up(prisma: PrismaClient): Promise<void> {
 ### 3. CI Checks and Pull Requests
 
 CI checks enforce schema and migration sanity:
+
 - **Schema Drift Check:** CI compares the current schema with the committed migrations using `prisma migrate diff`. If a schema change exists without a corresponding migration file, CI will fail.
 - **Unsafe Migration Detection:** CI checks for unsafe migrations, such as adding a new `NOT NULL` column without a `DEFAULT` to an existing table. Any such statement will fail CI to prevent downtime or deployment errors.
 

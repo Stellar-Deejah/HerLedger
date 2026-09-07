@@ -72,7 +72,10 @@ function decodeEventStatus(val: xdr.ScVal): EventStatus {
 function decodeFinancialEvent(val: xdr.ScVal): FinancialEvent {
   const map = val.map();
   if (!map)
-    throw new ContractError(ContractErrorCode.DECODE_ERROR, "Expected struct map for FinancialEvent");
+    throw new ContractError(
+      ContractErrorCode.DECODE_ERROR,
+      "Expected struct map for FinancialEvent"
+    );
 
   const fields: Record<string, xdr.ScVal> = {};
   for (const entry of map) {
@@ -135,9 +138,13 @@ export async function getFinancialEvent(
 
       const sim = await simulateRead(tx, config);
       if (StellarRpc.Api.isSimulationError(sim)) {
-        throw new ContractError(ContractErrorCode.SIMULATION_ERROR, `get_event error: ${sim.error}`, {
-          context: { contractCode: sim.error, method: "get_event" },
-        });
+        throw new ContractError(
+          ContractErrorCode.SIMULATION_ERROR,
+          `get_event error: ${sim.error}`,
+          {
+            context: { contractCode: sim.error, method: "get_event" },
+          }
+        );
       }
       const retval = sim.result?.retval;
       if (!retval || isVoid(retval)) return null;
@@ -422,7 +429,11 @@ export async function revokeFinancialEvent(
     networkPassphrase: config.networkPassphrase,
   })
     .addOperation(
-      contract.call("revoke_event", encodeBytes32(toHexString32(params.eventId)), encodeBytes32(toHexString32(params.reasonHash)))
+      contract.call(
+        "revoke_event",
+        encodeBytes32(toHexString32(params.eventId)),
+        encodeBytes32(toHexString32(params.reasonHash))
+      )
     )
     .setTimeout(300)
     .build();

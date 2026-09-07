@@ -39,35 +39,38 @@ export function DisputeListPaginated({
     totalPages: 0,
   });
 
-  const fetchDisputes = useCallback(async (page: number, limit: number) => {
-    setLoading(true);
-    setError(null);
+  const fetchDisputes = useCallback(
+    async (page: number, limit: number) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const offset = (page - 1) * limit;
-      const response = await fetch(
-        `/api/disputes?businessId=${businessId}&offset=${offset}&limit=${limit}`
-      );
+      try {
+        const offset = (page - 1) * limit;
+        const response = await fetch(
+          `/api/disputes?businessId=${businessId}&offset=${offset}&limit=${limit}`
+        );
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch disputes");
+        if (!response.ok) {
+          throw new Error("Failed to fetch disputes");
+        }
+
+        const data = await response.json();
+
+        setDisputes(data.disputes || []);
+        setPagination({
+          page,
+          pageSize: limit,
+          total: data.total || 0,
+          totalPages: Math.ceil((data.total || 0) / limit),
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to fetch disputes");
+      } finally {
+        setLoading(false);
       }
-
-      const data = await response.json();
-      
-      setDisputes(data.disputes || []);
-      setPagination({
-        page,
-        pageSize: limit,
-        total: data.total || 0,
-        totalPages: Math.ceil((data.total || 0) / limit),
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch disputes");
-    } finally {
-      setLoading(false);
-    }
-  }, [businessId]);
+    },
+    [businessId]
+  );
 
   useEffect(() => {
     fetchDisputes(1, pagination.pageSize);
@@ -135,13 +138,9 @@ export function DisputeListPaginated({
           marginBottom: "1rem",
         }}
       >
-        <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>
-          Disputes ({pagination.total})
-        </h3>
+        <h3 style={{ fontSize: "1rem", fontWeight: 600 }}>Disputes ({pagination.total})</h3>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-          <label style={{ fontSize: "0.875rem", color: "var(--muted)" }}>
-            Show:
-          </label>
+          <label style={{ fontSize: "0.875rem", color: "var(--muted)" }}>Show:</label>
           <select
             value={pagination.pageSize}
             onChange={(e) => handlePageSizeChange(Number(e.target.value))}
@@ -197,14 +196,13 @@ export function DisputeListPaginated({
               </thead>
               <tbody>
                 {disputes.map((dispute) => (
-                  <tr
-                    key={dispute.id}
-                    style={{ borderBottom: "1px solid var(--border)" }}
-                  >
+                  <tr key={dispute.id} style={{ borderBottom: "1px solid var(--border)" }}>
                     <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
                       {dispute.eventId.slice(0, 8)}...
                     </td>
-                    <td style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem" }}>
+                    <td
+                      style={{ padding: "0.75rem", fontFamily: "monospace", fontSize: "0.75rem" }}
+                    >
                       {dispute.reasonHash.slice(0, 16)}...
                     </td>
                     <td style={{ padding: "0.75rem" }}>
@@ -221,12 +219,8 @@ export function DisputeListPaginated({
                         {dispute.status}
                       </span>
                     </td>
-                    <td style={{ padding: "0.75rem" }}>
-                      {formatDate(dispute.createdAt)}
-                    </td>
-                    <td style={{ padding: "0.75rem" }}>
-                      {formatDate(dispute.updatedAt)}
-                    </td>
+                    <td style={{ padding: "0.75rem" }}>{formatDate(dispute.createdAt)}</td>
+                    <td style={{ padding: "0.75rem" }}>{formatDate(dispute.updatedAt)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -287,7 +281,10 @@ export function DisputeListPaginated({
                   border: "1px solid var(--border)",
                   borderRadius: "var(--radius)",
                   backgroundColor: "var(--background)",
-                  cursor: pagination.page === pagination.totalPages || loading ? "not-allowed" : "pointer",
+                  cursor:
+                    pagination.page === pagination.totalPages || loading
+                      ? "not-allowed"
+                      : "pointer",
                   opacity: pagination.page === pagination.totalPages || loading ? 0.5 : 1,
                 }}
               >
@@ -302,7 +299,10 @@ export function DisputeListPaginated({
                   border: "1px solid var(--border)",
                   borderRadius: "var(--radius)",
                   backgroundColor: "var(--background)",
-                  cursor: pagination.page === pagination.totalPages || loading ? "not-allowed" : "pointer",
+                  cursor:
+                    pagination.page === pagination.totalPages || loading
+                      ? "not-allowed"
+                      : "pointer",
                   opacity: pagination.page === pagination.totalPages || loading ? 0.5 : 1,
                 }}
               >

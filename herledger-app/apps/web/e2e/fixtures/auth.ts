@@ -16,7 +16,7 @@ export const test = base.extend<{
         emailVerified: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      },
     });
 
     await db.session.create({
@@ -29,7 +29,7 @@ export const test = base.extend<{
         updatedAt: new Date(),
         ipAddress: "127.0.0.1",
         userAgent: "Playwright",
-      }
+      },
     });
 
     // 2. Set the cookie in the browser context

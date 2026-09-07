@@ -1,8 +1,8 @@
-import { defineConfig } from '@prisma/config'
-import dotenv from 'dotenv'
-import { resolve } from 'path'
+import { defineConfig } from "@prisma/config";
+import dotenv from "dotenv";
+import { resolve } from "path";
 
-dotenv.config({ path: resolve(process.cwd(), '.env.local') })
+dotenv.config({ path: resolve(process.cwd(), ".env.local") });
 
 export default defineConfig({
   earlyAccess: true,
@@ -11,6 +11,6 @@ export default defineConfig({
     shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   },
   migrations: {
-    seed: 'tsx prisma/seed.ts',
+    seed: "tsx prisma/seed.ts",
   },
-})
+});

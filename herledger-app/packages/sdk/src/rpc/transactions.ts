@@ -214,12 +214,11 @@ export async function submitAndWait(
   optionsOrOnSubmitted?: ((hash: string) => void) | SubmitAndWaitOptions,
   maybeOptions?: SubmitAndWaitOptions
 ): Promise<TransactionResult> {
-  const onSubmitted =
-    typeof optionsOrOnSubmitted === "function" ? optionsOrOnSubmitted : undefined;
+  const onSubmitted = typeof optionsOrOnSubmitted === "function" ? optionsOrOnSubmitted : undefined;
   const options =
     typeof optionsOrOnSubmitted === "object" && optionsOrOnSubmitted !== null
       ? optionsOrOnSubmitted
-      : maybeOptions ?? {};
+      : (maybeOptions ?? {});
 
   assertNotAborted(options.signal);
   const server = getSorobanRpcServer(config);

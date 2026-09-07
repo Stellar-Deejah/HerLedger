@@ -47,7 +47,9 @@ describe("Financial Events Indexing & Metrics", () => {
   const mockPrisma = {
     $transaction: transactionMock,
   } as unknown as import("@prisma/client").PrismaClient;
-  const mockConfig = { network: "testnet" } as unknown as import("@herledger/sdk").StellarNetworkConfig;
+  const mockConfig = {
+    network: "testnet",
+  } as unknown as import("@herledger/sdk").StellarNetworkConfig;
   const mockContracts = {} as unknown as import("@herledger/sdk").ContractConfig;
 
   beforeEach(() => {
@@ -78,7 +80,9 @@ describe("Financial Events Indexing & Metrics", () => {
     await indexPayment(mockPrisma, payment, mockConfig, mockContracts);
 
     const metrics = await getMetrics();
-    expect(metrics).toContain('events_indexed_total{event_type="PaymentReceived",status="Pending"} 1');
+    expect(metrics).toContain(
+      'events_indexed_total{event_type="PaymentReceived",status="Pending"} 1'
+    );
   });
 
   it("increments events_indexed_total with PaymentSent when business is sender", async () => {

@@ -11,13 +11,13 @@ describe("validateCallbackUrl", () => {
 
   it("allows a same-origin relative path with query and hash", () => {
     expect(validateCallbackUrl("/dashboard/settings?tab=profile#top", ALLOWED)).toBe(
-      "/dashboard/settings?tab=profile#top",
+      "/dashboard/settings?tab=profile#top"
     );
   });
 
   it("allows a fully-qualified URL matching an allowed origin, normalized to a path", () => {
     expect(validateCallbackUrl("https://app.herledger.example/dashboard", ALLOWED)).toBe(
-      "/dashboard",
+      "/dashboard"
     );
   });
 

@@ -13,11 +13,7 @@ describe("projectFields projection utility", () => {
   };
 
   it("projects only allowed fields", () => {
-    const projected = projectFields(sampleObj, [
-      "id",
-      "attestationId",
-      "attesterAddress",
-    ]);
+    const projected = projectFields(sampleObj, ["id", "attestationId", "attesterAddress"]);
 
     expect(projected).toEqual({
       id: "att-123",
@@ -42,7 +38,10 @@ describe("projectFields projection utility", () => {
   });
 
   it("ignores allowed fields that do not exist on target object", () => {
-    const projected = projectFields(sampleObj, ["id", "nonExistentField" as keyof typeof sampleObj]);
+    const projected = projectFields(sampleObj, [
+      "id",
+      "nonExistentField" as keyof typeof sampleObj,
+    ]);
     expect(projected).toEqual({ id: "att-123" });
   });
 

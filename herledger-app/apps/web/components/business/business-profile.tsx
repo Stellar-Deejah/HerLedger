@@ -19,8 +19,6 @@ interface BusinessData {
   wallet: string;
 }
 
-
-
 interface Discrepancy {
   field: string;
   dbValue: string;
@@ -375,10 +373,7 @@ export function BusinessProfile() {
               {discrepancies.map((disc, i) => (
                 <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
                   <td style={{ padding: "0.5rem", fontWeight: 500 }}>{disc.field}</td>
-                  <td
-                    style={{ padding: "0.5rem", fontFamily: "monospace" }}
-                    title={disc.dbValue}
-                  >
+                  <td style={{ padding: "0.5rem", fontFamily: "monospace" }} title={disc.dbValue}>
                     {truncateAddress(disc.dbValue)}
                   </td>
                   <td

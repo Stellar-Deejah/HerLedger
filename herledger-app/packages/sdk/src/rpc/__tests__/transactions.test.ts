@@ -107,8 +107,7 @@ describe("simulateAndPrepare", () => {
       code: "SIMULATION_ERROR",
     });
     await expect(promise).rejects.toSatisfy(
-      (err: unknown) =>
-        err instanceof ContractError && err.message.includes("tx_insufficient_fee")
+      (err: unknown) => err instanceof ContractError && err.message.includes("tx_insufficient_fee")
     );
   });
 
@@ -160,13 +159,9 @@ describe("submitAndWait", () => {
   });
 
   it("throws ContractError when the RPC rejects the transaction with ERROR", async () => {
-    mockSend.mockResolvedValue(
-      pendingSendResponse({ status: "ERROR", hash: "0".repeat(64) })
-    );
+    mockSend.mockResolvedValue(pendingSendResponse({ status: "ERROR", hash: "0".repeat(64) }));
 
-    await expect(submitAndWait(buildSignedXdr(), config)).rejects.toBeInstanceOf(
-      ContractError
-    );
+    await expect(submitAndWait(buildSignedXdr(), config)).rejects.toBeInstanceOf(ContractError);
   });
 
   it("throws RpcError with code TRY_AGAIN_LATER_TIMEOUT when congestion never clears", async () => {

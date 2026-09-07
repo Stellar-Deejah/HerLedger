@@ -67,9 +67,12 @@ describe("registrationFlowReducer: retry / back-navigation", () => {
   });
 
   it("error -> wallet on RETRY_REQUESTED when no wallet is connected", () => {
-    const next = registrationFlowReducer(state({ step: "error", walletAddress: null, error: "boom" }), {
-      type: "RETRY_REQUESTED",
-    });
+    const next = registrationFlowReducer(
+      state({ step: "error", walletAddress: null, error: "boom" }),
+      {
+        type: "RETRY_REQUESTED",
+      }
+    );
     expect(next.step).toBe("wallet");
   });
 

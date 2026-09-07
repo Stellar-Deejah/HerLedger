@@ -121,14 +121,14 @@ describe("exhaustiveness (type-level + runtime)", () => {
       "wallet:NOT_INSTALLED"
     );
     expect(describeError(new RpcError(RpcErrorCode.TIMEOUT, "x"))).toBe("rpc:TIMEOUT");
-    expect(
-      describeError(new ContractError(ContractErrorCode.DECODE_ERROR, "x"))
-    ).toBe("contract:DECODE_ERROR");
-    expect(
-      describeError(new ValidationError(ValidationErrorCode.MALFORMED_INPUT, "x"))
-    ).toBe("validation:MALFORMED_INPUT");
-    expect(
-      describeError(new AuthenticationError(AuthenticationErrorCode.FORBIDDEN, "x"))
-    ).toBe("auth:FORBIDDEN");
+    expect(describeError(new ContractError(ContractErrorCode.DECODE_ERROR, "x"))).toBe(
+      "contract:DECODE_ERROR"
+    );
+    expect(describeError(new ValidationError(ValidationErrorCode.MALFORMED_INPUT, "x"))).toBe(
+      "validation:MALFORMED_INPUT"
+    );
+    expect(describeError(new AuthenticationError(AuthenticationErrorCode.FORBIDDEN, "x"))).toBe(
+      "auth:FORBIDDEN"
+    );
   });
 });

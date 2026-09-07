@@ -124,7 +124,10 @@ export async function findAttestationByAttestationIdAndBusiness(
       },
     });
   } catch (cause) {
-    throw new DatabaseError(`Failed to find attestation ${attestationId} for business ${businessId}`, cause);
+    throw new DatabaseError(
+      `Failed to find attestation ${attestationId} for business ${businessId}`,
+      cause
+    );
   }
 }
 
@@ -133,7 +136,8 @@ export function createAttestationsRepository(prisma: PrismaClient): Attestations
     upsert: (input) => upsertAttestation(prisma, input),
     upsertClaimDescription: (input) => upsertClaimDescription(prisma, input),
     findByEvent: (eventId) => findAttestationsByEvent(prisma, eventId),
-    findByBusiness: (businessId, options) => findAttestationsByBusiness(prisma, businessId, options),
+    findByBusiness: (businessId, options) =>
+      findAttestationsByBusiness(prisma, businessId, options),
     findById: (attestationId) => findAttestationById(prisma, attestationId),
     findByAttestationIdAndBusiness: (attestationId, businessId) =>
       findAttestationByAttestationIdAndBusiness(prisma, attestationId, businessId),

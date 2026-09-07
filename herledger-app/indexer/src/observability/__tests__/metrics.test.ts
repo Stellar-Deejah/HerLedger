@@ -26,7 +26,9 @@ describe("Prometheus Metrics", () => {
 
     const output = await getMetrics();
     expect(output).toContain("events_indexed_total");
-    expect(output).toContain('events_indexed_total{event_type="PaymentReceived",status="Pending"} 2');
+    expect(output).toContain(
+      'events_indexed_total{event_type="PaymentReceived",status="Pending"} 2'
+    );
     expect(output).toContain('events_indexed_total{event_type="PaymentSent",status="Pending"} 1');
   });
 

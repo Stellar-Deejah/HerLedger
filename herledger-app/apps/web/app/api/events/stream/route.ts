@@ -49,10 +49,7 @@ export async function GET(req: NextRequest | Request) {
 
       const checkEvents = async () => {
         try {
-          const events = await db.financialEvents.findUpdatedAfter(
-            profile.businessId,
-            lastChecked
-          );
+          const events = await db.financialEvents.findUpdatedAfter(profile.businessId, lastChecked);
 
           const lastEvent = events[events.length - 1];
           if (lastEvent) {

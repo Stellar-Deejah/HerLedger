@@ -63,10 +63,7 @@ export function validateCallbackUrl(
         return null;
       }
       // Ensure path doesn't escape into protocol-relative after URL normalization
-      if (
-        parsed.pathname.startsWith("//") ||
-        parsed.pathname.startsWith("/\\")
-      ) {
+      if (parsed.pathname.startsWith("//") || parsed.pathname.startsWith("/\\")) {
         return null;
       }
       return `${parsed.pathname}${parsed.search}${parsed.hash}`;
