@@ -108,7 +108,9 @@ export async function businessRoutes(app: FastifyInstance): Promise<void> {
     });
 
     const attestationsByEvent = await Promise.all(
-      events.map(({ eventId }) => findAttestationsByEvent(getPrismaClient(), eventId))
+      events.map(({ eventId }: { eventId: string }) =>
+        findAttestationsByEvent(getPrismaClient(), eventId)
+      )
     );
 
     const attestations = attestationsByEvent.flat();

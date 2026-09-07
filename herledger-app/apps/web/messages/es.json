@@ -1,0 +1,147 @@
+{
+  "meta": {
+    "description": "Construye un historial financiero verificable para tu negocio en Stellar."
+  },
+  "nav": {
+    "aria": "Navegación del panel",
+    "overview": "Resumen",
+    "activity": "Actividad",
+    "business": "Negocio",
+    "attestations": "Atestaciones",
+    "disputes": "Disputas",
+    "settings": "Ajustes",
+    "signOut": "Cerrar sesión",
+    "notifications": "Notificaciones",
+    "recentNotifications": "Notificaciones recientes",
+    "noNewNotifications": "Sin notificaciones nuevas"
+  },
+  "ui": {
+    "loading": "Cargando…",
+    "pleaseWait": "Espere, por favor…",
+    "statusAria": "Estado: {status}",
+    "status": {
+      "Pending": "Pendiente",
+      "Verified": "Verificado",
+      "Disputed": "En disputa",
+      "Revoked": "Revocado",
+      "Active": "Activo"
+    }
+  },
+  "auth": {
+    "signInTitle": "Inicia sesión en HerLedger",
+    "signInSubtitle": "Accede a tu historial financiero empresarial",
+    "signUpTitle": "Crea tu cuenta de HerLedger",
+    "signUpSubtitle": "Registra tu negocio y empieza a construir tu historial financiero",
+    "verifyEmailTitle": "Verifica tu correo electrónico",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Tu nombre",
+    "signIn": "Iniciar sesión",
+    "signUp": "Crear cuenta",
+    "noAccount": "¿No tienes cuenta?",
+    "createOne": "Crea una",
+    "haveAccount": "¿Ya tienes una cuenta?",
+    "minPassword": "Mínimo {count} caracteres",
+    "passwordTooShort": "La contraseña debe tener al menos {count} caracteres.",
+    "unexpectedError": "Se produjo un error inesperado. Inténtalo de nuevo.",
+    "accountCreationFailed": "No se pudo crear la cuenta.",
+    "resendVerification": "Reenviar correo de verificación",
+    "passwordStrength": "Fortaleza de la contraseña: {label}",
+    "strengthLabels": {
+      "veryWeak": "Muy débil",
+      "weak": "Débil",
+      "fair": "Aceptable",
+      "good": "Buena",
+      "strong": "Fuerte"
+    },
+    "verifyEmailSent": "Enviamos un enlace de verificación a {email}. Haz clic en el enlace de ese correo para terminar de configurar tu cuenta.",
+    "verifyEmailCheck": "Revisa tu bandeja de entrada para encontrar el enlace de verificación y terminar de configurar tu cuenta.",
+    "verificationEmailSent": "Correo de verificación enviado.",
+    "resendCooldown": "Puedes reenviar en {seconds}s",
+    "resendFailed": "No se pudo reenviar el correo de verificación.",
+    "redirecting": "Redirigiendo…"
+  },
+  "activity": {
+    "loading": "Cargando actividad…",
+    "loadingOverview": "Cargando resumen…",
+    "loadError": "No se pudo cargar la actividad. Inténtalo de nuevo.",
+    "loadRecentError": "No se pudo cargar la actividad reciente. Inténtalo de nuevo.",
+    "signInAgain": "Vuelve a iniciar sesión para ver tu actividad.",
+    "emptyTitle": "Aún no hay actividad financiera.",
+    "emptyDescription": "Las transacciones de Stellar compatibles que involucren tu cartera registrada aparecerán aquí.",
+    "emptyVerifiedTitle": "Aún no hay actividad financiera verificada.",
+    "emptyVerifiedDescription": "Cuando tu negocio esté registrado y se detecten transacciones de Stellar compatibles, tu actividad aparecerá aquí.",
+    "financialActivity": "Actividad financiera",
+    "tableAria": "Actividad financiera",
+    "type": "Tipo",
+    "amount": "Monto",
+    "status": "Estado",
+    "ledger": "Ledger",
+    "stellarRef": "Ref. de Stellar",
+    "date": "Fecha",
+    "viewTxAria": "Ver transacción {reference} en Stellar Expert",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "previousAria": "Página anterior",
+    "nextAria": "Página siguiente",
+    "recentActivity": "Actividad reciente",
+    "business": "Negocio",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "activeAttestations": "Atestaciones activas",
+    "ledgerLabel": "Ledger {sequence}",
+    "eventType": {
+      "PaymentReceived": "Pago recibido",
+      "PaymentSent": "Pago enviado",
+      "InvoiceSettled": "Factura liquidada",
+      "CommitmentFulfilled": "Compromiso cumplido"
+    }
+  },
+  "settings": {
+    "title": "Ajustes",
+    "account": "Cuenta",
+    "name": "Nombre",
+    "email": "Correo electrónico",
+    "loading": "Cargando…",
+    "privacy": "Privacidad",
+    "privacyBody1": "Los datos de las transacciones de Stellar son visibles públicamente en la cadena de bloques de Stellar. HerLedger minimiza la información personal adicional almacenada en la cadena. Los metadatos privados de la aplicación — como el nombre de tu negocio y tus datos de contacto — permanecen fuera de la cadena y no se publican en ninguna cadena de bloques. Solo se registran en la cadena hashes criptográficos para verificar la integridad.",
+    "privacyBody2": "HerLedger no afirma que el saldo de tu cartera de Stellar o tu historial de transacciones sean privados. Las transacciones de la cadena de bloques son públicas.",
+    "dangerZone": "Zona de peligro",
+    "deleteWarning": "Una vez que elimines tu cuenta, no hay vuelta atrás. Asegúrate de estar seguro.",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteConfirmTitle": "¿Seguro que quieres eliminar tu cuenta?",
+    "deleteConfirmBody": "Esto revocará todas las sesiones activas y anonimizará tus datos personales de inmediato. La eliminación definitiva se producirá después de un período de gracia de 30 días.",
+    "confirmPassword": "Confirmar contraseña",
+    "cancel": "Cancelar",
+    "deleting": "Eliminando...",
+    "confirmDeletion": "Confirmar eliminación",
+    "deleteFailed": "No se pudo eliminar la cuenta",
+    "language": "Idioma",
+    "locales": {
+      "en": "English",
+      "es": "Español"
+    }
+  },
+  "dashboard": {
+    "title": "Panel",
+    "business": "Perfil del negocio",
+    "attestations": "Atestaciones",
+    "disputes": "Disputas",
+    "createAttestation": "Crear atestación",
+    "registerAttester": "Registrar atestador"
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "description": "La página que buscabas no existe.",
+    "home": "Volver al inicio"
+  },
+  "error": {
+    "title": "Algo salió mal",
+    "body": "No se pudo cargar esta página. Inténtalo de nuevo.",
+    "retry": "Reintentar"
+  },
+  "marketing": {
+    "signIn": "Iniciar sesión",
+    "getStarted": "Empezar"
+  }
+}

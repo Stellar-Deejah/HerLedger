@@ -5,6 +5,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
+    "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
     "forceConsistentCasingInFileNames": true,

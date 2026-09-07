@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "matchCategories": [
+        "vulnerability"
+      ],
+      "automerge": true,
+      "groupName": "security-updates"
+    },
+    {
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "schedule": [
+        "before 4am on monday"
+      ],
+      "groupName": "weekly-minor-updates"
+    },
+    {
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false,
+      "groupName": "major-updates"
+    }
+  ]
+}

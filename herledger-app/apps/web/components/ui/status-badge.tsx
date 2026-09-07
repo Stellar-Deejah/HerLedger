@@ -1,35 +1,66 @@
+"use client";
+
 import type { EventStatus, AttestationStatus } from "@herledger/sdk";
+import { useTranslations } from "next-intl";
 
-type Status = EventStatus | AttestationStatus;
+export type Status = EventStatus | AttestationStatus;
 
-const STATUS_STYLES: Record<Status, { background: string; color: string; label: string }> = {
-  Pending: { background: "#fef9c3", color: "#854d0e", label: "Pending" },
-  Verified: { background: "#dcfce7", color: "#166534", label: "Verified" },
-  Disputed: { background: "#ffedd5", color: "#9a3412", label: "Disputed" },
-  Revoked: { background: "#fee2e2", color: "#991b1b", label: "Revoked" },
-  Active: { background: "#dcfce7", color: "#166534", label: "Active" },
+const STATUS_STYLES: Record<Status, { background: string; color: string }> = {
+  Pending: {
+    background: "var(--color-warning-bg)",
+    color: "var(--color-warning-text)",
+  },
+  Verified: {
+    background: "var(--color-success-bg)",
+    color: "var(--color-success-text)",
+  },
+  Disputed: {
+    background: "var(--color-disputed-bg)",
+    color: "var(--color-disputed-text)",
+  },
+  Revoked: {
+    background: "var(--color-error-bg)",
+    color: "var(--color-error-text)",
+  },
+  Active: {
+    background: "var(--color-success-bg)",
+    color: "var(--color-success-text)",
+  },
 };
 
-interface StatusBadgeProps {
+export interface StatusBadgeProps {
+  /** The current ledger event status or attestation status */
   status: Status;
 }
 
+/**
+ * StatusBadge renders a pill badge representing the state of an event or attestation.
+ * Uses semantic color tokens (Warning, Success, Disputed, Error) and the active
+ * locale's message catalog for the status label.
+ */
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const style = STATUS_STYLES[status] ?? { background: "#f5f5f4", color: "#57534e", label: status };
+  const t = useTranslations("ui");
+
+  const style = STATUS_STYLES[status] ?? {
+    background: "var(--color-muted-bg)",
+    color: "var(--color-muted-text)",
+  };
+  const label = status in STATUS_STYLES ? t(`status.${status}`) : status;
+
   return (
     <span
       style={{
         display: "inline-block",
-        padding: "0.125rem 0.5rem",
-        borderRadius: "9999px",
-        fontSize: "0.75rem",
-        fontWeight: 500,
+        padding: "0.125rem var(--spacing-sm)",
+        borderRadius: "var(--radius-full)",
+        fontSize: "var(--font-size-xs)",
+        fontWeight: "var(--font-weight-medium)",
         background: style.background,
         color: style.color,
       }}
-      aria-label={`Status: ${style.label}`}
+      aria-label={t("statusAria", { status: label })}
     >
-      {style.label}
+      {label}
     </span>
   );
 }

@@ -5,6 +5,7 @@
     "types": ["node"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitReturns": true,
