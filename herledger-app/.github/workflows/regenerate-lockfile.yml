@@ -1,0 +1,51 @@
+name: Regenerate Lockfile
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate-lockfile:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      
+      - name: Delete old lockfile
+        run: rm -f pnpm-lock.yaml
+        working-directory: herledger-app
+      
+      - name: Install dependencies (regenerate lockfile)
+        run: pnpm install --no-frozen-lockfile
+        working-directory: herledger-app
+      
+      - name: Configure git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Commit and push lockfile
+        run: |
+          git add pnpm-lock.yaml
+          if git diff --staged --quiet; then
+            echo "No changes to lockfile"
+          else
+            git commit -m "chore: regenerate lockfile to include packages/db [skip ci]"
+            git push origin main
+          fi
+        working-directory: herledger-app
