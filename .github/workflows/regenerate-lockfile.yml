@@ -42,11 +42,10 @@ jobs:
       
       - name: Commit and push lockfile
         run: |
-          git add pnpm-lock.yaml
+          git add herledger-app/pnpm-lock.yaml
           if git diff --staged --quiet; then
             echo "No changes to lockfile"
           else
             git commit -m "chore: regenerate lockfile to include packages/db [skip ci]"
-            git push origin main
+            git push
           fi
-        working-directory: herledger-app
