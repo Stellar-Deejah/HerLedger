@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Build, lint, typecheck, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: herledger
+          POSTGRES_PASSWORD: herledger
+          POSTGRES_DB: herledger_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://herledger:herledger@localhost:5432/herledger_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: herledger-app/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: herledger-app
+
+      - name: Format check
+        run: pnpm format
+        working-directory: herledger-app
+
+      - name: Type check
+        run: pnpm typecheck
+        working-directory: herledger-app
+
+      - name: Lint
+        run: pnpm lint
+        working-directory: herledger-app
+
+      - name: Create shadow database
+        run: PGPASSWORD=herledger createdb -h localhost -U herledger herledger_shadow
+
+      - name: Prisma generate
+        run: pnpm db:generate
+        working-directory: herledger-app
+
+      - name: Prisma migrate
+        run: pnpm db:migrate
+        working-directory: herledger-app
+
+      - name: Prisma migrate shadow
+        run: DATABASE_URL=postgresql://herledger:herledger@localhost:5432/herledger_shadow pnpm db:migrate
+        working-directory: herledger-app
+
+      - name: Validate database migrations
+        run: pnpm exec tsx scripts/validate-migrations.ts
+        working-directory: herledger-app
+
+      - name: Prisma seed
+        run: pnpm db:seed
+        working-directory: herledger-app
+
+      - name: Unit tests
+        run: pnpm test
+        working-directory: herledger-app
+
+      - name: Build
+        run: pnpm build
+        working-directory: herledger-app
