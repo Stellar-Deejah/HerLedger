@@ -28,6 +28,10 @@ jobs:
         with:
           version: 9
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
