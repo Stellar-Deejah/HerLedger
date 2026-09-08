@@ -38,7 +38,7 @@
     "typescript-eslint-ts6-compat": "npm:typescript@5.9.3"
   },
   "engines": {
-    "node": ">=20.9.0",
+    "node": ">=20.19.0 || ^22.12.0 || >=24.0.0",
     "pnpm": ">=9"
   },
   "dependencies": {
