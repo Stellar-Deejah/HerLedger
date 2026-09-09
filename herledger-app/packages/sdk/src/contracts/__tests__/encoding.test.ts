@@ -14,8 +14,8 @@ import {
   decodeBool,
   encodeU32,
   type HexString32,
-} from "../../index.js";
-import { ValidationError } from "../../errors/index.js";
+} from "../../index";
+import { ValidationError } from "../../errors/index";
 
 // scValToNative is wrapped (not replaced) so every other test in this file
 // still gets its real, correct behavior -- only the two tests below that

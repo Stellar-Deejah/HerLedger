@@ -1,5 +1,5 @@
-import type { PrismaClient } from "@prisma/client";
 import { generatePersonalAccessToken, hashPersonalAccessToken } from "@herledger/config/tokens";
+import type { PrismaClient } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Personal access token management — create/list/revoke, backing

@@ -1,8 +1,6 @@
 import { getServerEnv } from "@herledger/config/server";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { getServerEnv } from "@herledger/config";
-import { prisma } from "@/lib/db";
 
 import { getPrismaClient } from "@/lib/db/client";
 import { sendVerificationEmail } from "@/lib/email/verification";

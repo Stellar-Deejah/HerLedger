@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { ErrorMessage } from "@/components/ui/error-message";
 
 // ---------------------------------------------------------------------------
@@ -37,7 +38,13 @@ export function PersonalAccessTokens() {
   }
 
   useEffect(() => {
-    void load();
+    let active = true;
+    void fetchJson<{ tokens: TokenSummary[] }>("/api/settings/tokens").then(({ data }) => {
+      if (active) setTokens(data?.tokens ?? []);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function handleCreate(e: React.FormEvent) {

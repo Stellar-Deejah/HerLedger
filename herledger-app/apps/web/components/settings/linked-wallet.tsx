@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { connectWallet, signWalletLinkChallenge, WalletError } from "@herledger/sdk";
+import { useEffect, useState } from "react";
+
 import { ErrorMessage } from "@/components/ui/error-message";
 
 // ---------------------------------------------------------------------------
@@ -34,29 +35,25 @@ export function LinkedWallet() {
   const [state, setState] = useState<WalletState>({ status: "loading" });
   const [error, setError] = useState<string | null>(null);
 
-  async function load() {
-    const { data, error: err } = await fetchJson<{
-      walletAddress: string | null;
-      hasActiveDispute: boolean;
-    }>("/api/settings/wallet");
-
-    if (err?.code === "BUSINESS_NOT_FOUND") {
-      setState({ status: "no-business" });
-      return;
-    }
-    if (!data) {
-      setState({ status: "no-business" });
-      return;
-    }
-    setState({
-      status: "idle",
-      walletAddress: data.walletAddress,
-      hasActiveDispute: data.hasActiveDispute,
-    });
-  }
-
   useEffect(() => {
-    void load();
+    let active = true;
+    void fetchJson<{ walletAddress: string | null; hasActiveDispute: boolean }>(
+      "/api/settings/wallet"
+    ).then(({ data, error: err }) => {
+      if (!active) return;
+      if (err?.code === "BUSINESS_NOT_FOUND" || !data) {
+        setState({ status: "no-business" });
+        return;
+      }
+      setState({
+        status: "idle",
+        walletAddress: data.walletAddress,
+        hasActiveDispute: data.hasActiveDispute,
+      });
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function handleUnlink() {

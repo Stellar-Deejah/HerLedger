@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { DatabaseError } from "../types.js";
+import { DatabaseError } from "../types";
 
 // ---------------------------------------------------------------------------
 // Audit log repository — append-only record of state-changing operations

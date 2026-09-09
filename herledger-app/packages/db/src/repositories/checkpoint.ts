@@ -1,18 +1,23 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { type CheckpointRepository, DatabaseError } from "../types.js";
+import { type CheckpointRepository, DatabaseError } from "../types";
 
 export const MAIN_STREAM = "main";
 export const EVENTS_STREAM = "contract-events";
+export const GLOBAL_WALLET = "global";
 
 /**
  * Read the last processed ledger for a stream.
  * Returns 0 if no checkpoint exists (start from beginning).
  */
-export async function getCheckpoint(prisma: PrismaClient, stream: string): Promise<number> {
+export async function getCheckpoint(
+  prisma: PrismaClient,
+  stream: string,
+  walletAddress = GLOBAL_WALLET
+): Promise<number> {
   try {
     const checkpoint = await prisma.indexerCheckpoint.findUnique({
-      where: { stream },
+      where: { stream_walletAddress: { stream, walletAddress } },
     });
     return checkpoint?.lastLedger ?? 0;
   } catch (cause) {
@@ -27,12 +32,13 @@ export async function getCheckpoint(prisma: PrismaClient, stream: string): Promi
 export async function saveCheckpoint(
   prisma: PrismaClient,
   stream: string,
-  lastLedger: number
+  lastLedger: number,
+  walletAddress = GLOBAL_WALLET
 ): Promise<void> {
   try {
     await prisma.indexerCheckpoint.upsert({
-      where: { stream },
-      create: { stream, lastLedger },
+      where: { stream_walletAddress: { stream, walletAddress } },
+      create: { stream, walletAddress, lastLedger },
       update: { lastLedger },
     });
   } catch (cause) {

@@ -5,10 +5,8 @@ import {
   requestAccess,
   getNetwork,
 } from "@stellar/freighter-api";
-import { WalletError, WalletErrorCode } from "../errors/index.js";
-import type { WalletConnection, WalletProvider } from "./types.js";
-
-import type { WalletConnection, WalletProvider } from "./types.js";
+import { WalletError, WalletErrorCode } from "../errors/index";
+import type { WalletConnection, WalletProvider } from "./types";
 
 // ---------------------------------------------------------------------------
 // FreighterWalletProvider

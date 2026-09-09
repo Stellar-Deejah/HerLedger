@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 // Root-level 404 fallback, rendered only for requests that match no locale
 // (and therefore no [locale] route). Locale-aware 404s live in

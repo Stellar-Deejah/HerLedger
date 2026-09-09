@@ -31,9 +31,9 @@ vi.mock("@herledger/config/server", () => ({
     networkPassphrase: "Test SDF Network ; September 2015",
   }),
   getContractConfig: () => ({
-    businessRegistryId: "CBUSINESS",
-    financialLedgerId: "CLEDGER",
-    attestationRegistryId: "CATTEST",
+    businessRegistryId: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+    financialLedgerId: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+    attestationRegistryId: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
   }),
 }));
 
@@ -45,9 +45,9 @@ vi.mock("@herledger/config/server", () => ({
     networkPassphrase: "Test SDF Network ; September 2015",
   }),
   getContractConfig: () => ({
-    businessRegistryId: "CBUSINESS",
-    financialLedgerId: "CLEDGER",
-    attestationRegistryId: "CATTEST",
+    businessRegistryId: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+    financialLedgerId: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+    attestationRegistryId: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
   }),
 }));
 

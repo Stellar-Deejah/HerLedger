@@ -1,6 +1,6 @@
 import { config } from "dotenv";
 import { resolve } from "path";
-import { getServerEnv } from "./server.js";
+import { getServerEnv } from "./server";
 
 // Load .env.local from the workspace root (herledger-app/.env.local)
 config({ path: resolve(process.cwd(), "../../.env.local") });

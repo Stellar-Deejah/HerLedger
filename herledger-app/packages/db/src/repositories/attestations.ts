@@ -5,7 +5,7 @@ import {
   type UpsertAttestationInput,
   type UpsertClaimDescriptionInput,
   DatabaseError,
-} from "../types.js";
+} from "../types";
 
 export async function upsertAttestation(
   prisma: PrismaClient,

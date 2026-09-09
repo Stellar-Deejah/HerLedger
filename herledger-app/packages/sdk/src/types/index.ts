@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 // Application-level types mirroring on-chain contract structures
 // ---------------------------------------------------------------------------
-export type { Brand, ContractAddress, HexString32 } from "./branded.js";
-import type { ContractAddress } from "./branded.js";
+export type { Brand, ContractAddress, HexString32 } from "./branded";
+import type { ContractAddress } from "./branded";
 export interface Business {
   id: string; // hex-encoded BytesN<32>
   owner: string; // Stellar address

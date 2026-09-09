@@ -1,6 +1,6 @@
-import type { ContractAddress } from "../types/branded.js";
-import type { NetworkId } from "../types/index.js";
-import { ValidationError, ValidationErrorCode } from "../errors/index.js";
+import type { ContractAddress } from "../types/branded";
+import type { NetworkId } from "../types/index";
+import { ValidationError, ValidationErrorCode } from "../errors/index";
 
 // ---------------------------------------------------------------------------
 // Contract address registry.

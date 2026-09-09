@@ -9,7 +9,7 @@
  * controlled fakes so the timing behaviour can be verified deterministically.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 // AbortController is a Node.js 20+ global — no import needed.
 
 // ---------------------------------------------------------------------------

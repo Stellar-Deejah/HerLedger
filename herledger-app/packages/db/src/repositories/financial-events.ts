@@ -8,7 +8,7 @@ import {
   type FinancialEventsSummary,
   type PaginationOptions,
   DatabaseError,
-} from "../types.js";
+} from "../types";
 
 const VALID_AMOUNT_RE = /^-?\d+$/;
 

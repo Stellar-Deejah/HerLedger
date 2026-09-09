@@ -24,7 +24,6 @@ const validBody = {
   displayName: "Notary Co",
   description: "Independent notary",
   metadataHash: "a".repeat(64),
-  txHash: "txhash123",
   txHash: "tx_123",
 };
 

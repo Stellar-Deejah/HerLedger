@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { serverEnvSchema, publicEnvSchema, formatZodError } from "./schema.js";
+import { serverEnvSchema, publicEnvSchema, formatZodError } from "./schema";
 
 // Mock StrKey.isValidContract so contract IDs below only need to look like a
 // 56-char "C..." strkey, not be a cryptographically valid one.

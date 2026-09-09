@@ -8,5 +8,5 @@ export {
   connectWallet,
   getConnectedAddress,
   signTransactionWithFreighter,
-} from "./freighter.js";
-export type { WalletConnection } from "./freighter.js";
+} from "./freighter";
+export type { WalletConnection } from "./freighter";

@@ -92,7 +92,19 @@ describe("GET /api/attestations/events", () => {
           findRecentByBusiness: vi.fn(),
           findById: vi.fn(),
           findUpdatedAfter: vi.fn(),
-          findAttestableEvents: vi.fn().mockResolvedValue([{ eventId: "ev_1" }]),
+          findAttestableEvents: vi.fn().mockResolvedValue([
+            {
+              id: "1",
+              eventId: "ev_1",
+              eventType: "PaymentReceived",
+              assetAddress: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4",
+              amount: "10000000",
+              status: "Verified",
+              stellarReference: "a".repeat(64),
+              ledgerSequence: 1,
+              createdAt: new Date("2026-01-01T00:00:00.000Z"),
+            },
+          ]),
           summarize: vi.fn(),
         },
       })

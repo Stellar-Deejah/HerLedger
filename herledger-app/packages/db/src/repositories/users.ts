@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { PrismaClient, User } from "@prisma/client";
 
-import { type UsersRepository, DatabaseError } from "../types.js";
+import { type UsersRepository, DatabaseError } from "../types";
 
 export async function findUserById(prisma: PrismaClient, id: string): Promise<User | null> {
   try {

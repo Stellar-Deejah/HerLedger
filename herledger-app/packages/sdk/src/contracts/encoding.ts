@@ -1,6 +1,6 @@
 import { xdr, Address, nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
-import { ValidationError, ValidationErrorCode } from "../errors/index.js";
-import type { HexString32 } from "../types/branded.js";
+import { ValidationError, ValidationErrorCode } from "../errors/index";
+import type { HexString32 } from "../types/branded";
 
 // ---------------------------------------------------------------------------
 // Centralized XDR encoding/decoding utilities for Soroban contract calls.

@@ -4,7 +4,7 @@ import {
   buildCacheKey,
   defaultQueryCache,
   clearQueryCache,
-} from "../cache/query-cache.js";
+} from "../cache/query-cache";
 
 describe("QueryCache", () => {
   it("caches a result and serves subsequent calls from cache (no second loader call)", async () => {

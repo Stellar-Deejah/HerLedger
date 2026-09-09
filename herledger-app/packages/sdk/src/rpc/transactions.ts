@@ -1,11 +1,16 @@
-import { rpc as StellarRpc, Transaction, TransactionBuilder } from "@stellar/stellar-sdk";
-import type { StellarNetworkConfig, TransactionResult } from "../types/index.js";
-import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
-import { getSorobanRpcServer } from "./client.js";
-import { signTransactionWithFreighter } from "../wallet/freighter.js";
-import { withRpcTimeout, type RpcCallOptions } from "./timeout.js";
+import {
+  rpc as StellarRpc,
+  Transaction,
+  TransactionBuilder,
+  type FeeBumpTransaction,
+} from "@stellar/stellar-sdk";
+import type { StellarNetworkConfig, TransactionResult } from "../types/index";
+import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index";
+import { getSorobanRpcServer } from "./client";
+import { signTransactionWithFreighter } from "../wallet/freighter";
+import { withRpcTimeout, type RpcCallOptions } from "./timeout";
 
-export type { RpcCallOptions } from "./timeout.js";
+export type { RpcCallOptions } from "./timeout";
 
 const BASE_BACKOFF_MS = 1_000; // 1s
 const MAX_BACKOFF_MS = 8_000; // 8s cap on the exponential schedule
@@ -224,11 +229,10 @@ export async function submitAndWait(
   const server = getSorobanRpcServer(config);
 
   const txObj = TransactionBuilder.fromXDR(signedXdr, config.networkPassphrase);
+  const maxWaitMs = options.maxWaitMs ?? DEFAULT_MAX_WAIT_MS;
   const deadline = Date.now() + maxWaitMs;
 
   const sendResult = await submitWithRetries(server, txObj, deadline, options);
-  onSubmitted?.(sendResult.hash);
-
   if (sendResult.status === "ERROR") {
     const detail = sendResult.errorResult?.toXDR("base64") ?? "unknown";
     throw new ContractError(

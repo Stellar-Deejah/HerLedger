@@ -13,7 +13,8 @@ const localPlugin = {
       meta: {
         type: "suggestion",
         docs: {
-          description: "Warn on raw 56-character Stellar addresses rendered directly in JSX without truncation",
+          description:
+            "Warn on raw 56-character Stellar addresses rendered directly in JSX without truncation",
         },
         schema: [],
       },
@@ -75,14 +76,7 @@ const eslintConfig = [
       "import/order": [
         "error",
         {
-          groups: [
-            "builtin",
-            "external",
-            "internal",
-            "parent",
-            "sibling",
-            "index",
-          ],
+          groups: ["builtin", "external", "internal", "parent", "sibling", "index"],
           "newlines-between": "always",
           alphabetize: { order: "asc", caseInsensitive: true },
         },
@@ -118,7 +112,11 @@ const eslintConfig = [
     },
   },
   {
-    files: ["components/business/business-profile.tsx", "components/disputes/dispute-list-paginated.tsx", "components/disputes/dispute-status-poller.tsx"],
+    files: [
+      "components/business/business-profile.tsx",
+      "components/disputes/dispute-list-paginated.tsx",
+      "components/disputes/dispute-status-poller.tsx",
+    ],
     rules: {
       "react-hooks/set-state-in-effect": "off",
     },

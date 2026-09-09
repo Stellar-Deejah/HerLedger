@@ -2,7 +2,6 @@ import { buildServer } from "./api/server.js";
 import { runSyncJob } from "./jobs/sync-ledger.js";
 import { connectWithRetry, disconnectPrisma } from "./db/client.js";
 import { scheduleReconciliation } from "./jobs/reconciliation.js";
-import { disconnectPrisma } from "./db/client.js";
 import { logger } from "./observability/index.js";
 
 // ---------------------------------------------------------------------------
@@ -41,7 +40,10 @@ async function main(): Promise<void> {
   try {
     await connectWithRetry();
   } catch (err) {
-    console.error({ event: "fatal-db-unavailable", error: err instanceof Error ? err.message : String(err) });
+    console.error({
+      event: "fatal-db-unavailable",
+      error: err instanceof Error ? err.message : String(err),
+    });
     process.exit(1);
   }
 
@@ -100,9 +102,6 @@ async function main(): Promise<void> {
   // (e.g. unrecoverable schema mismatch) exits the process with code 1
   // so the orchestrator will restart.
   void runSyncJob(shutdownController.signal).catch((err) => {
-    console.error({ event: "sync-job-fatal", error: err });
-  // Start sync job in the background -- errors are caught inside the job loop
-  void runSyncJob().catch((err) => {
     logger.error({ event: "sync-job-fatal", error: err }, "Fatal error in sync job");
     process.exit(1);
   });

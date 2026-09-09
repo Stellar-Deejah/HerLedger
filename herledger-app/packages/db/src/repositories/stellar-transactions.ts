@@ -4,7 +4,7 @@ import {
   type StellarTransactionsRepository,
   type UpsertStellarTransactionInput,
   DatabaseError,
-} from "../types.js";
+} from "../types";
 
 /**
  * Idempotent insert of a Stellar transaction record.

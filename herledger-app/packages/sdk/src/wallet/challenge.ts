@@ -1,6 +1,6 @@
 import { Keypair } from "@stellar/stellar-sdk";
 import { signMessage } from "@stellar/freighter-api";
-import { WalletError, WalletErrorCode } from "../errors/index.js";
+import { WalletError, WalletErrorCode } from "../errors/index";
 
 // ---------------------------------------------------------------------------
 // Wallet ownership challenge — used to re-link a Stellar wallet to a

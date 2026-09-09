@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { scorePassword, STRENGTH_LABELS } from "../password-strength.js";
+import { scorePassword, STRENGTH_LABELS } from "../password-strength";
 
 describe("scorePassword", () => {
   it("scores an empty password as the weakest, with no suggestions", () => {

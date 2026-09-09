@@ -86,7 +86,7 @@ describe("WalletProvider interface", () => {
 
   it("signTransaction() accepts an optional accountToSign parameter", async () => {
     await stub.signTransaction("XDR", "PASSPHRASE", "GACCOUNT");
-     
+
     expect(stub.signTransaction).toHaveBeenCalledWith("XDR", "PASSPHRASE", "GACCOUNT");
   });
 });
@@ -117,7 +117,10 @@ describe("WalletProvider error propagation", () => {
       signTransaction: vi
         .fn()
         .mockRejectedValue(
-          new WalletError(WalletErrorCode.SIGNING_REJECTED, "Freighter signing rejected: User rejected")
+          new WalletError(
+            WalletErrorCode.SIGNING_REJECTED,
+            "Freighter signing rejected: User rejected"
+          )
         ),
     });
 
@@ -221,16 +224,16 @@ describe("signTransaction delegation", () => {
     const result = await stub.signTransaction(XDR, PASSPHRASE);
 
     expect(result).toBe("SIGNED_XDR");
-     
+
     expect(stub.signTransaction).toHaveBeenCalledOnce();
-     
+
     expect(stub.signTransaction).toHaveBeenCalledWith(XDR, PASSPHRASE);
   });
 
   it("passes accountToSign through to the provider", async () => {
     const stub = makeStubProvider();
     await stub.signTransaction("XDR", "PASSPHRASE", "GSPECIFIC_ACCOUNT");
-     
+
     expect(stub.signTransaction).toHaveBeenCalledWith("XDR", "PASSPHRASE", "GSPECIFIC_ACCOUNT");
   });
 });
@@ -262,9 +265,8 @@ describe("connect / disconnect lifecycle", () => {
       await stub.disconnect();
     }
 
-     
     expect(stub.connect).toHaveBeenCalledTimes(3);
-     
+
     expect(stub.disconnect).toHaveBeenCalledTimes(3);
   });
 });
@@ -280,7 +282,7 @@ describe("useWalletContext guard", () => {
     const react = await import("react");
     vi.mocked(react.useContext).mockReturnValueOnce(null);
 
-    const { useWalletContext } = await import("../lib/wallet/context.js");
+    const { useWalletContext } = await import("../lib/wallet/context");
 
     expect(() => useWalletContext()).toThrow(/WalletContextProvider/);
   });

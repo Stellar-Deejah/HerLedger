@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
-import { createDbClient, getDbClient } from "../client.js";
-import { createMockDbClient } from "../mock.js";
+import { createDbClient, getDbClient } from "../client";
+import { createMockDbClient } from "../mock";
 
 describe("Database Client & DI Factory", () => {
   it("creates a repository-backed DbClient from a PrismaClient", () => {
@@ -31,7 +31,7 @@ describe("Database Client & DI Factory", () => {
     expect(db1).toBe(db2);
 
     const mockDb = createMockDbClient();
-    const { setDbClient, resetDbClient } = await import("../client.js");
+    const { setDbClient, resetDbClient } = await import("../client");
     setDbClient(mockDb);
     expect(getDbClient()).toBe(mockDb);
     resetDbClient();

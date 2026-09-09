@@ -7,7 +7,7 @@ import {
   getAttestation,
   type StellarNetworkConfig,
   type ContractConfig,
-} from "../../index.js";
+} from "../../index";
 
 // ---------------------------------------------------------------------------
 // Testnet smoke tests.

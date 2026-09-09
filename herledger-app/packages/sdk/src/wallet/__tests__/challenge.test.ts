@@ -6,8 +6,8 @@ import {
   isWalletLinkChallengeExpired,
   verifyWalletLinkChallengeSignature,
   WALLET_LINK_CHALLENGE_TTL_MS,
-} from "../challenge.js";
-import type { WalletLinkChallengeParams } from "../challenge.js";
+} from "../challenge";
+import type { WalletLinkChallengeParams } from "../challenge";
 
 // Freighter's signMessage ultimately signs with the wallet's Ed25519 key —
 // these tests exercise the actual crypto (via a real Keypair, standing in

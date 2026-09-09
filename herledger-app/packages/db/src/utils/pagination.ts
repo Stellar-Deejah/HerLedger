@@ -1,4 +1,4 @@
-import type { EventStatus, PaginatedResult, PaginationOptions } from "../types.js";
+import type { EventStatus, PaginatedResult, PaginationOptions } from "../types";
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;

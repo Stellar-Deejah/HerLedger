@@ -4,7 +4,7 @@ import { StrKey } from "@stellar/stellar-sdk";
 
 vi.mock("server-only", () => ({}));
 
-import { validateNetworkConsistency } from "../server.js";
+import { validateNetworkConsistency } from "../server";
 
 const MAINNET_PASSPHRASE = "Public Global Stellar Network ; September 2015";
 const TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";

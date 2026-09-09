@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from "zod";
 
-import { ResponseSchema as ActivityRecentResponseSchema } from "../../app/api/v1/activity/recent/schema.js";
-import { ResponseSchema as ActivitySummaryResponseSchema } from "../../app/api/v1/activity/summary/schema.js";
-import { ResponseSchema as AttestationsResponseSchema } from "../../app/api/v1/attestations/schema.js";
-import { ResponseSchema as BusinessRegisterResponseSchema } from "../../app/api/v1/business/register/schema.js";
-import { ResponseSchema as HealthResponseSchema } from "../../app/api/v1/health/schema.js";
+import { ResponseSchema as ActivityRecentResponseSchema } from "../../app/api/v1/activity/recent/schema";
+import { ResponseSchema as ActivitySummaryResponseSchema } from "../../app/api/v1/activity/summary/schema";
+import { ResponseSchema as AttestationsResponseSchema } from "../../app/api/v1/attestations/schema";
+import { ResponseSchema as BusinessRegisterResponseSchema } from "../../app/api/v1/business/register/schema";
+import { ResponseSchema as HealthResponseSchema } from "../../app/api/v1/health/schema";
 
 function zodToOpenApi(schema: any): any {
   if (!schema) return {};

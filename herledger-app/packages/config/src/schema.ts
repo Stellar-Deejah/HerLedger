@@ -54,7 +54,7 @@ export const serverEnvSchema = z
       .describe("Node environment"),
     APP_URL: z.string().url().describe("The canonical URL of the web application"),
     DATABASE_URL: z.string().min(1).describe("PostgreSQL connection string"),
-    BETTER_AUTH_SECRET: z.string().min(32).describe("Secret key for auth session encryption"),
+    BETTER_AUTH_SECRET: authSecretEntropy.describe("Secret key for auth session encryption"),
     RESEND_API_KEY: z.string().optional().describe("Resend API key for transactional emails"),
     EMAIL_FROM: z
       .string()

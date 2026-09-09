@@ -1,10 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import {
-  EMAIL_NOT_VERIFIED_ERROR,
-  GENERIC_SIGN_IN_ERROR,
-  normalizeSignInError,
-} from "../messages.js";
+import { EMAIL_NOT_VERIFIED_ERROR, GENERIC_SIGN_IN_ERROR, normalizeSignInError } from "../messages";
 
 describe("normalizeSignInError", () => {
   it("returns the same generic message for a 'user not found'-shaped error", () => {

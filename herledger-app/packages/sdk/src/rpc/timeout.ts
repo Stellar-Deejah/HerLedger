@@ -1,4 +1,4 @@
-import { RpcError, RpcErrorCode } from "../errors/index.js";
+import { RpcError, RpcErrorCode } from "../errors/index";
 
 // ---------------------------------------------------------------------------
 // Shared timeout/abort helper for RPC calls.

@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
 import { getRecentActivity } from "@/lib/data/activity";
-import { getActivitySummary } from "@/lib/data/activity-summary";
 import { getActiveAttestationCount } from "@/lib/data/attestations";
 
 import { DashboardSummary, type OverviewBusinessProfile } from "./dashboard-summary";
@@ -20,17 +19,10 @@ interface OverviewPanelProps {
  */
 export async function OverviewPanel({ businessId, businessProfile }: OverviewPanelProps) {
   const t = await getTranslations("activity");
-  let result:
-    | [
-        Awaited<ReturnType<typeof getRecentActivity>>,
-        Awaited<ReturnType<typeof getActivitySummary>>,
-        number,
-      ]
-    | null = null;
+  let result: [Awaited<ReturnType<typeof getRecentActivity>>, number] | null = null;
   try {
     result = await Promise.all([
       getRecentActivity(businessId, { offset: 0, limit: 20 }),
-      getActivitySummary(businessId),
       getActiveAttestationCount(businessId),
     ]);
   } catch {
@@ -45,12 +37,11 @@ export async function OverviewPanel({ businessId, businessProfile }: OverviewPan
     );
   }
 
-  const [activity, summary, attestationCount] = result;
+  const [activity, attestationCount] = result;
 
   return (
     <DashboardSummary
       initialEvents={activity.events}
-      initialSummary={summary}
       attestationCount={attestationCount}
       businessProfile={businessProfile}
     />

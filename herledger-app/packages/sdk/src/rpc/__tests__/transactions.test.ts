@@ -6,8 +6,8 @@ import {
   TransactionBuilder,
   rpc as StellarRpc,
 } from "@stellar/stellar-sdk";
-import type { StellarNetworkConfig } from "../../types/index.js";
-import { ContractError } from "../../errors/index.js";
+import type { StellarNetworkConfig } from "../../types/index";
+import { ContractError } from "../../errors/index";
 
 const { mockSimulate, mockSend, mockGetTransaction, mockSign } = vi.hoisted(() => ({
   mockSimulate: vi.fn(),
@@ -16,7 +16,7 @@ const { mockSimulate, mockSend, mockGetTransaction, mockSign } = vi.hoisted(() =
   mockSign: vi.fn(),
 }));
 
-vi.mock("../client.js", () => ({
+vi.mock("../client", () => ({
   getSorobanRpcServer: () => ({
     simulateTransaction: mockSimulate,
     sendTransaction: mockSend,
@@ -24,11 +24,11 @@ vi.mock("../client.js", () => ({
   }),
 }));
 
-vi.mock("../../wallet/freighter.js", () => ({
+vi.mock("../../wallet/freighter", () => ({
   signTransactionWithFreighter: mockSign,
 }));
 
-import { simulateAndPrepare, submitAndWait, submitWithFeeBump } from "../transactions.js";
+import { simulateAndPrepare, submitAndWait, submitWithFeeBump } from "../transactions";
 
 const PASS = "Test SDF Network ; September 2015";
 

@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { indexPayment, deriveEventId } from "../financial-events.js";
 import { upsertFinancialEvent } from "../../db/schema/financial-events.js";
@@ -6,7 +8,7 @@ import { resetMetrics, getMetrics } from "../../observability/index.js";
 import type { ParsedPayment } from "../../types/index.js";
 
 const isSupportedAssetMock = vi.fn().mockResolvedValue(true);
-vi.mock("@herledger/sdk", () => ({
+vi.mock("@herledger/sdk/contracts", () => ({
   isSupportedAsset: (...args: unknown[]) => isSupportedAssetMock(...args),
 }));
 
@@ -391,7 +393,6 @@ describe("deriveEventId", () => {
     // The old algorithm was txHash.slice(0, 62) + suffix
     // The new algorithm is SHA-256(txHash:suffix)
     // Verify by computing the expected SHA-256 manually
-    const { createHash } = require("node:crypto");
     const hash = "deadbeef".repeat(8); // 64 hex chars
     const suffix = "00";
     const expected = createHash("sha256").update(`${hash}:${suffix}`).digest("hex");

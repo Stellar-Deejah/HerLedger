@@ -3,6 +3,7 @@ import { getSorobanRpcServer } from "@herledger/sdk";
 import type { StellarNetworkConfig } from "@herledger/sdk";
 import { rpcRequestDurationSeconds } from "../observability/index.js";
 import { retryWithBackoff } from "./retry.js";
+import { IndexerError } from "../types/index.js";
 
 // ---------------------------------------------------------------------------
 // Stellar RPC helpers for the indexer
@@ -21,6 +22,7 @@ export async function fetchTransactionsForAccount(
   transactions: Horizon.ServerApi.TransactionRecord[];
   nextCursor: string | undefined;
 }> {
+  const { cursor, minLedger } = options;
   return retryWithBackoff(async () => {
     const timer = rpcRequestDurationSeconds.startTimer({ operation: "fetch_transactions" });
     const server = new Horizon.Server(horizonUrl, { allowHttp: horizonUrl.startsWith("http://") });
@@ -29,7 +31,7 @@ export async function fetchTransactionsForAccount(
       let builder = server
         .transactions()
         .forAccount(address)
-        .order("asc")
+        .order("desc")
         .limit(100)
         .includeFailed(false);
 
@@ -38,9 +40,16 @@ export async function fetchTransactionsForAccount(
       }
 
       const page = await builder.call();
-      const records = page.records;
+      const reachedCheckpoint =
+        minLedger !== undefined && page.records.some((record) => record.ledger_attr <= minLedger);
+      const records =
+        minLedger === undefined
+          ? page.records
+          : page.records.filter((record) => record.ledger_attr > minLedger);
       const nextCursor =
-        records.length > 0 ? (records[records.length - 1]?.paging_token ?? undefined) : undefined;
+        !reachedCheckpoint && records.length > 0
+          ? (records[records.length - 1]?.paging_token ?? undefined)
+          : undefined;
 
       timer({ status: "success" });
       return { transactions: records, nextCursor };

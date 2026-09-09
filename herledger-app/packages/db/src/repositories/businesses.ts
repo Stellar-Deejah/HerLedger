@@ -6,7 +6,7 @@ import {
   type CreateBusinessProfileInput,
   type UpdateBusinessProfileInput,
   DatabaseError,
-} from "../types.js";
+} from "../types";
 
 export const DEFAULT_PAGE_SIZE = 100;
 

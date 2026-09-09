@@ -1,16 +1,16 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
-import { createAttestationsRepository } from "./repositories/attestations.js";
-import { createAttestersRepository } from "./repositories/attesters.js";
-import { createBusinessesRepository } from "./repositories/businesses.js";
-import { createCheckpointRepository } from "./repositories/checkpoint.js";
-import { createDisputesRepository } from "./repositories/disputes.js";
-import { createFinancialEventsRepository } from "./repositories/financial-events.js";
-import { createIndexerErrorsRepository } from "./repositories/indexer-errors.js";
-import { createStellarTransactionsRepository } from "./repositories/stellar-transactions.js";
-import { createUsersRepository } from "./repositories/users.js";
-import type { DbClient } from "./types.js";
+import { createAttestationsRepository } from "./repositories/attestations";
+import { createAttestersRepository } from "./repositories/attesters";
+import { createBusinessesRepository } from "./repositories/businesses";
+import { createCheckpointRepository } from "./repositories/checkpoint";
+import { createDisputesRepository } from "./repositories/disputes";
+import { createFinancialEventsRepository } from "./repositories/financial-events";
+import { createIndexerErrorsRepository } from "./repositories/indexer-errors";
+import { createStellarTransactionsRepository } from "./repositories/stellar-transactions";
+import { createUsersRepository } from "./repositories/users";
+import type { DbClient } from "./types";
 
 const DEFAULT_STATEMENT_TIMEOUT_MS = 10_000;
 

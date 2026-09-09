@@ -12,7 +12,7 @@ import {
   AuthenticationErrorCode,
   assertUnreachable,
   type AppError,
-} from "../errors/index.js";
+} from "../errors/index";
 
 describe("WalletError", () => {
   it("carries a code, message, context, and cause", () => {

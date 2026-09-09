@@ -1,6 +1,12 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  buildWalletLinkChallengeMessage,
+  isWalletLinkChallengeExpired,
+  verifyWalletLinkChallengeSignature,
+} from "@herledger/sdk";
 import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+
 import { auth } from "@/lib/auth/server";
 import { getPrismaClient } from "@/lib/db/client";
 import {
@@ -9,11 +15,6 @@ import {
   relinkBusinessWallet,
   unlinkBusinessWallet,
 } from "@/lib/settings/wallet";
-import {
-  buildWalletLinkChallengeMessage,
-  isWalletLinkChallengeExpired,
-  verifyWalletLinkChallengeSignature,
-} from "@herledger/sdk";
 
 const prisma = getPrismaClient();
 

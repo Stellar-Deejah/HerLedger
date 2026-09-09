@@ -3,5 +3,5 @@
 // lifecycle (simulate → prepare → submit → confirm).
 // ---------------------------------------------------------------------------
 
-export { getSorobanRpcServer, getLatestLedger } from "./client.js";
-export { simulateAndPrepare, submitAndWait } from "./transactions.js";
+export { getSorobanRpcServer, getLatestLedger } from "./client";
+export { simulateAndPrepare, submitAndWait } from "./transactions";

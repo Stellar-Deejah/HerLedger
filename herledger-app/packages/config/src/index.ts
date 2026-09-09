@@ -1,14 +1,6 @@
-import { publicEnvSchema, formatZodError, type PublicEnv, type ServerEnv } from "./schema.js";
+import { publicEnvSchema, formatZodError, type PublicEnv, type ServerEnv } from "./schema";
 
 export type { PublicEnv, ServerEnv };
-export type { StellarNetworkConfig, ContractConfig } from "./server.js";
-export {
-  getServerEnv,
-  getStellarNetworkConfig,
-  getContractConfig,
-  validateNetworkConsistency,
-} from "./server.js";
-
 export function getPublicEnv(): PublicEnv {
   const result = publicEnvSchema.safeParse(process.env);
   if (!result.success) {

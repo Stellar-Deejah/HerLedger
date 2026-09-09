@@ -1,2 +1,2 @@
-export { WalletContextProvider, useWalletContext } from "./context.js";
-export type { WalletState } from "./context.js";
+export { WalletContextProvider, useWalletContext } from "./context";
+export type { WalletState } from "./context";

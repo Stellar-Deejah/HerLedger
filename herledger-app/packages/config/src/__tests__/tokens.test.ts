@@ -3,7 +3,7 @@ import {
   generatePersonalAccessToken,
   hashPersonalAccessToken,
   verifyPersonalAccessTokenHash,
-} from "../tokens.js";
+} from "../tokens";
 
 const PEPPER = "test-pepper-value-not-a-real-secret-32chars";
 const OTHER_PEPPER = "a-different-pepper-value-also-32-chars-long";

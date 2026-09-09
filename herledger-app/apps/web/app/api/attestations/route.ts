@@ -1,6 +1,3 @@
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth/server";
-import { prisma } from "@/lib/db";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
@@ -11,15 +8,13 @@ import { typedJson } from "@/lib/api/route-handler";
 import { auth } from "@/lib/auth/server";
 import { getAttestations } from "@/lib/data/attestations";
 import { getPrismaClient } from "@/lib/db/client";
-import { withRateLimit } from "@/lib/rate-limit";
 
-export async function GET() {
 import { RequestSchema } from "./schema";
 import type { AttestationsResponse, AttestationDto } from "./schema";
 
 const prisma = getPrismaClient();
 
-export const GET = withRateLimit(async (req: NextRequest) => {
+export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   const limited = readLimiter.check(rateLimitKey(req, session?.user?.id));
@@ -27,9 +22,7 @@ export const GET = withRateLimit(async (req: NextRequest) => {
 
   if (!session) {
     return typedJson<AttestationsResponse>(
-      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" },
-          meta: null
-        },
+      { data: null, error: { code: "UNAUTHORIZED", message: "Not authenticated" }, meta: null },
       { status: 401 }
     );
   }
@@ -40,9 +33,11 @@ export const GET = withRateLimit(async (req: NextRequest) => {
   });
   if (!parsed.success) {
     return typedJson<AttestationsResponse>(
-      { data: null, error: { code: "INVALID_PARAMS", message: "Invalid query params" },
-          meta: null
-        },
+      {
+        data: null,
+        error: { code: "INVALID_PARAMS", message: "Invalid query params" },
+        meta: null,
+      },
       { status: 422 }
     );
   }
@@ -85,4 +80,4 @@ export const GET = withRateLimit(async (req: NextRequest) => {
     error: null,
     meta: null,
   });
-});
+}

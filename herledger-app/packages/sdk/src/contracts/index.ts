@@ -11,15 +11,15 @@ export {
   registerCurrentNetworkAddresses,
   toContractAddress,
   buildContractConfig,
-} from "./registry.js";
+} from "./registry";
 export type {
   ContractName,
   ContractAddressRegistry,
   ContractAddressRegistryEntry,
-} from "./registry.js";
+} from "./registry";
 
 // Generated ABI types
-export * from "./__generated__/index.js";
+export * from "./__generated__/index";
 
 // XDR encoding/decoding
 export {
@@ -34,7 +34,7 @@ export {
   decodeU64,
   decodeBool,
   hexToBytes,
-} from "./encoding.js";
+} from "./encoding";
 
 // BusinessRegistry client
 export {
@@ -43,7 +43,7 @@ export {
   registerBusiness,
   updateBusinessMetadata,
   deactivateBusiness,
-} from "./business-registry.js";
+} from "./business-registry";
 
 // FinancialLedger client
 export {
@@ -55,7 +55,7 @@ export {
   verifyFinancialEvent,
   resolveFinancialEvent,
   revokeFinancialEvent,
-} from "./financial-ledger.js";
+} from "./financial-ledger";
 
 // AttestationRegistry client
 export {
@@ -65,8 +65,8 @@ export {
   deactivateAttester,
   createAttestation,
   revokeAttestation,
-} from "./attestation-registry.js";
+} from "./attestation-registry";
 
 // Attester display-name registry (pure, hand-maintained map)
-export { KNOWN_ATTESTERS, resolveAttesterName } from "../attester-registry.js";
-export type { AttesterRegistry, AttesterRegistryEntry } from "../attester-registry.js";
+export { KNOWN_ATTESTERS, resolveAttesterName } from "../attester-registry";
+export type { AttesterRegistry, AttesterRegistryEntry } from "../attester-registry";

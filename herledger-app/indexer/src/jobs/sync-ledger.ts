@@ -1,17 +1,10 @@
-import pLimit from "p-limit";
 import { getPrismaClient } from "../db/client.js";
 import { getCheckpoint, saveCheckpoint, MAIN_STREAM } from "../db/schema/checkpoint.js";
 import { findAllActiveBusinessWallets } from "../db/schema/businesses.js";
 import { writeDeadLetter } from "../db/schema/indexer-errors.js";
-import { tryClaimWallet, releaseWallet, DEFAULT_LEASE_MS } from "../db/schema/sync-jobs.js";
 import { processTransactionForWallet } from "./process-transaction.js";
 import { fetchTransactionsForAccount, fetchLatestLedger } from "../stellar/rpc.js";
 import { isSuccessfulTransaction, getTransactionLedger } from "../stellar/verification.js";
-import { indexPayment } from "../index/financial-events.js";
-import { getStellarNetworkConfig, getContractConfig as getRawContractConfig, validateNetworkConsistency } from "@herledger/config";
-import { registerCurrentNetworkAddresses, buildContractConfig, type ContractConfig } from "@herledger/sdk";
-import { IndexerError } from "../types/index.js";
-import type { ParsedPayment } from "../types/index.js";
 import { setInflightSyncPromise } from "../main.js";
 
 // ---------------------------------------------------------------------------
@@ -39,12 +32,7 @@ import {
   recordDeadLettered,
   finishCycleMetrics,
 } from "./sync-metrics.js";
-import {
-  logger,
-  generateCorrelationId,
-  runWithContext,
-  syncLagLedgers,
-} from "../observability/index.js";
+import { logger, syncLagLedgers } from "../observability/index.js";
 
 // ---------------------------------------------------------------------------
 // Main ledger sync job
@@ -53,13 +41,6 @@ import {
 
 const SYNC_INTERVAL_MS = 30_000; // 30 seconds between sync cycles
 const WALLET_PAGE_SIZE = 100;
-const DEFAULT_SYNC_CONCURRENCY = 5;
-
-interface ActiveWallet {
-  id: string;
-  businessId: string;
-  walletAddress: string;
-}
 
 export async function runSyncJob(signal: AbortSignal): Promise<void> {
   const prisma = getPrismaClient();
@@ -100,26 +81,10 @@ export async function runSyncJob(signal: AbortSignal): Promise<void> {
     // than blocking the grace period for a full 30 s interval.
     if (!signal.aborted) {
       await abortableSleep(SYNC_INTERVAL_MS, signal);
-  while (true) {
-    const correlationId = generateCorrelationId();
-    try {
-      await runWithContext({ correlationId, job: "sync-ledger" }, async () => {
-        await syncCycle(prisma, stellarConfig, contractConfig);
-      });
-    } catch (err) {
-      logger.error(
-        {
-          job: "sync-ledger",
-          event: "cycle-error",
-          correlationId,
-          error: err instanceof Error ? err.message : String(err),
-        },
-        "Error during sync cycle"
-      );
     }
   }
 
-  console.log({ job: "sync-ledger", event: "stopped" });
+  logger.info({ job: "sync-ledger", event: "stopped" }, "Stopped sync ledger job");
 }
 
 async function syncCycle(
@@ -131,13 +96,6 @@ async function syncCycle(
 
   const latestLedger = await fetchLatestLedger(stellarConfig);
 
-  console.log({
-    job: "sync-ledger",
-    event: "cycle-begin",
-    latestLedger,
-    concurrency: getSyncConcurrency(),
-    instanceId: getInstanceId(),
-  });
   const lastCheckpoint = await getCheckpoint(prisma, MAIN_STREAM);
   const initialLag = Math.max(0, latestLedger - lastCheckpoint);
   syncLagLedgers.set(initialLag);
@@ -153,8 +111,7 @@ async function syncCycle(
     "Beginning ledger sync cycle"
   );
 
-  const limit = pLimit(getSyncConcurrency());
-  const instanceId = getInstanceId();
+  let maxProcessedLedger = lastCheckpoint;
   let anyWallets = false;
   const processedLedgers = new Set<number>();
 
@@ -172,20 +129,6 @@ async function syncCycle(
       anyWallets = true;
     }
 
-    await Promise.all(
-      wallets.map((wallet) =>
-        limit(() =>
-          processWallet(
-            wallet,
-            prisma,
-            stellarConfig,
-            contractConfig,
-            latestLedger,
-            instanceId
-          )
-        )
-      )
-    );
     for (const { walletAddress } of wallets) {
       let txCursor: string | undefined;
 
@@ -194,7 +137,10 @@ async function syncCycle(
         const { transactions, nextCursor: nextTxCursor } = await fetchTransactionsForAccount(
           walletAddress,
           stellarConfig.horizonUrl,
-          txCursor
+          {
+            ...(txCursor !== undefined && { cursor: txCursor }),
+            minLedger: lastCheckpoint,
+          }
         );
 
         for (const tx of transactions) {
@@ -292,8 +238,6 @@ async function syncCycle(
     syncLagLedgers.set(0);
     return;
   }
-}
-
   // Persist per-ledger checkpoints for each successfully processed ledger.
   // This ensures that on restart, we only re-process ledgers that haven't
   // been fully committed yet. Ledgers are processed in ascending order
@@ -338,11 +282,13 @@ async function syncCycle(
 function abortableSleep(ms: number, signal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     const timer = setTimeout(resolve, ms);
-    signal.addEventListener("abort", () => {
-      clearTimeout(timer);
-      resolve();
-    }, { once: true });
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true }
+    );
   });
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }

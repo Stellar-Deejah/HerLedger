@@ -25,13 +25,13 @@ export type {
   Brand,
   ContractAddress,
   HexString32,
-} from "./types/index.js";
-export type { ApiResponse, ApiError, ApiMeta, ApiErrorResponse } from "./types/api.js";
-export * from "./types/index.js";
+} from "./types/index";
+export type { ApiResponse, ApiError, ApiMeta, ApiErrorResponse } from "./types/api";
+export * from "./types/index";
 
 // Attester registry
-export { KNOWN_ATTESTERS, resolveAttesterName } from "./attester-registry.js";
-export type { AttesterRegistry, AttesterRegistryEntry } from "./attester-registry.js";
+export { KNOWN_ATTESTERS, resolveAttesterName } from "./attester-registry";
+export type { AttesterRegistry, AttesterRegistryEntry } from "./attester-registry";
 
 // Errors
 export {
@@ -46,7 +46,7 @@ export {
   AuthenticationError,
   AuthenticationErrorCode,
   assertUnreachable,
-} from "./errors/index.js";
+} from "./errors/index";
 export type {
   AppError,
   AppErrorCode,
@@ -56,7 +56,7 @@ export type {
   ContractErrorContext,
   ValidationErrorContext,
   AuthenticationErrorContext,
-} from "./errors/index.js";
+} from "./errors/index";
 
 // Query cache
 export {
@@ -65,8 +65,8 @@ export {
   clearQueryCache,
   buildCacheKey,
   DEFAULT_QUERY_CACHE_TTL_MS,
-} from "./cache/query-cache.js";
-export type { QueryCacheOptions } from "./cache/query-cache.js";
+} from "./cache/query-cache";
+export type { QueryCacheOptions } from "./cache/query-cache";
 
 // RPC
 export {
@@ -80,16 +80,16 @@ export {
   recordRpcFailure,
   resetRpcState,
   parseRpcUrls,
-} from "./rpc/client.js";
-export type { RpcHealthResult } from "./rpc/client.js";
-export { CircuitBreaker } from "./rpc/circuit-breaker.js";
-export type { CircuitState, CircuitBreakerOptions } from "./rpc/circuit-breaker.js";
-export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/transactions.js";
-export { DEFAULT_RPC_TIMEOUT_MS } from "./rpc/timeout.js";
-export type { RpcCallOptions } from "./rpc/timeout.js";
+} from "./rpc/client";
+export type { RpcHealthResult } from "./rpc/client";
+export { CircuitBreaker } from "./rpc/circuit-breaker";
+export type { CircuitState, CircuitBreakerOptions } from "./rpc/circuit-breaker";
+export { simulateAndPrepare, submitAndWait, pollTransactionStatus } from "./rpc/transactions";
+export { DEFAULT_RPC_TIMEOUT_MS } from "./rpc/timeout";
+export type { RpcCallOptions } from "./rpc/timeout";
 
 // Wallet — interface + Freighter adapter
-export type { WalletProvider, WalletConnection } from "./wallet/types.js";
+export type { WalletProvider, WalletConnection } from "./wallet/types";
 export {
   FreighterWalletProvider,
   freighterWalletProvider,
@@ -98,7 +98,7 @@ export {
   connectWallet,
   getConnectedAddress,
   signTransactionWithFreighter,
-} from "./wallet/freighter.js";
+} from "./wallet/freighter";
 
 // Wallet ownership challenge (re-linking)
 export {
@@ -108,8 +108,8 @@ export {
   isWalletLinkChallengeExpired,
   signWalletLinkChallenge,
   verifyWalletLinkChallengeSignature,
-} from "./wallet/challenge.js";
-export type { WalletLinkChallengeParams } from "./wallet/challenge.js";
+} from "./wallet/challenge";
+export type { WalletLinkChallengeParams } from "./wallet/challenge";
 
 // Encoding
 export {
@@ -125,7 +125,7 @@ export {
   decodeBool,
   hexToBytes,
   toHexString32,
-} from "./contracts/encoding.js";
+} from "./contracts/encoding";
 
 // Contract address registry
 export {
@@ -134,12 +134,12 @@ export {
   registerCurrentNetworkAddresses,
   toContractAddress,
   buildContractConfig,
-} from "./contracts/registry.js";
+} from "./contracts/registry";
 export type {
   ContractName,
   ContractAddressRegistry,
   ContractAddressRegistryEntry,
-} from "./contracts/registry.js";
+} from "./contracts/registry";
 
 // Contracts (clients, encoding, registry, generated ABI types)
-export * from "./contracts/index.js";
+export * from "./contracts/index";

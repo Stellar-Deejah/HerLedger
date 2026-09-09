@@ -6,10 +6,10 @@ export {
   getPrismaClient,
   resetDbClient,
   setDbClient,
-} from "./client.js";
+} from "./client";
 
 // Mock helper for unit tests
-export { createMockDbClient } from "./mock.js";
+export { createMockDbClient } from "./mock";
 
 // Repositories
 export {
@@ -21,7 +21,7 @@ export {
   updateBusinessProfile,
   deactivateBusinessProfile,
   createBusinessesRepository,
-} from "./repositories/businesses.js";
+} from "./repositories/businesses";
 
 export {
   upsertFinancialEvent,
@@ -32,7 +32,7 @@ export {
   findEventsUpdatedAfter,
   findAttestableEvents,
   createFinancialEventsRepository,
-} from "./repositories/financial-events.js";
+} from "./repositories/financial-events";
 
 export {
   upsertAttestation,
@@ -42,21 +42,22 @@ export {
   findAttestationById,
   findAttestationByAttestationIdAndBusiness,
   createAttestationsRepository,
-} from "./repositories/attestations.js";
+} from "./repositories/attestations";
 
 export {
   findAttesterByWallet,
   upsertAttester,
   createAttestersRepository,
-} from "./repositories/attesters.js";
+} from "./repositories/attesters";
 
 export {
   getCheckpoint,
   saveCheckpoint,
   MAIN_STREAM,
   EVENTS_STREAM,
+  GLOBAL_WALLET,
   createCheckpointRepository,
-} from "./repositories/checkpoint.js";
+} from "./repositories/checkpoint";
 
 export {
   writeDeadLetter,
@@ -64,26 +65,26 @@ export {
   markDeadLetterResolved,
   incrementDeadLetterRetry,
   createIndexerErrorsRepository,
-} from "./repositories/indexer-errors.js";
+} from "./repositories/indexer-errors";
 
 export {
   upsertStellarTransaction,
   createStellarTransactionsRepository,
-} from "./repositories/stellar-transactions.js";
+} from "./repositories/stellar-transactions";
 
-export { findUserById, deleteUserAccount, createUsersRepository } from "./repositories/users.js";
+export { findUserById, deleteUserAccount, createUsersRepository } from "./repositories/users";
 
 export {
   findDisputeByEventId,
   createDispute,
   createDisputesRepository,
-} from "./repositories/disputes.js";
+} from "./repositories/disputes";
 
 export {
   createAuditLog,
   findAuditLogsByEntity,
   type CreateAuditLogInput,
-} from "./repositories/audit-log.js";
+} from "./repositories/audit-log";
 
 // Pagination and filtering utilities
 export {
@@ -93,7 +94,7 @@ export {
   filterEventsByStatus,
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
-} from "./utils/pagination.js";
+} from "./utils/pagination";
 
 // Types and errors
 export type {
@@ -124,6 +125,6 @@ export type {
   UsersRepository,
   DisputesRepository,
   DbClient,
-} from "./types.js";
+} from "./types";
 
-export { DatabaseError } from "./types.js";
+export { DatabaseError } from "./types";

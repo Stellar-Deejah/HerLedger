@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { CircuitBreaker } from "../rpc/circuit-breaker.js";
+import { CircuitBreaker } from "../rpc/circuit-breaker";
 
 describe("CircuitBreaker", () => {
   beforeEach(() => {

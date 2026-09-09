@@ -9,22 +9,8 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 const nextConfig: NextConfig = withNextIntl({
   reactStrictMode: true,
+  typedRoutes: true,
   transpilePackages: ["@herledger/sdk", "@herledger/config", "@herledger/db"],
-  experimental: {
-    typedRoutes: true,
-  },
-  turbopack: {
-    resolveAlias: {
-      "./attester-registry.js": "./attester-registry.ts",
-      "./errors/index.js": "./errors/index.ts",
-      "./rpc/client.js": "./rpc/client.ts",
-      "./rpc/transactions.js": "./rpc/transactions.ts",
-      "./wallet/freighter.js": "./wallet/freighter.ts",
-      "./types/index.js": "./types/index.ts",
-      "./schema.js": "./schema.ts",
-      "./server.js": "./server.ts",
-    },
-  },
   webpack: (config) => {
     config.resolve = config.resolve || {};
     config.resolve.extensionAlias = {

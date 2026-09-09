@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { withRpcTimeout, DEFAULT_RPC_TIMEOUT_MS } from "../rpc/timeout.js";
-import { RpcError } from "../errors/index.js";
+import { withRpcTimeout, DEFAULT_RPC_TIMEOUT_MS } from "../rpc/timeout";
+import { RpcError } from "../errors/index";
 
 describe("withRpcTimeout", () => {
   afterEach(() => {

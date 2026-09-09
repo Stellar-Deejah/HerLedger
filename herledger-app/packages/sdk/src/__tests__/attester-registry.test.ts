@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveAttesterName, type AttesterRegistry } from "../attester-registry.js";
+import { resolveAttesterName, type AttesterRegistry } from "../attester-registry";
 
 const KNOWN_ADDRESS = "GABCDEFGHIJKLMNOPQRSTUVWXYZ234567ABCDEFGHIJKLMNOPQRSTUVWX";
 const UNKNOWN_ADDRESS = "GZYXWVUTSRQPONMLKJIHGFEDCBA765432ZYXWVUTSRQPONMLKJIHGFED";

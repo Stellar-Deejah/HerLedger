@@ -9,8 +9,8 @@ import {
   configureCircuitBreaker,
   recordRpcFailure,
   parseRpcUrls,
-} from "../rpc/client.js";
-import type { StellarNetworkConfig } from "../types/index.js";
+} from "../rpc/client";
+import type { StellarNetworkConfig } from "../types/index";
 
 // Setup global mock variables for the class methods
 const mockGetLatestLedger = vi.fn();

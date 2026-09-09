@@ -32,6 +32,39 @@
                               "type": "string",
                               "enum": ["ok", "degraded"]
                             },
+                            "db": {
+                              "type": "object",
+                              "properties": {
+                                "healthy": {
+                                  "type": "boolean"
+                                },
+                                "latencyMs": {
+                                  "type": "number"
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["healthy"]
+                            },
+                            "indexer": {
+                              "type": "object",
+                              "properties": {
+                                "healthy": {
+                                  "type": "boolean"
+                                },
+                                "latencyMs": {
+                                  "type": "number"
+                                },
+                                "error": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["healthy"]
+                            },
+                            "version": {
+                              "type": "string"
+                            },
                             "rpc": {
                               "type": "object",
                               "properties": {
@@ -57,13 +90,39 @@
                               "required": ["healthy"]
                             }
                           },
-                          "required": ["status"]
+                          "required": ["status", "version"]
                         },
                         "error": {
                           "type": "null"
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     },
                     {
                       "type": "object",
@@ -82,9 +141,35 @@
                             }
                           },
                           "required": ["code", "message"]
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     }
                   ]
                 }
@@ -177,9 +262,35 @@
                         },
                         "error": {
                           "type": "null"
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     },
                     {
                       "type": "object",
@@ -198,9 +309,35 @@
                             }
                           },
                           "required": ["code", "message"]
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     }
                   ]
                 }
@@ -281,9 +418,35 @@
                         },
                         "error": {
                           "type": "null"
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     },
                     {
                       "type": "object",
@@ -302,9 +465,35 @@
                             }
                           },
                           "required": ["code", "message"]
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     }
                   ]
                 }
@@ -393,9 +582,35 @@
                         },
                         "error": {
                           "type": "null"
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     },
                     {
                       "type": "object",
@@ -414,9 +629,35 @@
                             }
                           },
                           "required": ["code", "message"]
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     }
                   ]
                 }
@@ -522,9 +763,35 @@
                         },
                         "error": {
                           "type": "null"
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     },
                     {
                       "type": "object",
@@ -543,9 +810,35 @@
                             }
                           },
                           "required": ["code", "message"]
+                        },
+                        "meta": {
+                          "type": "object",
+                          "properties": {
+                            "requestId": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "pagination": {
+                              "type": "object",
+                              "properties": {
+                                "offset": {
+                                  "type": "number"
+                                },
+                                "limit": {
+                                  "type": "number"
+                                },
+                                "count": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": ["offset", "limit", "count"]
+                            }
+                          }
                         }
                       },
-                      "required": ["data", "error"]
+                      "required": ["data", "error", "meta"]
                     }
                   ]
                 }
@@ -838,6 +1131,39 @@
                     "type": "string",
                     "enum": ["ok", "degraded"]
                   },
+                  "db": {
+                    "type": "object",
+                    "properties": {
+                      "healthy": {
+                        "type": "boolean"
+                      },
+                      "latencyMs": {
+                        "type": "number"
+                      },
+                      "error": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["healthy"]
+                  },
+                  "indexer": {
+                    "type": "object",
+                    "properties": {
+                      "healthy": {
+                        "type": "boolean"
+                      },
+                      "latencyMs": {
+                        "type": "number"
+                      },
+                      "error": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["healthy"]
+                  },
+                  "version": {
+                    "type": "string"
+                  },
                   "rpc": {
                     "type": "object",
                     "properties": {
@@ -863,13 +1189,39 @@
                     "required": ["healthy"]
                   }
                 },
-                "required": ["status"]
+                "required": ["status", "version"]
               },
               "error": {
                 "type": "null"
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           },
           {
             "type": "object",
@@ -888,9 +1240,35 @@
                   }
                 },
                 "required": ["code", "message"]
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           }
         ]
       },
@@ -928,9 +1306,35 @@
               },
               "error": {
                 "type": "null"
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           },
           {
             "type": "object",
@@ -949,9 +1353,35 @@
                   }
                 },
                 "required": ["code", "message"]
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           }
         ]
       },
@@ -995,9 +1425,35 @@
               },
               "error": {
                 "type": "null"
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           },
           {
             "type": "object",
@@ -1016,9 +1472,35 @@
                   }
                 },
                 "required": ["code", "message"]
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           }
         ]
       },
@@ -1041,9 +1523,35 @@
               },
               "error": {
                 "type": "null"
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           },
           {
             "type": "object",
@@ -1062,9 +1570,35 @@
                   }
                 },
                 "required": ["code", "message"]
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           }
         ]
       },
@@ -1084,9 +1618,35 @@
               },
               "error": {
                 "type": "null"
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           },
           {
             "type": "object",
@@ -1105,9 +1665,35 @@
                   }
                 },
                 "required": ["code", "message"]
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "timestamp": {
+                    "type": "string"
+                  },
+                  "pagination": {
+                    "type": "object",
+                    "properties": {
+                      "offset": {
+                        "type": "number"
+                      },
+                      "limit": {
+                        "type": "number"
+                      },
+                      "count": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["offset", "limit", "count"]
+                  }
+                }
               }
             },
-            "required": ["data", "error"]
+            "required": ["data", "error", "meta"]
           }
         ]
       }

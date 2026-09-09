@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createResponseSchema, type SuccessData } from "../../../../../lib/api/envelope.js";
+import { createResponseSchema, type SuccessData } from "../../../../../lib/api/envelope";
 
 export const RequestSchema = z.object({
   businessId: z.string().length(64),

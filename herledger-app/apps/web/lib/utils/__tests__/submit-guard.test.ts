@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { runExclusive } from "../submit-guard.js";
+import { runExclusive } from "../submit-guard";
 
 function deferred<T>() {
   let resolve!: (value: T) => void;

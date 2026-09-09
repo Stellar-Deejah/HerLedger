@@ -8,7 +8,7 @@ vi.mock("server-only", () => ({}));
 // See server.csrf.test.ts for why this is a dynamic import inside
 // beforeAll rather than a static top-level one: server.ts reads env vars
 // via getServerEnv() at module load time.
-let auth: (typeof import("../server.js"))["auth"];
+let auth: (typeof import("../server"))["auth"];
 
 beforeAll(async () => {
   const contractId = StrKey.encodeContract(Buffer.alloc(32));
@@ -35,7 +35,7 @@ beforeAll(async () => {
   // suite otherwise runs under) because Better Auth's rate limiter is only
   // enabled by default in production -- this exercises the real deployed
   // behavior, not a test-only bypass.
-  ({ auth } = await import("../server.js"));
+  ({ auth } = await import("../server"));
 }, 30000);
 
 function signInRequest(ip: string, password = "wrong-password-123") {

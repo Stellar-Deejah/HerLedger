@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { axe } from "vitest-axe";
 
 import type { FinancialEventDto } from "@/app/api/activity/recent/schema";
+import { WithIntl } from "@/tests/utils/with-intl";
 
 const { mockRecent, mockExportUrl } = vi.hoisted(() => ({
   mockRecent: vi.fn(),
@@ -33,6 +34,14 @@ vi.mock("@/lib/api/client", async () => {
 
 import { ActivityList } from "../activity-list";
 
+function renderActivity() {
+  return render(
+    <WithIntl>
+      <ActivityList initialEvents={[EVENT]} initialHasMore={false} />
+    </WithIntl>
+  );
+}
+
 const EVENT: FinancialEventDto = {
   id: "1",
   eventId: "ev_1",
@@ -42,6 +51,7 @@ const EVENT: FinancialEventDto = {
   status: "Verified",
   stellarReference: "a".repeat(64),
   ledgerSequence: 100,
+  createdAt: "2026-01-01T00:00:00.000Z",
 };
 
 describe("ActivityList date-range filtering", () => {
@@ -56,7 +66,7 @@ describe("ActivityList date-range filtering", () => {
 
   it("refetches with the selected range and resets to page 0", async () => {
     const user = userEvent.setup();
-    render(<ActivityList initialEvents={[EVENT]} initialHasMore={false} />);
+    renderActivity();
 
     const fromInput = screen.getByLabelText("From");
     await user.type(fromInput, "2026-01-01");
@@ -70,7 +80,7 @@ describe("ActivityList date-range filtering", () => {
 
   it("builds the export link with the current range", async () => {
     const user = userEvent.setup();
-    render(<ActivityList initialEvents={[EVENT]} initialHasMore={false} />);
+    renderActivity();
 
     const fromInput = screen.getByLabelText("From");
     await user.type(fromInput, "2026-01-01");
@@ -84,7 +94,7 @@ describe("ActivityList date-range filtering", () => {
 
   it("clears the range back to an unfiltered fetch", async () => {
     const user = userEvent.setup();
-    render(<ActivityList initialEvents={[EVENT]} initialHasMore={false} />);
+    renderActivity();
 
     const fromInput = screen.getByLabelText("From");
     await user.type(fromInput, "2026-01-01");
@@ -108,7 +118,7 @@ describe("ActivityList date-range filtering", () => {
   const AXE_OPTIONS = { rules: { "color-contrast": { enabled: false } } };
 
   it("has no axe violations, and every date/export control is keyboard-reachable", async () => {
-    const { container } = render(<ActivityList initialEvents={[EVENT]} initialHasMore={false} />);
+    const { container } = renderActivity();
 
     expect(await axe(container, AXE_OPTIONS)).toHaveNoViolations();
 

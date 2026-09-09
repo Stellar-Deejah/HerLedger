@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import type { EventStatus } from "../types.js";
+import type { EventStatus } from "../types";
 import {
   buildCursorPagination,
   clampPagination,
   filterEventsByStatus,
   paginateArray,
-} from "../utils/pagination.js";
+} from "../utils/pagination";
 
 describe("Pagination and Filtering Utilities", () => {
   describe("clampPagination", () => {

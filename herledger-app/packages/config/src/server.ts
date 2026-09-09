@@ -1,5 +1,5 @@
 import "server-only";
-import { serverEnvSchema, formatZodError, type ServerEnv } from "./schema.js";
+import { serverEnvSchema, formatZodError, type ServerEnv } from "./schema";
 
 export function getServerEnv(): ServerEnv {
   const result = serverEnvSchema.safeParse(process.env);
@@ -8,7 +8,7 @@ export function getServerEnv(): ServerEnv {
     console.error(`\n[HerLedger] ❌ Missing or invalid server environment variables:\n`);
     console.table(issues);
     console.error(`\nSee .env.example for required configuration.\n`);
-    process.exit(1);
+    throw new Error("Invalid server environment configuration");
   }
   return result.data;
 }

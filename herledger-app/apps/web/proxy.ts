@@ -39,8 +39,55 @@ import { validateCallbackUrl } from "@/lib/auth/validate-callback-url";
 
 const PROTECTED_PREFIXES = ["/dashboard"];
 const AUTH_ROUTES = ["/auth/sign-in", "/auth/sign-up"];
+const isProd = process.env.NODE_ENV === "production";
 
-export async function middleware(request: NextRequest) {
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function buildCsp(nonce: string): string {
+  const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"];
+  const connectSrc = ["'self'"];
+  const rpcUrl = process.env.NEXT_PUBLIC_STELLAR_RPC_URL;
+  if (rpcUrl) {
+    try {
+      connectSrc.push(new URL(rpcUrl).origin);
+    } catch {
+      // Invalid configuration must not widen the policy.
+    }
+  }
+  if (!isProd) {
+    scriptSrc.push("'unsafe-eval'");
+    connectSrc.push("ws:", "wss:");
+  }
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc.join(" ")}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    `connect-src ${connectSrc.join(" ")}`,
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    ...(isProd ? ["upgrade-insecure-requests"] : []),
+  ].join("; ");
+}
+
+function applySecurityHeaders(response: NextResponse, nonce: string): NextResponse {
+  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  return response;
+}
+
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const appUrl = process.env.APP_URL || "http://localhost:3000";
   const nonce = generateNonce();

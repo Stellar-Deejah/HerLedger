@@ -11,12 +11,12 @@ import type {
   StellarNetworkConfig,
   ContractConfig,
   TransactionResult,
-} from "../types/index.js";
-import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index.js";
-import { getSorobanRpcServer } from "../rpc/client.js";
-import { simulateAndPrepare, submitAndWait } from "../rpc/transactions.js";
-import { signTransactionWithFreighter } from "../wallet/freighter.js";
-import { defaultQueryCache, buildCacheKey, type QueryCacheOptions } from "../cache/query-cache.js";
+} from "../types/index";
+import { RpcError, RpcErrorCode, ContractError, ContractErrorCode } from "../errors/index";
+import { getSorobanRpcServer } from "../rpc/client";
+import { simulateAndPrepare, submitAndWait } from "../rpc/transactions";
+import { signTransactionWithFreighter } from "../wallet/freighter";
+import { defaultQueryCache, buildCacheKey, type QueryCacheOptions } from "../cache/query-cache";
 import {
   encodeBytes32,
   encodeAddress,
@@ -24,7 +24,7 @@ import {
   decodeAddress,
   decodeU64,
   toHexString32,
-} from "./encoding.js";
+} from "./encoding";
 
 // ---------------------------------------------------------------------------
 // AttestationRegistry contract client

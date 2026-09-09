@@ -12,7 +12,7 @@ import type {
   IndexerErrorsRepository,
   StellarTransactionsRepository,
   UsersRepository,
-} from "./types.js";
+} from "./types";
 
 /**
  * Creates a mock DbClient with vitest mock functions for unit testing without

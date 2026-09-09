@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyPluginAsync, preHandlerHookHandler } from "fastify";
-import { getServerEnv } from "@herledger/config";
+import { getServerEnv } from "@herledger/config/server";
 import { healthRoutes } from "./health.js";
 import { businessRoutes } from "./businesses.js";
 import { supportedAssetsRoutes } from "./supported-assets.js";

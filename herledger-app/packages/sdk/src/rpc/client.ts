@@ -1,8 +1,8 @@
 import { rpc as StellarRpc } from "@stellar/stellar-sdk";
-import type { StellarNetworkConfig } from "../types/index.js";
-import { RpcError, RpcErrorCode } from "../errors/index.js";
-import { CircuitBreaker } from "./circuit-breaker.js";
-import type { CircuitBreakerOptions, CircuitState } from "./circuit-breaker.js";
+import type { StellarNetworkConfig } from "../types/index";
+import { RpcError, RpcErrorCode } from "../errors/index";
+import { CircuitBreaker } from "./circuit-breaker";
+import type { CircuitBreakerOptions, CircuitState } from "./circuit-breaker";
 
 // ---------------------------------------------------------------------------
 // Soroban RPC client factory — multi-endpoint with circuit breaker

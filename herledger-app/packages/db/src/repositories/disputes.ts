@@ -1,6 +1,6 @@
 import type { Dispute, PrismaClient } from "@prisma/client";
 
-import { type CreateDisputeInput, type DisputesRepository, DatabaseError } from "../types.js";
+import { type CreateDisputeInput, type DisputesRepository, DatabaseError } from "../types";
 
 export async function findDisputeByEventId(
   prisma: PrismaClient,

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FreighterWalletProvider } from "../wallet/freighter.js";
-import { WalletError } from "../errors/index.js";
+import { FreighterWalletProvider } from "../wallet/freighter";
+import { WalletError } from "../errors/index";
 
 // ---------------------------------------------------------------------------
 // Mock @stellar/freighter-api
@@ -221,13 +221,13 @@ describe("FreighterWalletProvider", () => {
 
   describe("backward-compatible functional exports", () => {
     it("isFreighterAvailable delegates to FreighterWalletProvider", async () => {
-      const { isFreighterAvailable } = await import("../wallet/freighter.js");
+      const { isFreighterAvailable } = await import("../wallet/freighter");
       mockIsConnected.mockResolvedValue({ isConnected: true });
       expect(await isFreighterAvailable()).toBe(true);
     });
 
     it("connectWallet delegates to FreighterWalletProvider", async () => {
-      const { connectWallet } = await import("../wallet/freighter.js");
+      const { connectWallet } = await import("../wallet/freighter");
       mockIsConnected.mockResolvedValue({ isConnected: true });
       mockRequestAccess.mockResolvedValue({ error: null });
       mockGetAddress.mockResolvedValue({ address: "GABCDEFG", error: null });
@@ -238,13 +238,13 @@ describe("FreighterWalletProvider", () => {
     });
 
     it("getConnectedAddress delegates to FreighterWalletProvider", async () => {
-      const { getConnectedAddress } = await import("../wallet/freighter.js");
+      const { getConnectedAddress } = await import("../wallet/freighter");
       mockGetAddress.mockResolvedValue({ address: "GABCDEFG", error: null });
       expect(await getConnectedAddress()).toBe("GABCDEFG");
     });
 
     it("signTransactionWithFreighter delegates to FreighterWalletProvider", async () => {
-      const { signTransactionWithFreighter } = await import("../wallet/freighter.js");
+      const { signTransactionWithFreighter } = await import("../wallet/freighter");
       mockSignTransaction.mockResolvedValue({ signedTxXdr: "SIGNED_XDR", error: null });
       const result = await signTransactionWithFreighter(
         "AAAAAgAAAAB...",

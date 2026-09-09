@@ -66,7 +66,17 @@ export async function GET(req: NextRequest) {
 
   return typedJson<AttestableEventsResponse>({
     data: {
-      events,
+      events: events.map((event) => ({
+        id: event.id,
+        eventId: event.eventId,
+        eventType: event.eventType,
+        assetAddress: event.assetAddress,
+        amount: event.amount,
+        status: event.status,
+        stellarReference: event.stellarReference,
+        ledgerSequence: event.ledgerSequence,
+        createdAt: event.createdAt.toISOString(),
+      })),
       pagination: {
         offset: parsed.data.offset,
         limit: parsed.data.limit,

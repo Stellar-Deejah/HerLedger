@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";
 
-import { middleware } from "../middleware";
+import { proxy as middleware } from "../proxy";
 
 vi.mock("server-only", () => ({}));
 

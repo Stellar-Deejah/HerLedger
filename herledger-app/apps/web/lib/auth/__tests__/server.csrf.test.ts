@@ -7,7 +7,7 @@ vi.mock("server-only", () => ({}));
 // getServerEnv()), so they must be set before the module is imported. We
 // import it dynamically inside beforeAll rather than statically at the top
 // of the file so this file's own top-level code runs first.
-let auth: (typeof import("../server.js"))["auth"];
+let auth: (typeof import("../server"))["auth"];
 
 beforeAll(async () => {
   const contractId = StrKey.encodeContract(Buffer.alloc(32));
@@ -30,7 +30,7 @@ beforeAll(async () => {
     INDEXER_API_URL: "http://localhost:4000",
   });
 
-  ({ auth } = await import("../server.js"));
+  ({ auth } = await import("../server"));
 }, 30000);
 
 // Better Auth 1.6.28 has no `csrf` config option; sign-in/sign-up carry

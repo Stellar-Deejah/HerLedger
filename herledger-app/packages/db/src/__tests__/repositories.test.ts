@@ -7,8 +7,8 @@ import {
   findAttestationsByEvent,
   upsertAttestation,
   upsertClaimDescription,
-} from "../repositories/attestations.js";
-import { findAttesterByWallet, upsertAttester } from "../repositories/attesters.js";
+} from "../repositories/attestations";
+import { findAttesterByWallet, upsertAttester } from "../repositories/attesters";
 import {
   createBusinessProfile,
   deactivateBusinessProfile,
@@ -17,9 +17,9 @@ import {
   findBusinessByUserId,
   findBusinessByWallet,
   updateBusinessProfile,
-} from "../repositories/businesses.js";
-import { getCheckpoint, saveCheckpoint } from "../repositories/checkpoint.js";
-import { createDispute, findDisputeByEventId } from "../repositories/disputes.js";
+} from "../repositories/businesses";
+import { getCheckpoint, saveCheckpoint } from "../repositories/checkpoint";
+import { createDispute, findDisputeByEventId } from "../repositories/disputes";
 import {
   findAttestableEvents,
   findEventById,
@@ -29,16 +29,16 @@ import {
   summarizeFinancialEvents,
   updateEventStatus,
   upsertFinancialEvent,
-} from "../repositories/financial-events.js";
+} from "../repositories/financial-events";
 import {
   findDeadLetterByErrorId,
   incrementDeadLetterRetry,
   markDeadLetterResolved,
   writeDeadLetter,
-} from "../repositories/indexer-errors.js";
-import { upsertStellarTransaction } from "../repositories/stellar-transactions.js";
-import { deleteUserAccount, findUserById } from "../repositories/users.js";
-import { DatabaseError } from "../types.js";
+} from "../repositories/indexer-errors";
+import { upsertStellarTransaction } from "../repositories/stellar-transactions";
+import { deleteUserAccount, findUserById } from "../repositories/users";
+import { DatabaseError } from "../types";
 
 describe("Database Repositories", () => {
   describe("businesses repository", () => {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Account, Contract, TransactionBuilder } from "@stellar/stellar-sdk";
-import type { StellarNetworkConfig } from "../types/index.js";
+import type { StellarNetworkConfig } from "../types/index";
 
 const mockSimulateTransaction = vi.fn();
 const mockSendTransaction = vi.fn();
@@ -8,7 +8,7 @@ const mockGetTransaction = vi.fn();
 
 // vi.mock calls are hoisted above imports by vitest, so the static import of
 // `../rpc/transactions.js` below picks up this mocked client.
-vi.mock("../rpc/client.js", () => ({
+vi.mock("../rpc/client", () => ({
   getSorobanRpcServer: () => ({
     simulateTransaction: mockSimulateTransaction,
     sendTransaction: mockSendTransaction,
@@ -16,7 +16,7 @@ vi.mock("../rpc/client.js", () => ({
   }),
 }));
 
-import { simulateAndPrepare, submitAndWait } from "../rpc/transactions.js";
+import { simulateAndPrepare, submitAndWait } from "../rpc/transactions";
 
 const CONFIG: StellarNetworkConfig = {
   network: "testnet",

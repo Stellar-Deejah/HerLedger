@@ -19,16 +19,26 @@
  * keep exact precision — `Intl.NumberFormat` only formats integer BigInt
  * values, so splitting is required rather than optional.
  */
-export function formatAmount(amount: bigint, locale = "en", decimals = 7): string {
+export function formatAmount(
+  amount: bigint,
+  localeOrDecimals?: string | number,
+  decimals = 7
+): string {
+  const locale = typeof localeOrDecimals === "string" ? localeOrDecimals : undefined;
+  if (typeof localeOrDecimals === "number") decimals = localeOrDecimals;
   if (decimals === 0) return amount.toString();
 
   const factor = BigInt(10 ** decimals);
-  const whole = amount / factor;
-  const fractional = amount % factor;
+  const negative = amount < 0n;
+  const absolute = negative ? -amount : amount;
+  const whole = absolute / factor;
+  const fractional = absolute % factor;
 
-  const wholeStr = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(whole);
+  const wholeStr = locale
+    ? new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(whole)
+    : whole.toString();
   const fractionalStr = fractional.toString().padStart(decimals, "0");
-  return `${wholeStr}.${fractionalStr}`;
+  return `${negative ? "-" : ""}${wholeStr}.${fractionalStr}`;
 }
 
 /**

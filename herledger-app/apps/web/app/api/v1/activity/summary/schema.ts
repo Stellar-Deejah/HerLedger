@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createResponseSchema, type SuccessData } from "../../../../../lib/api/envelope.js";
+import { createResponseSchema, type SuccessData } from "../../../../../lib/api/envelope";
 
 export const RequestSchema = z.object({
   /** Inclusive lower bound on `FinancialEvent.createdAt` (`YYYY-MM-DD`). */
