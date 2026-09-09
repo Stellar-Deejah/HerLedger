@@ -15,6 +15,9 @@ importers:
       '@prisma/adapter-pg':
         specifier: 7.9.1
         version: 7.9.1
+      '@prisma/client':
+        specifier: 7.9.1
+        version: 7.9.1(prisma@7.9.1(@types/react-dom@19.2.4(@types/react@19.2.4))(@types/react@19.2.4)(magicast@0.5.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@7.0.2))(typescript@7.0.2)
       '@types/pg':
         specifier: 8.23.1
         version: 8.23.1

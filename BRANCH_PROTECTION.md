@@ -1,68 +1,84 @@
 # Branch Protection Guide
 
-## How to Protect Your Branch
+## Current Branch Structure
 
-### 1. **GitHub Branch Protection Rules**
+- **`main`** — stable, grant-ready production branch
+- **`dev`** — development/integration branch for contributors
 
-Go to your repository on GitHub and set up branch protection:
+## Recommended Branch Protection Rules (Manual Setup Required)
 
-1. Navigate to: `https://github.com/Stellar-Deejah/HerLedger/settings/branches`
-2. Click "Add rule" or edit existing rules for `main` branch
-3. Enable these protections:
-   - ✅ Require a pull request before merging
-   - ✅ Require approvals (set number of required reviewers)
-   - ✅ Require status checks to pass before merging
-   - ✅ Require branches to be up to date before merging
-   - ✅ Require signed commits
-   - ✅ Include administrators
+GitHub branch protection cannot be configured via API without a personal access
+token. Set it up manually at:
 
-### 2. **Protect Current Branch from Force Pushes**
+**https://github.com/Stellar-Deejah/HerLedger/settings/branches**
 
-Run these commands locally:
+### Protect `main`
 
-```bash
-# Prevent force pushes to your branch
-git config branch.fix/stabilize-repository.pushRemoteRefsOnly true
+Add a rule for the `main` branch pattern with these settings:
 
-# Or protect it at remote level (requires admin access on GitHub)
-gh api repos/Stellar-Deejah/HerLedger/branches/fix/stabilize-repository/protection \
-  --method PUT \
-  --field required_status_checks='{"strict":true,"contexts":["ci"]}' \
-  --field enforce_admins=true
+| Setting | Value |
+|---|---|
+| Require a pull request before merging | ✅ Enabled |
+| Required approvals | 1 (or more for a team) |
+| Require status checks to pass before merging | ✅ Enabled |
+| Required status checks | `Lint and type check`, `Unit tests`, `Build` |
+| Require branches to be up to date before merging | ✅ Enabled |
+| Require conversation resolution before merging | ✅ Recommended |
+| Restrict who can push to matching branches | Optional — restrict to maintainers |
+| Do not allow bypassing the above settings | ✅ Enabled for stricter enforcement |
+| Allow force pushes | ❌ Disabled |
+| Allow deletions | ❌ Disabled |
+
+### `dev` Branch
+
+`dev` can have lighter protection. Contributors push feature branches and open
+PRs against `dev`. A simpler rule:
+
+| Setting | Value |
+|---|---|
+| Require a pull request before merging | ✅ Enabled |
+| Required approvals | 1 |
+| Require status checks to pass before merging | ✅ Enabled |
+| Required status checks | `Lint and type check`, `Unit tests` |
+| Allow force pushes | ❌ Disabled |
+
+## Contributor Workflow
+
+```
+main  ← stable, deploy-ready
+  ↑
+  ← (PR from dev after testing)
+  
+dev   ← integration branch
+  ↑
+  ← (PR from feature/xyz branches)
+
+feature/xyz  ← contributor branch (create from dev)
 ```
 
-### 3. **Create a Pull Request**
+1. Contributors create feature branches from `dev`
+2. Open a PR targeting `dev`
+3. CI runs, reviewer approves, branch merges into `dev`
+4. When `dev` is stable and tested, open a PR from `dev` → `main`
+5. After merge, `main` is deployable
 
-Create a PR to merge your branch into main:
+## CI Checks (Automated)
 
-```bash
-gh pr create \
-  --base main \
-  --head fix/stabilize-repository \
-  --title "fix: stabilize repository and merge origin/main" \
-  --body "This PR merges origin/main into fix/stabilize-repository with all conflicts resolved."
-```
+CI runs on pushes and PRs to both `main` and `dev`:
 
-### 4. **GitHub Settings (Manual)**
+- **Format check** — Prettier
+- **Type check** — TypeScript (5 packages)
+- **Lint** — ESLint with strict rules
+- **Unit tests** — Vitest with real PostgreSQL
+- **Build** — Next.js production build
+- **CSS budget check** — gzipped CSS must stay under 50 KB
+- **Storybook build** — Component library build verification
+- **E2E tests** — Playwright (scheduled)
+- **ABI check** — Contract codegen consistency (requires Rust/stellar-cli)
+- **Testnet smoke** — Nightly + manual dispatch
 
-Visit: https://github.com/Stellar-Deejah/HerLedger/settings/branches
+The core required checks for merging are:
+`Lint and type check`, `Unit tests`, `Build`
 
-- Set `main` as protected branch
-- Require PR reviews
-- Require CI checks to pass
-- Disable force pushes
-
-## Current Branch Status
-
-- **Branch:** `fix/stabilize-repository`
-- **Status:** Clean, ready for PR
-- **Remote:** Up to date with origin
-- **Conflicts:** All resolved
-
-## Best Practices
-
-1. **Never force push to main** - Always use PRs
-2. **Require reviews** - At least 1 approval before merging
-3. **Require CI** - All checks must pass
-4. **Keep branches updated** - Merge main into feature branches regularly
-5. **Use signed commits** - Verify commit authenticity
+The `Contract ABI codegen diff` job requires Stellar CLI compilation and is
+a supplementary check — it does not block merges on its own.

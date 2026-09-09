@@ -340,6 +340,9 @@ jobs:
             herledger-contract/target
           key: ${{ runner.os }}-cargo-stellar-26.1.0-${{ hashFiles('herledger-contract/Cargo.lock') }}
 
+      - name: Install system dependencies for stellar-cli
+        run: sudo apt-get update -q && sudo apt-get install -y libdbus-1-dev pkg-config
+
       - name: Install Stellar CLI
         run: |
           if ! command -v stellar >/dev/null 2>&1; then
