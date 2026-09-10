@@ -11,17 +11,13 @@ const prisma = getPrismaClient();
 
 export const test = base.extend<{
   db: typeof prisma;
-  seedFinancialEvent: (override?: any) => Promise<any>;
+  seedFinancialEvent: (override?: Record<string, unknown>) => Promise<unknown>;
 }>({
-  db: async ({}, use) => {
+  db: async (_params, use) => {
     // Teardown before each test ensures a clean slate
-    await prisma.$transaction([
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "Session" CASCADE;'),
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "User" CASCADE;'),
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "BusinessProfile" CASCADE;'),
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "FinancialEvent" CASCADE;'),
-      prisma.$executeRawUnsafe('TRUNCATE TABLE "Attestation" CASCADE;'),
-    ]);
+    await prisma.$executeRawUnsafe(
+      'TRUNCATE TABLE "attestations", "financial_events", "business_profiles", "sessions", "users" CASCADE;'
+    );
 
     await use(prisma);
   },
@@ -33,12 +29,11 @@ export const test = base.extend<{
           id: "evt_123",
           eventId: "e".repeat(64),
           stellarReference: "tx_hash_123",
+          metadataHash: "m".repeat(64),
           businessId: "biz_123",
-          type: "PaymentReceived",
+          eventType: "PaymentReceived",
           assetAddress: "native",
           amount: "100000000",
-          senderAddress: "GBOTHERACCOUNTAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-          recipientAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
           status: "Pending",
           ledgerSequence: 100,
           ...override,
