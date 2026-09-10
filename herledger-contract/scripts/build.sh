@@ -9,9 +9,13 @@ WORKSPACE_DIR="$(dirname "$SCRIPT_DIR")"
 
 cd "$WORKSPACE_DIR"
 
+echo "==> Ensuring wasm32v1-none target is installed..."
+rustup target add wasm32v1-none || true
+
 echo "==> Building HerLedger contracts..."
 stellar contract build
 
 echo ""
 echo "==> Build complete. WASM artifacts:"
+mkdir -p target/wasm32v1-none/release
 find target/wasm32v1-none/release -maxdepth 1 -name "*.wasm" | sort

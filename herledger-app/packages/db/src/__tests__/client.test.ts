@@ -25,16 +25,25 @@ describe("Database Client & DI Factory", () => {
   });
 
   it("provides getDbClient singleton and allows overriding with setDbClient", async () => {
-    process.env["DATABASE_URL"] = "postgresql://user:pass@localhost:5432/testdb";
-    const db1 = getDbClient();
-    const db2 = getDbClient();
-    expect(db1).toBe(db2);
+    const origDbUrl = process.env["DATABASE_URL"];
+    try {
+      process.env["DATABASE_URL"] = "postgresql://user:pass@localhost:5432/testdb";
+      const db1 = getDbClient();
+      const db2 = getDbClient();
+      expect(db1).toBe(db2);
 
-    const mockDb = createMockDbClient();
-    const { setDbClient, resetDbClient } = await import("../client");
-    setDbClient(mockDb);
-    expect(getDbClient()).toBe(mockDb);
-    resetDbClient();
+      const mockDb = createMockDbClient();
+      const { setDbClient, resetDbClient } = await import("../client");
+      setDbClient(mockDb);
+      expect(getDbClient()).toBe(mockDb);
+      resetDbClient();
+    } finally {
+      if (origDbUrl !== undefined) {
+        process.env["DATABASE_URL"] = origDbUrl;
+      } else {
+        delete process.env["DATABASE_URL"];
+      }
+    }
   });
 
   it("creates a mock DbClient with default mocks", async () => {
