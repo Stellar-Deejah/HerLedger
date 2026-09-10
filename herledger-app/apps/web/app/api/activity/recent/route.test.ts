@@ -77,10 +77,10 @@ describe("GET /api/activity/recent", () => {
     expect(body.meta).toBeNull();
   });
 
-  it("returns 422 when limit is 101", async () => {
+  it("returns 422 when limit is 201", async () => {
     vi.mocked(auth.api.getSession).mockResolvedValueOnce({ user: { id: "user_1" } } as never);
     setDbClient(createMockDbClient());
-    const req = new NextRequest("http://localhost/api/activity/recent?limit=101");
+    const req = new NextRequest("http://localhost/api/activity/recent?limit=201");
     const res = await GET(req);
     expect(res.status).toBe(422);
     const body = await res.json();
