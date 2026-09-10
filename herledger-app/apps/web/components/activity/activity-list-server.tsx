@@ -20,7 +20,8 @@ export async function ActivityListServer({ businessId }: ActivityListServerProps
   let data: Awaited<ReturnType<typeof getRecentActivity>> | null = null;
   try {
     data = await getRecentActivity(businessId, { offset: 0, limit: PAGE_SIZE });
-  } catch {
+  } catch (err) {
+    console.error("[ActivityListServer] Error loading recent activity:", err);
     data = null;
   }
 

@@ -36,33 +36,46 @@ export async function getAttestations(
     return { attestations: [] };
   }
 
-  const fetchAttestations = unstable_cache(
-    async () => {
-      const events = await prisma.financialEvent.findMany({
-        where: { businessId },
-        select: {
-          eventId: true,
-          attestations: {
-            ...(includeRevoked ? {} : { where: { status: "Active" as const } }),
-            orderBy: { ledgerSequence: "desc" },
-            select: {
-              id: true,
-              attestationId: true,
-              eventId: true,
-              attesterAddress: true,
-              claimHash: true,
-              claimDescription: true,
-              status: true,
-              ledgerSequence: true,
-            },
+  const fetchFn = async () => {
+    const events = await prisma.financialEvent.findMany({
+      where: { businessId },
+      select: {
+        eventId: true,
+        attestations: {
+          ...(includeRevoked ? {} : { where: { status: "Active" as const } }),
+          orderBy: { ledgerSequence: "desc" },
+          select: {
+            id: true,
+            attestationId: true,
+            eventId: true,
+            attesterAddress: true,
+            claimHash: true,
+            claimDescription: true,
+            status: true,
+            ledgerSequence: true,
           },
         },
-      });
+      },
+    });
 
-      return events
-        .flatMap((event) => event.attestations)
-        .sort((a, b) => b.ledgerSequence - a.ledgerSequence);
-    },
+    return events
+      .flatMap((event) => event.attestations)
+      .sort((a, b) => b.ledgerSequence - a.ledgerSequence);
+  };
+
+  const shouldSkipCache =
+    process.env.NODE_ENV === "test" ||
+    process.env.NODE_ENV === "development" ||
+    Boolean(process.env.CI) ||
+    Boolean(process.env.PLAYWRIGHT_TEST);
+
+  if (shouldSkipCache) {
+    const attestations = await fetchFn();
+    return { attestations };
+  }
+
+  const fetchAttestations = unstable_cache(
+    fetchFn,
     [`attestations-${businessId}-${includeRevoked}`],
     { tags: [attestationsTag(businessId)], revalidate: ATTESTATIONS_REVALIDATE_SECONDS }
   );
@@ -74,11 +87,23 @@ export async function getAttestations(
 export async function getActiveAttestationCount(businessId: string | null): Promise<number> {
   if (!businessId) return 0;
 
-  const fetchCount = unstable_cache(
-    async () => prisma.attestation.count({ where: { status: "Active", event: { businessId } } }),
-    [`attestations-count-${businessId}`],
-    { tags: [attestationsTag(businessId)], revalidate: ATTESTATIONS_REVALIDATE_SECONDS }
-  );
+  const countFn = async () =>
+    prisma.attestation.count({ where: { status: "Active", event: { businessId } } });
+
+  const shouldSkipCache =
+    process.env.NODE_ENV === "test" ||
+    process.env.NODE_ENV === "development" ||
+    Boolean(process.env.CI) ||
+    Boolean(process.env.PLAYWRIGHT_TEST);
+
+  if (shouldSkipCache) {
+    return countFn();
+  }
+
+  const fetchCount = unstable_cache(countFn, [`attestations-count-${businessId}`], {
+    tags: [attestationsTag(businessId)],
+    revalidate: ATTESTATIONS_REVALIDATE_SECONDS,
+  });
 
   return fetchCount();
 }

@@ -50,10 +50,18 @@ export function DashboardSummary({
   }
   if (events.length === 0) {
     return (
-      <EmptyState
-        title="No verified financial activity yet."
-        description="Once your business is registered and supported Stellar transactions are detected, your activity will appear here."
-      />
+      <div>
+        {businessProfile && (
+          <p>
+            {businessProfile.displayName} · {businessProfile.active ? "Active" : "Inactive"} ·{" "}
+            {attestationCount} active attestations
+          </p>
+        )}
+        <EmptyState
+          title="No verified financial activity yet."
+          description="Once your business is registered and supported Stellar transactions are detected, your activity will appear here."
+        />
+      </div>
     );
   }
 

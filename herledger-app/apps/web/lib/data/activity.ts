@@ -62,13 +62,18 @@ export async function getRecentActivity(
   // startDate/endDate join the cache key alongside offset/limit -- a
   // different range is a genuinely different result set, not a cache hit
   // for the unfiltered one.
+  const shouldSkipCache =
+    process.env.NODE_ENV === "test" ||
+    process.env.NODE_ENV === "development" ||
+    Boolean(process.env.CI) ||
+    Boolean(process.env.PLAYWRIGHT_TEST);
+
   const cacheKey = `activity-${businessId}-${offset}-${limit}-${startDate ?? ""}-${endDate ?? ""}`;
-  const fetchPage =
-    process.env.NODE_ENV === "test"
-      ? fetchPageFn
-      : unstable_cache(fetchPageFn, [cacheKey], {
-          revalidate: ACTIVITY_REVALIDATE_SECONDS,
-        });
+  const fetchPage = shouldSkipCache
+    ? fetchPageFn
+    : unstable_cache(fetchPageFn, [cacheKey], {
+        revalidate: ACTIVITY_REVALIDATE_SECONDS,
+      });
 
   const events = await fetchPage();
 

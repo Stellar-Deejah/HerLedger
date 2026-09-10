@@ -42,13 +42,18 @@ export async function getActivitySummary(
     );
   };
 
+  const shouldSkipCache =
+    process.env.NODE_ENV === "test" ||
+    process.env.NODE_ENV === "development" ||
+    Boolean(process.env.CI) ||
+    Boolean(process.env.PLAYWRIGHT_TEST);
+
   const cacheKey = `activity-summary-${businessId}-${startDate ?? ""}-${endDate ?? ""}`;
-  const fetchSummary =
-    process.env.NODE_ENV === "test"
-      ? fetchSummaryFn
-      : unstable_cache(fetchSummaryFn, [cacheKey], {
-          revalidate: SUMMARY_REVALIDATE_SECONDS,
-        });
+  const fetchSummary = shouldSkipCache
+    ? fetchSummaryFn
+    : unstable_cache(fetchSummaryFn, [cacheKey], {
+        revalidate: SUMMARY_REVALIDATE_SECONDS,
+      });
 
   return fetchSummary();
 }

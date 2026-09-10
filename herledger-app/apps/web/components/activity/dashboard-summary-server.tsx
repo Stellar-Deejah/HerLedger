@@ -25,7 +25,8 @@ export async function OverviewPanel({ businessId, businessProfile }: OverviewPan
       getRecentActivity(businessId, { offset: 0, limit: 20 }),
       getActiveAttestationCount(businessId),
     ]);
-  } catch {
+  } catch (err) {
+    console.error("[OverviewPanel] Error loading overview activity/attestations:", err);
     result = null;
   }
 
