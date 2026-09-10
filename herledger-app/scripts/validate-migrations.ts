@@ -18,16 +18,19 @@ function main() {
 
   // Use the same environment variables or rely on GHA setup
   const diffResult = spawnSync(
-    "npx",
+    "pnpm",
     [
+      "exec",
       "prisma",
       "migrate",
       "diff",
       "--exit-code",
       "--from-migrations",
       migrationsDir,
-      "--to-schema",
+      "--to-schema-datamodel",
       schemaPath,
+      "--shadow-database-url",
+      process.env["SHADOW_DATABASE_URL"] ?? process.env["DATABASE_URL"] ?? "",
     ],
     {
       cwd: rootDir,
