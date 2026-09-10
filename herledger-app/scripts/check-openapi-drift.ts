@@ -29,17 +29,31 @@ export function checkOpenApiDrift(): boolean {
   const existingIndexerJson = fs.readFileSync(indexerPath, "utf8");
   const existingWebJson = fs.readFileSync(webPath, "utf8");
 
-  const generatedIndexerJson = JSON.stringify(indexerSpec, null, 2) + "\n";
-  const generatedWebJson = JSON.stringify(webSpec, null, 2) + "\n";
+  // Compare semantically (stringify both sides) so prettier formatting
+  // differences in the committed files don't produce false-positive drift.
+  const normalize = (spec: unknown) => JSON.stringify(spec, null, 2) + "\n";
+
+  const generatedIndexerNormalized = normalize(indexerSpec);
+  const generatedWebNormalized = normalize(webSpec);
+
+  let existingIndexerNormalized: string;
+  let existingWebNormalized: string;
+  try {
+    existingIndexerNormalized = normalize(JSON.parse(existingIndexerJson));
+    existingWebNormalized = normalize(JSON.parse(existingWebJson));
+  } catch {
+    console.error("Error parsing existing OpenAPI spec files.");
+    return false;
+  }
 
   let hasDrift = false;
 
-  if (existingIndexerJson !== generatedIndexerJson) {
+  if (existingIndexerNormalized !== generatedIndexerNormalized) {
     console.error(`Spec drift detected in Indexer API (${indexerPath})!`);
     hasDrift = true;
   }
 
-  if (existingWebJson !== generatedWebJson) {
+  if (existingWebNormalized !== generatedWebNormalized) {
     console.error(`Spec drift detected in Web API (${webPath})!`);
     hasDrift = true;
   }
