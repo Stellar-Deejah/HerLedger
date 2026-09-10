@@ -92,8 +92,10 @@ export async function findRecentEventsByBusiness(
   businessId: string,
   options?: ActivityQueryOptions
 ): Promise<FinancialEvent[]> {
-  const offset = options?.offset ?? 0;
-  const limit = options?.limit ?? 20;
+  const offset =
+    typeof options?.offset === "number" && !Number.isNaN(options.offset) ? options.offset : 0;
+  const limit =
+    typeof options?.limit === "number" && !Number.isNaN(options.limit) ? options.limit : 20;
   const { startDate, endDate } = options ?? {};
 
   try {

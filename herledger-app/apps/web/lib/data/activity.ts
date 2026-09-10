@@ -32,15 +32,18 @@ export async function getRecentActivity(
     endDate,
   }: { offset: number; limit: number; startDate?: string; endDate?: string }
 ): Promise<ActivityRecentData> {
+  const safeOffset = typeof offset === "number" && !Number.isNaN(offset) ? offset : 0;
+  const safeLimit = typeof limit === "number" && !Number.isNaN(limit) ? limit : 20;
+
   if (!businessId) {
-    return { events: [], pagination: { offset: 0, limit, count: 0 } };
+    return { events: [], pagination: { offset: safeOffset, limit: safeLimit, count: 0 } };
   }
 
   const fetchPageFn = async () => {
     const db = getDbClient();
     const events = await db.financialEvents.findRecentByBusiness(businessId, {
-      offset,
-      limit,
+      offset: safeOffset,
+      limit: safeLimit,
       ...toDateRange({
         ...(startDate ? { startDate } : {}),
         ...(endDate ? { endDate } : {}),
@@ -68,7 +71,7 @@ export async function getRecentActivity(
     Boolean(process.env.CI) ||
     Boolean(process.env.PLAYWRIGHT_TEST);
 
-  const cacheKey = `activity-${businessId}-${offset}-${limit}-${startDate ?? ""}-${endDate ?? ""}`;
+  const cacheKey = `activity-${businessId}-${safeOffset}-${safeLimit}-${startDate ?? ""}-${endDate ?? ""}`;
   const fetchPage = shouldSkipCache
     ? fetchPageFn
     : unstable_cache(fetchPageFn, [cacheKey], {
@@ -79,6 +82,6 @@ export async function getRecentActivity(
 
   return {
     events,
-    pagination: { offset, limit, count: events.length },
+    pagination: { offset: safeOffset, limit: safeLimit, count: events.length },
   };
 }

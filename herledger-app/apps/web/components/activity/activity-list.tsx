@@ -11,7 +11,9 @@ import { useEventStream } from "@/hooks/use-event-stream";
 import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { formatAmount, formatDate } from "@/lib/utils/format";
 
-export const PAGE_SIZE = 20;
+export { PAGE_SIZE } from "./constants";
+import { PAGE_SIZE } from "./constants";
+
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200] as const;
 const VIRTUALIZATION_THRESHOLD = 100;
 const GRID_TEMPLATE = "1fr 1.2fr 1fr 1fr 0.8fr 2fr";
