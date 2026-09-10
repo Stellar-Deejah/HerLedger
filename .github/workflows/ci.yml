@@ -388,6 +388,7 @@ jobs:
 
       - name: Check generated ABI types match committed types
         run: pnpm --filter @herledger/sdk generate:abi:check
+        working-directory: herledger-app
 
   # Nightly testnet smoke — or manually via workflow_dispatch
   testnet-smoke:

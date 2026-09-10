@@ -11,6 +11,7 @@ import { createIndexerErrorsRepository } from "./repositories/indexer-errors";
 import { createStellarTransactionsRepository } from "./repositories/stellar-transactions";
 import { createUsersRepository } from "./repositories/users";
 import type { DbClient } from "./types";
+export type { DbClient };
 
 const DEFAULT_STATEMENT_TIMEOUT_MS = 10_000;
 

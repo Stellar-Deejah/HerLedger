@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { vi } from "vitest";
 
 import type {
   AttestationsRepository,
@@ -13,78 +14,35 @@ import type {
   UsersRepository,
 } from "./types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getFn(): any {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const globalVi = (globalThis as any).vi;
-  if (globalVi && typeof globalVi.fn === "function") {
-    return globalVi.fn.bind(globalVi);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const fallback = (impl?: any) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const calls: any[][] = [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fn: any = (...args: any[]) => {
-      calls.push(args);
-      return typeof fn._resolved !== "undefined"
-        ? Promise.resolve(fn._resolved)
-        : impl
-          ? impl(...args)
-          : undefined;
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fn.mockResolvedValue = (val: any) => {
-      fn._resolved = val;
-      return fn;
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fn.mockReturnValue = (val: any) => {
-      fn._returned = val;
-      return fn;
-    };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    fn.mockImplementation = (newImpl: any) => {
-      impl = newImpl;
-      return fn;
-    };
-    fn.mock = { calls };
-    return fn;
-  };
-  return fallback;
-}
-
 /**
  * Creates a mock DbClient with vitest mock functions for unit testing without
  * requiring a live database or module mocking hacks.
  */
 export function createMockDbClient(overrides?: Partial<DbClient>): DbClient {
-  const fn = getFn();
-
   const mockPrisma = {
-    $transaction: fn(async (cb: (tx: unknown) => unknown) => cb(mockPrisma)),
+    $transaction: vi.fn(async (cb: (tx: unknown) => unknown) => cb(mockPrisma)),
   } as unknown as PrismaClient;
 
   const mockBusinesses: BusinessesRepository = {
-    findAllActiveWallets: fn().mockResolvedValue({ wallets: [], nextCursor: null }),
-    findByWallet: fn().mockResolvedValue(null),
-    findById: fn().mockResolvedValue(null),
-    findByUserId: fn().mockResolvedValue(null),
-    create: fn().mockResolvedValue({}),
-    update: fn().mockResolvedValue({}),
-    deactivate: fn().mockResolvedValue({}),
+    findAllActiveWallets: vi.fn().mockResolvedValue({ wallets: [], nextCursor: null }),
+    findByWallet: vi.fn().mockResolvedValue(null),
+    findById: vi.fn().mockResolvedValue(null),
+    findByUserId: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    deactivate: vi.fn().mockResolvedValue({}),
     ...overrides?.businesses,
   };
 
   const mockFinancialEvents: FinancialEventsRepository = {
-    upsert: fn().mockResolvedValue(undefined),
-    updateStatus: fn().mockResolvedValue(undefined),
-    findByBusiness: fn().mockResolvedValue([]),
-    findRecentByBusiness: fn().mockResolvedValue([]),
-    findById: fn().mockResolvedValue(null),
-    findUpdatedAfter: fn().mockResolvedValue([]),
-    findAttestableEvents: fn().mockResolvedValue([]),
-    summarize: fn().mockResolvedValue({
+    upsert: vi.fn().mockResolvedValue(undefined),
+    updateStatus: vi.fn().mockResolvedValue(undefined),
+    findByBusiness: vi.fn().mockResolvedValue([]),
+    findRecentByBusiness: vi.fn().mockResolvedValue([]),
+    findById: vi.fn().mockResolvedValue(null),
+    findUpdatedAfter: vi.fn().mockResolvedValue([]),
+    findAttestableEvents: vi.fn().mockResolvedValue([]),
+    summarize: vi.fn().mockResolvedValue({
       totalReceived: "0",
       totalSent: "0",
       netBalance: "0",
@@ -94,49 +52,49 @@ export function createMockDbClient(overrides?: Partial<DbClient>): DbClient {
   };
 
   const mockAttestations: AttestationsRepository = {
-    upsert: fn().mockResolvedValue(undefined),
-    upsertClaimDescription: fn().mockResolvedValue({}),
-    findByEvent: fn().mockResolvedValue([]),
-    findByBusiness: fn().mockResolvedValue([]),
-    findById: fn().mockResolvedValue(null),
-    findByAttestationIdAndBusiness: fn().mockResolvedValue(null),
+    upsert: vi.fn().mockResolvedValue(undefined),
+    upsertClaimDescription: vi.fn().mockResolvedValue({}),
+    findByEvent: vi.fn().mockResolvedValue([]),
+    findByBusiness: vi.fn().mockResolvedValue([]),
+    findById: vi.fn().mockResolvedValue(null),
+    findByAttestationIdAndBusiness: vi.fn().mockResolvedValue(null),
     ...overrides?.attestations,
   };
 
   const mockAttesters: AttestersRepository = {
-    findByWallet: fn().mockResolvedValue(null),
-    upsert: fn().mockResolvedValue({}),
+    findByWallet: vi.fn().mockResolvedValue(null),
+    upsert: vi.fn().mockResolvedValue({}),
     ...overrides?.attesters,
   };
 
   const mockCheckpoint: CheckpointRepository = {
-    get: fn().mockResolvedValue(0),
-    save: fn().mockResolvedValue(undefined),
+    get: vi.fn().mockResolvedValue(0),
+    save: vi.fn().mockResolvedValue(undefined),
     ...overrides?.checkpoint,
   };
 
   const mockIndexerErrors: IndexerErrorsRepository = {
-    writeDeadLetter: fn().mockResolvedValue({ errorId: "mock-err-id" }),
-    findByErrorId: fn().mockResolvedValue(null),
-    markResolved: fn().mockResolvedValue(undefined),
-    incrementRetry: fn().mockResolvedValue(undefined),
+    writeDeadLetter: vi.fn().mockResolvedValue({ errorId: "mock-err-id" }),
+    findByErrorId: vi.fn().mockResolvedValue(null),
+    markResolved: vi.fn().mockResolvedValue(undefined),
+    incrementRetry: vi.fn().mockResolvedValue(undefined),
     ...overrides?.indexerErrors,
   };
 
   const mockStellarTransactions: StellarTransactionsRepository = {
-    upsert: fn().mockResolvedValue(undefined),
+    upsert: vi.fn().mockResolvedValue(undefined),
     ...overrides?.stellarTransactions,
   };
 
   const mockUsers: UsersRepository = {
-    findById: fn().mockResolvedValue(null),
-    deleteAccount: fn().mockResolvedValue(undefined),
+    findById: vi.fn().mockResolvedValue(null),
+    deleteAccount: vi.fn().mockResolvedValue(undefined),
     ...overrides?.users,
   };
 
   const mockDisputes: DisputesRepository = {
-    findByEventId: fn().mockResolvedValue(null),
-    create: fn().mockResolvedValue({}),
+    findByEventId: vi.fn().mockResolvedValue(null),
+    create: vi.fn().mockResolvedValue({}),
     ...overrides?.disputes,
   };
 
