@@ -169,10 +169,10 @@ export async function cleanupSeed(userId: string): Promise<void> {
       where: { event: { businessId: business.businessId } },
     });
     await prisma.financialEvent.deleteMany({ where: { businessId: business.businessId } });
-    await prisma.businessProfile.delete({ where: { userId } });
+    await prisma.businessProfile.deleteMany({ where: { userId } });
   }
 
-  await prisma.user.delete({ where: { id: userId } });
+  await prisma.user.deleteMany({ where: { id: userId } });
 }
 
 export async function disconnectSeedClient(): Promise<void> {

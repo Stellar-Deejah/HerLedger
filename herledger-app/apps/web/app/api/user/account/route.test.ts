@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
+import { resetDbClient, setDbClient } from "@herledger/db";
+import { createMockDbClient } from "@herledger/db/mock";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { auth } from "@/lib/auth/server";

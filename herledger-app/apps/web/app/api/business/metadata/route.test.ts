@@ -1,4 +1,5 @@
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
+import { resetDbClient, setDbClient } from "@herledger/db";
+import { createMockDbClient } from "@herledger/db/mock";
 import { updateBusinessMetadata } from "@herledger/sdk";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

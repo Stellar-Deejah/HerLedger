@@ -7,6 +7,7 @@ import { getMessages, getTranslations } from "next-intl/server";
 import "../globals.css";
 import { routing } from "@/i18n/routing";
 import { SITE_URL } from "@/lib/seo/site";
+import { WalletContextProvider } from "@/lib/wallet";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -53,7 +54,9 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   return (
     <html lang={locale} className={inter.variable}>
       <body className={inter.className}>
-        <NextIntlClientProvider messages={messages}>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider messages={messages}>
+          <WalletContextProvider>{children}</WalletContextProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

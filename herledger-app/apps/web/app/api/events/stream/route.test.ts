@@ -1,4 +1,5 @@
-import { createMockDbClient, resetDbClient, setDbClient } from "@herledger/db";
+import { resetDbClient, setDbClient } from "@herledger/db";
+import { createMockDbClient } from "@herledger/db/mock";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {

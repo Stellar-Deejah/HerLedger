@@ -8,9 +8,6 @@ export {
   setDbClient,
 } from "./client";
 
-// Mock helper for unit tests
-export { createMockDbClient } from "./mock";
-
 // Repositories
 export {
   findAllActiveBusinessWallets,

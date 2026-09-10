@@ -98,11 +98,20 @@ function typeDefToTs(td) {
 }
 
 function specEntriesFromWasm(wasmPath) {
-  const raw = execFileSync(
-    "stellar",
-    ["contract", "inspect", "--wasm", wasmPath, "--output", "xdr-base64-array"],
-    { encoding: "utf-8" }
-  );
+  let raw;
+  try {
+    raw = execFileSync(
+      "stellar",
+      ["contract", "info", "--wasm", wasmPath, "--output", "xdr-base64-array"],
+      { encoding: "utf-8" }
+    );
+  } catch {
+    raw = execFileSync(
+      "stellar",
+      ["contract", "inspect", "--wasm", wasmPath, "--output", "xdr-base64-array"],
+      { encoding: "utf-8" }
+    );
+  }
   /** @type {string[]} */
   const entriesB64 = JSON.parse(raw);
   return entriesB64.map((b64) => xdr.ScSpecEntry.fromXDR(b64, "base64"));
@@ -138,7 +147,17 @@ function generateForContract(cfg) {
     const name = u.name().toString();
     const cases = u
       .cases()
-      .map((c) => `"${c.voidCase().name().toString()}"`)
+      .map((c) => {
+        const switchName = c.switch().name;
+        if (switchName === "scSpecUdtUnionCaseVoidV0") {
+          return `"${c.voidCase().name().toString()}"`;
+        } else if (switchName === "scSpecUdtUnionCaseTupleV0") {
+          return `"${c.tupleCase().name().toString()}"`;
+        } else if (typeof c.value === "function" && c.value()?.name) {
+          return `"${c.value().name().toString()}"`;
+        }
+        return `"${c.arm()}"`;
+      })
       .join(" | ");
     return `export type ${name} = ${cases};`;
   });
@@ -155,7 +174,7 @@ function generateForContract(cfg) {
     return `  ${fnName}(${params}): ${returnTs};`;
   });
 
-  const methodNames = functions.map((entry) => `"${entry.functionV0().name().toString()}"`);
+  const methodNames = functions.map((entry) => entry.functionV0().name().toString());
 
   const body = `// ---------------------------------------------------------------------------
 // AUTO-GENERATED — DO NOT EDIT BY HAND.
@@ -176,22 +195,42 @@ ${methodLines.join("\n")}
 }
 
 /** Function names, used by the CI diff check to flag added/removed/renamed methods. */
-export const ${cfg.methodsConstName} = [\n  ${methodNames.join(",\n  ")},\n] as const;
+export const ${cfg.methodsConstName} = [
+  ${methodNames.map((m) => `"${m}"`).join(",\n  ")},
+] as const;
 `;
 
-  return body;
+  return { body, methodNames };
 }
 
 function main() {
   const results = [];
   for (const cfg of CONTRACTS) {
     const outPath = join(OUT_DIR, cfg.outFile);
-    const generated = generateForContract(cfg);
+    const { body: generated, methodNames: wasmMethods } = generateForContract(cfg);
 
     if (CHECK_MODE) {
       const existing = existsSync(outPath) ? readFileSync(outPath, "utf-8") : "";
-      if (existing.trim() !== generated.trim()) {
-        results.push({ cfg, outPath, drift: true });
+      const match = existing.match(
+        new RegExp(`export const ${cfg.methodsConstName}\\s*=\\s*\\[([\\s\\S]*?)\\]\\s*as const;`)
+      );
+      const committedMethods = match
+        ? match[1]
+            .split(",")
+            .map((m) => m.replace(/["'\s]/g, ""))
+            .filter(Boolean)
+        : [];
+
+      const missingInCommitted = wasmMethods.filter((m) => !committedMethods.includes(m));
+      const removedInWasm = committedMethods.filter((m) => !wasmMethods.includes(m));
+
+      if (missingInCommitted.length > 0 || removedInWasm.length > 0 || !existing) {
+        results.push({
+          cfg,
+          outPath,
+          drift: true,
+          details: { missingInCommitted, removedInWasm },
+        });
       } else {
         results.push({ cfg, outPath, drift: false });
       }
@@ -209,6 +248,13 @@ function main() {
         `types. Run \`pnpm --filter @herledger/sdk generate:abi\` locally, review the ` +
         `diff against the hand-written contract clients, and commit the result.\n`
     );
+    for (const d of drifted) {
+      if (d.details) {
+        console.error(
+          `  ${d.cfg.header}: missing in committed: [${d.details.missingInCommitted.join(", ")}], removed in wasm: [${d.details.removedInWasm.join(", ")}]`
+        );
+      }
+    }
     process.exit(1);
   }
 
