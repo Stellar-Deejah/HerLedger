@@ -4,7 +4,7 @@ import { createResponseSchema, type SuccessData } from "../../../../../lib/api/e
 
 export const RequestSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(200).default(20),
   /**
    * Inclusive lower bound on `FinancialEvent.createdAt`, as an ISO 8601
    * calendar date (`YYYY-MM-DD`) rather than a full datetime -- this is what

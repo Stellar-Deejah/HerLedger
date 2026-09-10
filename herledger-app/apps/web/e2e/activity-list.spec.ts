@@ -31,6 +31,7 @@ function makeEvent(index: number) {
     status: "Verified",
     stellarReference: `0x${id.padStart(62, "0")}`,
     ledgerSequence: 100_000 - index,
+    createdAt: new Date(1700000000000 - index * 60000).toISOString(),
   };
 }
 
