@@ -17,7 +17,7 @@ function main() {
   console.log("➡️ Checking for unapplied schema changes...");
 
   // Use the same environment variables or rely on GHA setup
-  // Note: --to-schema-datamodel is the Prisma 7.x flag name for the schema path
+  // Note: --to-schema is the Prisma flag for the schema path
   const diffResult = spawnSync(
     "pnpm",
     [
@@ -28,7 +28,7 @@ function main() {
       "--exit-code",
       "--from-migrations",
       migrationsDir,
-      "--to-schema-datamodel",
+      "--to-schema",
       schemaPath,
     ],
     {

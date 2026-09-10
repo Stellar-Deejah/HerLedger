@@ -160,12 +160,9 @@ jobs:
         run: pnpm db:generate
         working-directory: herledger-app
 
-      # NOTE: validate-migrations runs prisma migrate diff which requires a
-      # fully configured shadow DB. Skipping here — the db:migrate step below
-      # and the unit tests serve as the definitive migration correctness check.
-      # - name: Validate database migrations
-      #   run: pnpm exec tsx scripts/validate-migrations.ts
-      #   working-directory: herledger-app
+      - name: Validate database migrations
+        run: pnpm exec tsx scripts/validate-migrations.ts
+        working-directory: herledger-app
 
       - name: Prisma migrate
         run: pnpm db:migrate
