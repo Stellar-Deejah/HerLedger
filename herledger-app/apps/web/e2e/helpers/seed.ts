@@ -72,6 +72,7 @@ export async function addSessionCookie(
   sessionToken: string,
   url: string
 ): Promise<void> {
+  await context.clearCookies();
   await context.addCookies([{ name: "better-auth.session_token", value: sessionToken, url }]);
 }
 

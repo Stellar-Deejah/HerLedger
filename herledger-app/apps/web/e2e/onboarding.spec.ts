@@ -10,6 +10,13 @@ test.describe("Business Onboarding Flow", () => {
   test("completes the full onboarding journey successfully", async ({ page, loggedInPage, db }) => {
     const testWalletAddress = DEFAULT_MOCK_WALLET_ADDRESS;
 
+    // Clear localStorage so no stale pending-registration leaks in
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.clear();
+      } catch {}
+    });
+
     // Inject mock Freighter wallet before navigation
     await mockFreighter(page, {
       isConnected: true,

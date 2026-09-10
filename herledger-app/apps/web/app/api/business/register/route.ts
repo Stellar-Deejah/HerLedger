@@ -107,14 +107,27 @@ export const POST = withRateLimit(async (req: NextRequest) => {
       );
     }
 
-    const profile = await db.businesses.create({
-      userId: session.user.id,
-      businessId,
-      walletAddress,
-      displayName,
-      metadataHash,
-      active: true,
-    });
+    let profile;
+    try {
+      profile = await db.businesses.create({
+        userId: session.user.id,
+        businessId,
+        walletAddress,
+        displayName,
+        metadataHash,
+        active: true,
+      });
+    } catch (createErr) {
+      const existing = await db.businesses.findByUserId(session.user.id);
+      if (existing) {
+        return typedJson<BusinessRegisterResponse>({
+          data: { businessId: existing.businessId },
+          error: null,
+          meta: null,
+        });
+      }
+      throw createErr;
+    }
 
     return typedJson<BusinessRegisterResponse>({
       data: { businessId: profile.businessId },

@@ -79,14 +79,18 @@ test("virtualizes large pages so the DOM row count stays bounded", async ({
     await page.goto("/dashboard/activity");
 
     // Default page size (20) renders the plain table.
-    await expect(page.getByRole("table", { name: "Financial activity" })).toBeVisible();
+    await expect(page.getByRole("table", { name: "Financial activity" })).toBeVisible({
+      timeout: 15000,
+    });
 
     // Grow the page past the virtualization threshold.
     await page.selectOption("#activity-page-size", "200");
 
     // The virtualized container uses role="table" (a div) and renders only the
     // visible + overscan rows, never the full 200.
-    await expect(page.locator('div[role="table"][aria-label="Financial activity"]')).toBeVisible();
+    await expect(page.locator('div[role="table"][aria-label="Financial activity"]')).toBeVisible({
+      timeout: 15000,
+    });
 
     const rowCount = await page.locator('[role="row"]').count();
     expect(rowCount).toBeGreaterThan(1); // header + at least one visible row

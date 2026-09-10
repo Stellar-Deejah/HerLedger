@@ -43,6 +43,7 @@ export const test = base.extend<{
     });
 
     // 2. Set the cookie in the browser context with cryptographic HMAC signature
+    await page.context().clearCookies();
     await page.context().addCookies([
       {
         name: "better-auth.session_token",

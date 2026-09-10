@@ -22,9 +22,8 @@ export class DisputesPage {
 
   async raiseDispute(_eventId: string, reason: string) {
     const challengeBtn = this.page.getByRole("button", { name: /Challenge/i }).first();
-    if (await challengeBtn.isVisible()) {
-      await challengeBtn.click();
-    }
+    await challengeBtn.waitFor({ state: "visible", timeout: 15000 });
+    await challengeBtn.click();
     await this.fillDisputeForm(reason);
     await this.submitDispute();
   }

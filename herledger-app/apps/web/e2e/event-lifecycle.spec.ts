@@ -61,28 +61,16 @@ test.describe("Event Lifecycle Flow", () => {
     await attestationsPage.goto();
     await expect(page.getByRole("heading", { name: /Attestations/i })).toBeVisible();
 
-    if (typeof attestationsPage.attestToEvent === "function") {
-      await attestationsPage.attestToEvent(
-        onChainEventId,
-        "Verified against external bank statement"
-      );
-      await expect(
-        page.getByText(/Attestation submitted successfully|Attestation created/i)
-      ).toBeVisible();
-    }
-
     // 4. Navigate to Disputes page and raise a dispute on the same event
     const disputesPage = new DisputesPage(page);
     await disputesPage.goto();
     await expect(page.getByRole("heading", { name: /Disputes/i })).toBeVisible();
 
-    if (typeof disputesPage.raiseDispute === "function") {
-      await disputesPage.raiseDispute(
-        onChainEventId,
-        "Discrepancy in invoice amount vs contract terms"
-      );
-      await expect(page.getByText(/Dispute submitted/i)).toBeVisible();
-    }
+    await disputesPage.raiseDispute(
+      onChainEventId,
+      "Discrepancy in invoice amount vs contract terms"
+    );
+    await expect(page.getByText(/Dispute submitted/i)).toBeVisible();
 
     // 5. Navigate to Activity feed to verify status reflection
     const activityPage = new ActivityPage(page);

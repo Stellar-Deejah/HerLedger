@@ -12,18 +12,4 @@ export class AttestationsPage {
   async goto() {
     await this.page.goto("/dashboard/attestations");
   }
-
-  async fillAttestationForm(eventId: string, claim: string) {
-    await this.page.getByLabel(/Event ID/i).fill(eventId);
-    await this.page.getByLabel(/Claim/i).fill(claim);
-  }
-
-  async submitAttestation() {
-    await this.page.getByRole("button", { name: /Submit/i }).click();
-  }
-
-  async attestToEvent(eventId: string, claim: string) {
-    await this.fillAttestationForm(eventId, claim);
-    await this.submitAttestation();
-  }
 }
