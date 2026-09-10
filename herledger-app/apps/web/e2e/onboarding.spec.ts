@@ -53,4 +53,3 @@ test.describe("Business Onboarding Flow", () => {
     expect(userBusiness?.displayName).toBe("My Playwright Test Business");
   });
 });
-

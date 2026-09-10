@@ -66,7 +66,9 @@ test.describe("Event Lifecycle Flow", () => {
         onChainEventId,
         "Verified against external bank statement"
       );
-      await expect(page.getByText(/Attestation submitted successfully|Attestation created/i)).toBeVisible();
+      await expect(
+        page.getByText(/Attestation submitted successfully|Attestation created/i)
+      ).toBeVisible();
     }
 
     // 4. Navigate to Disputes page and raise a dispute on the same event
