@@ -371,7 +371,7 @@ jobs:
           stellar --version
 
       - name: Build contracts
-        run: ./scripts/build.sh
+        run: bash ./scripts/build.sh
         working-directory: herledger-contract
 
       - uses: pnpm/action-setup@v4
