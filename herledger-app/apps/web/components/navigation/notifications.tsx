@@ -19,10 +19,10 @@ export function Notifications() {
 
   useEffect(() => {
     // Clear notifications when visiting the activity page.
-    if (pathname === "/dashboard/activity") {
+    if ((pathname === "/dashboard/activity" || pathname?.endsWith("/dashboard/activity")) && newEvents.length > 0) {
       clearNewEvents();
     }
-  }, [pathname, clearNewEvents]);
+  }, [pathname, newEvents.length, clearNewEvents]);
 
   const unreadCount = newEvents.length;
 

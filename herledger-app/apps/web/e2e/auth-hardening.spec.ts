@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { test, expect } from "@playwright/test";
 
-import { cleanupSeed, disconnectSeedClient } from "./helpers/seed";
+import { cleanupSeed, clearRateLimits, disconnectSeedClient } from "./helpers/seed";
 
 // ---------------------------------------------------------------------------
 // Covers the #13 acceptance criteria that are reachable through the UI:
@@ -39,7 +39,9 @@ test.describe("Sign-up: password policy and email verification", () => {
     await page.getByLabel("Password").fill("short12345"); // 10 chars
     await page.getByRole("button", { name: "Create account" }).click();
 
-    await expect(page.getByRole("alert")).toHaveText(/at least 12 characters/i);
+    await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toHaveText(
+      /at least 12 characters/i
+    );
     // Still on the sign-up page -- no navigation happened.
     await expect(page).toHaveURL(/\/auth\/sign-up$/);
   });
@@ -103,7 +105,9 @@ test.describe("Sign-in: unverified account", () => {
     await page.getByLabel("Password").fill(password);
     await page.getByRole("button", { name: "Sign in" }).click();
 
-    await expect(page.getByRole("alert")).toHaveText(/verify your email/i);
+    await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toHaveText(
+      /verify your email/i
+    );
     const resendLink = page.getByRole("link", { name: /resend verification email/i });
     await expect(resendLink).toHaveAttribute(
       "href",
@@ -118,6 +122,7 @@ test.describe("Sign-in: rate limiting", () => {
   test("5 consecutive failed sign-in attempts lock out the 6th with a rate-limit response", async ({
     page,
   }) => {
+    await clearRateLimits();
     await page.goto("/auth/sign-in");
 
     // A single browser session naturally shares one client identity across

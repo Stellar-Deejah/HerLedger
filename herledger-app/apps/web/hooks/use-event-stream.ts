@@ -169,10 +169,11 @@ export function useEventStream() {
     return undefined;
   }, []);
 
-  const clearNewEvents = () => {
-    globalNewEvents = [];
-    notifySubscribers();
-  };
-
   return { ...state, clearNewEvents };
+}
+
+export function clearNewEvents() {
+  if (globalNewEvents.length === 0) return;
+  globalNewEvents = [];
+  notifySubscribers();
 }

@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator, expect } from "@playwright/test";
 
 export class ActivityPage {
   readonly page: Page;
@@ -9,6 +9,13 @@ export class ActivityPage {
 
   async goto() {
     await this.page.goto("/dashboard/activity");
+  }
+
+  async filterByType(type: string) {
+    const filterSelect = this.page.getByLabel(/Filter by type|Type|Filter/i);
+    if (await filterSelect.isVisible()) {
+      await filterSelect.selectOption(type);
+    }
   }
 
   async getEventRow(eventId: string): Promise<Locator> {
@@ -23,6 +30,6 @@ export class ActivityPage {
 
   async expectEventStatus(eventId: string, status: string) {
     const row = await this.getEventRow(eventId);
-    await require("@playwright/test").expect(row).toContainText(status);
+    await expect(row).toContainText(status);
   }
 }

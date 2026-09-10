@@ -21,4 +21,9 @@ export class AttestationsPage {
   async submitAttestation() {
     await this.page.getByRole("button", { name: /Submit/i }).click();
   }
+
+  async attestToEvent(eventId: string, claim: string) {
+    await this.fillAttestationForm(eventId, claim);
+    await this.submitAttestation();
+  }
 }

@@ -16,7 +16,7 @@ export const test = base.extend<{
   db: async ({}, use) => {
     // Teardown before each test ensures a clean slate
     await prisma.$executeRawUnsafe(
-      'TRUNCATE TABLE "attestations", "financial_events", "business_profiles", "sessions", "users" CASCADE;'
+      'TRUNCATE TABLE "attestations", "financial_events", "business_profiles", "sessions", "users", "rate_limits" CASCADE;'
     );
 
     await use(prisma);

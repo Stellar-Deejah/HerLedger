@@ -1,4 +1,4 @@
-import { xdr } from "@stellar/stellar-sdk";
+import { Account, Keypair, Networks, Operation, TransactionBuilder, xdr } from "@stellar/stellar-sdk";
 
 // ---------------------------------------------------------------------------
 // Minimal, structurally-valid Soroban RPC response fixtures for
@@ -28,3 +28,14 @@ export function successfulTransactionResultXdr(feeCharged = "100"): string {
   });
   return result.toXDR("base64");
 }
+
+/** Any structurally-valid signed transaction envelope XDR. */
+export function throwawayEnvelopeXdr(): string {
+  const account = new Account(Keypair.random().publicKey(), "0");
+  const tx = new TransactionBuilder(account, { fee: "100", networkPassphrase: Networks.TESTNET })
+    .addOperation(Operation.bumpSequence({ bumpTo: "1" }))
+    .setTimeout(30)
+    .build();
+  return tx.toEnvelope().toXDR("base64");
+}
+

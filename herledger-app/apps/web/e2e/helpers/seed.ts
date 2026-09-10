@@ -175,6 +175,10 @@ export async function cleanupSeed(userId: string): Promise<void> {
   await prisma.user.deleteMany({ where: { id: userId } });
 }
 
+export async function clearRateLimits(): Promise<void> {
+  await prisma.rateLimit.deleteMany();
+}
+
 export async function disconnectSeedClient(): Promise<void> {
   await prisma.$disconnect();
 }

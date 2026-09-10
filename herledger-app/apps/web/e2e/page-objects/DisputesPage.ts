@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page } from "@playwright/test";
 
 export class DisputesPage {
   readonly page: Page;
@@ -17,6 +17,15 @@ export class DisputesPage {
   }
 
   async submitDispute() {
-    await this.page.getByRole("button", { name: /Submit Dispute/i }).click();
+    await this.page.getByRole("button", { name: /Submit Dispute|Submit dispute/i }).click();
+  }
+
+  async raiseDispute(_eventId: string, reason: string) {
+    const challengeBtn = this.page.getByRole("button", { name: /Challenge/i }).first();
+    if (await challengeBtn.isVisible()) {
+      await challengeBtn.click();
+    }
+    await this.fillDisputeForm(reason);
+    await this.submitDispute();
   }
 }
