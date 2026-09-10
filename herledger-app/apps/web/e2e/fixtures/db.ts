@@ -13,7 +13,7 @@ export const test = base.extend<{
   db: typeof prisma;
   seedFinancialEvent: (override?: Record<string, unknown>) => Promise<unknown>;
 }>({
-  db: async (_params, use) => {
+  db: async ({}, use) => {
     // Teardown before each test ensures a clean slate
     await prisma.$executeRawUnsafe(
       'TRUNCATE TABLE "attestations", "financial_events", "business_profiles", "sessions", "users" CASCADE;'
