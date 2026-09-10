@@ -212,7 +212,7 @@ jobs:
           node-version: "24"
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile --prod=false
         working-directory: herledger-app
 
       - name: Prisma generate

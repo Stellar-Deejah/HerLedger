@@ -3,6 +3,10 @@ import type { NextRequest } from "next/server";
 
 import { auth } from "@/lib/auth/server";
 import { validateCallbackUrl } from "@/lib/auth/validate-callback-url";
+import createMiddleware from "next-intl/middleware";
+import { routing } from "@/i18n/routing";
+
+const handleI18nRouting = createMiddleware(routing);
 
 // ---------------------------------------------------------------------------
 // Route protection middleware
@@ -122,39 +126,39 @@ export async function proxy(request: NextRequest) {
   }
 
   const allowedOrigins = [appUrl, request.nextUrl.origin];
-  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-  const isAuthRoute = AUTH_ROUTES.includes(pathname);
+  const pathnameWithoutLocale = pathname.replace(/^\/(?:en|es)(?=\/|$)/, "") || "/";
+  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathnameWithoutLocale.startsWith(prefix));
+  const isAuthRoute = AUTH_ROUTES.includes(pathnameWithoutLocale);
 
-  // Only pay for a session lookup when the route actually cares about auth
-  // state — public routes skip it entirely.
-  if (!isProtected && !isAuthRoute) {
-    return NextResponse.next();
+  if (isProtected) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+      const signIn = new URL("/auth/sign-in", request.url);
+      const callbackTarget = `${pathname}${search}`;
+      const safeCallback = validateCallbackUrl(callbackTarget, allowedOrigins);
+      signIn.searchParams.set("callbackUrl", safeCallback ?? "/dashboard");
+      return applySecurityHeaders(NextResponse.redirect(signIn), nonce);
+    }
   }
 
-  const session = await auth.api.getSession({ headers: request.headers });
+  if (isAuthRoute) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (session) {
+      const requestedCallback = request.nextUrl.searchParams.get("callbackUrl");
+      const safeCallback = validateCallbackUrl(requestedCallback, allowedOrigins);
+      return applySecurityHeaders(
+        NextResponse.redirect(new URL(safeCallback ?? "/dashboard", request.url)),
+        nonce
+      );
+    }
 
-  if (isProtected && !session) {
-    const signIn = new URL("/auth/sign-in", request.url);
-    const callbackTarget = `${pathname}${search}`;
-    const safeCallback = validateCallbackUrl(callbackTarget, allowedOrigins);
-    signIn.searchParams.set("callbackUrl", safeCallback ?? "/dashboard");
-    return NextResponse.redirect(signIn);
-  }
-
-  if (isAuthRoute && session) {
-    const requestedCallback = request.nextUrl.searchParams.get("callbackUrl");
-    const safeCallback = validateCallbackUrl(requestedCallback, allowedOrigins);
-    return NextResponse.redirect(new URL(safeCallback ?? "/dashboard", request.url));
-  }
-
-  // On auth routes when not logged in, drop malicious callbackUrl parameter if present
-  if (isAuthRoute && !session) {
+    // On auth routes when not logged in, drop malicious callbackUrl parameter if present
     const requestedCallback = request.nextUrl.searchParams.get("callbackUrl");
     if (requestedCallback !== null) {
       const safeCallback = validateCallbackUrl(requestedCallback, allowedOrigins);
       if (!safeCallback) {
         const cleanAuthUrl = new URL(pathname, request.url);
-        return NextResponse.redirect(cleanAuthUrl);
+        return applySecurityHeaders(NextResponse.redirect(cleanAuthUrl), nonce);
       }
     }
   }
@@ -167,11 +171,10 @@ export async function proxy(request: NextRequest) {
   // the nonce back out via `headers()` from `next/headers` for any script
   // they render directly.
   const cspHeaderValue = buildCsp(nonce);
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", cspHeaderValue);
+  request.headers.set("x-nonce", nonce);
+  request.headers.set("Content-Security-Policy", cspHeaderValue);
 
-  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  const response = handleI18nRouting(request) ?? NextResponse.next();
   return applySecurityHeaders(response, nonce);
 }
 

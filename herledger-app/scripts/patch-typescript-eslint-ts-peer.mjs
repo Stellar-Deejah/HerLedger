@@ -33,11 +33,17 @@ if (!existsSync(pnpmStore)) {
   process.exit(0);
 }
 
-const compatTypescriptDir = dirname(
-  require.resolve("typescript-eslint-ts6-compat/package.json", {
-    paths: [repoRoot],
-  }),
-);
+let compatTypescriptDir;
+try {
+  compatTypescriptDir = dirname(
+    require.resolve("typescript-eslint-ts6-compat/package.json", {
+      paths: [repoRoot],
+    })
+  );
+} catch {
+  // devDependencies were skipped (e.g. NODE_ENV=production) or compat package is not installed.
+  process.exit(0);
+}
 
 const targetPackagePrefixes = [
   "typescript-eslint@",
@@ -63,10 +69,7 @@ for (const entry of readdirSync(pnpmStore)) {
     continue;
   }
 
-  const desiredTarget = relative(
-    join(pnpmStore, entry, "node_modules"),
-    compatTypescriptDir,
-  );
+  const desiredTarget = relative(join(pnpmStore, entry, "node_modules"), compatTypescriptDir);
 
   if (existsSync(typescriptLink) || lstatSyncSafe(typescriptLink)) {
     const current = lstatSyncSafe(typescriptLink);
@@ -91,6 +94,6 @@ function lstatSyncSafe(path) {
 
 if (patched > 0) {
   console.log(
-    `patch-typescript-eslint-ts-peer: repointed ${patched} typescript-eslint package(s) to typescript@5.9.3`,
+    `patch-typescript-eslint-ts-peer: repointed ${patched} typescript-eslint package(s) to typescript@5.9.3`
   );
 }
