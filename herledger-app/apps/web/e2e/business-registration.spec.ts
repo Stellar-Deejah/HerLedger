@@ -126,7 +126,9 @@ test.describe("Business registration — resume on reload", () => {
 
     await page.goto("/dashboard/business");
 
-    await expect(page.getByText(/business registered on stellar/i)).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByRole("heading", { name: /business registered on stellar/i })
+    ).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(pending.txHash)).toBeVisible();
 
     // The resume path's DB POST (POST /api/business/register) hits the real

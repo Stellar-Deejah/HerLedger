@@ -14,9 +14,23 @@ test.describe("Event Lifecycle Flow", () => {
     db,
     seedFinancialEvent,
   }) => {
-    // 1. Seed the test DB with a Financial Event (bypassing the indexer)
+    // 1. Seed the test DB with BusinessProfile and Financial Event (bypassing the indexer)
     const eventId = "evt_lifecycle_123";
     const onChainEventId = "beef".repeat(16); // 64 chars
+
+    await db.businessProfile.create({
+      data: {
+        id: "biz_123",
+        userId: "usr_test123", // the user seeded in auth.ts
+        businessId: "onchain_biz_id",
+        displayName: "Test Business",
+        walletAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        metadataHash: "hash",
+        active: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
 
     await db.financialEvent.create({
       data: {
@@ -30,20 +44,6 @@ test.describe("Event Lifecycle Flow", () => {
         metadataHash: "hash123",
         status: "Pending",
         ledgerSequence: 100,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-
-    await db.businessProfile.create({
-      data: {
-        id: "biz_123",
-        userId: "usr_test123", // the user seeded in auth.ts
-        businessId: "onchain_biz_id",
-        displayName: "Test Business",
-        walletAddress: "GBSOMEBUSINESSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        metadataHash: "hash",
-        active: true,
         createdAt: new Date(),
         updatedAt: new Date(),
       },

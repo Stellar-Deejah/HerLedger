@@ -30,7 +30,13 @@ export interface SkeletonBlockProps {
  * that pulses while content streams in.
  */
 export function SkeletonBlock({ width = "100%", height = "0.75rem", style }: SkeletonBlockProps) {
-  return <span aria-hidden="true" className="skeleton" style={{ height, width, ...style }} />;
+  return (
+    <span
+      aria-hidden="true"
+      className="skeleton"
+      style={{ display: "inline-block", height, width, ...style }}
+    />
+  );
 }
 
 export interface SkeletonRowProps {

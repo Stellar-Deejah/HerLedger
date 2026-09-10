@@ -156,18 +156,9 @@ test("renders both active and revoked attestations with correct status badges", 
 });
 
 test.describe("Attester registration / attestation creation (pre-wallet-connection)", () => {
-  test.beforeEach(async ({ context }) => {
-    await context.addCookies([
-      {
-        name: "better-auth.session_token",
-        value: "e2e-fixture-session",
-        url: process.env.APP_URL ?? "http://localhost:3000",
-      },
-    ]);
-  });
-
   test("register-attester page explains the admin-wallet requirement before connecting", async ({
     page,
+    seededUser: _u,
   }) => {
     await page.goto("/dashboard/attestations/register");
 
@@ -178,6 +169,7 @@ test.describe("Attester registration / attestation creation (pre-wallet-connecti
 
   test("create-attestation page prompts for an attester wallet connection first", async ({
     page,
+    seededUser: _u,
   }) => {
     await page.goto("/dashboard/attestations/create");
 

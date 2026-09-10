@@ -1,4 +1,14 @@
+import { createHmac } from "node:crypto";
+
 import { test as base } from "./db";
+
+function signSessionToken(rawToken: string): string {
+  const secret =
+    process.env["BETTER_AUTH_SECRET"] ||
+    "05fddafc9c2b3b1a6a57ab04d3677c73f59779b7ba60aaf931a38672f93ccc78";
+  const signature = createHmac("sha256", secret).update(rawToken).digest("base64");
+  return `${rawToken}.${signature}`;
+}
 
 export const test = base.extend<{
   loggedInPage: void;
@@ -32,11 +42,11 @@ export const test = base.extend<{
       },
     });
 
-    // 2. Set the cookie in the browser context
+    // 2. Set the cookie in the browser context with cryptographic HMAC signature
     await page.context().addCookies([
       {
         name: "better-auth.session_token",
-        value: sessionToken,
+        value: signSessionToken(sessionToken),
         url: process.env.APP_URL ?? "http://localhost:3000",
       },
     ]);

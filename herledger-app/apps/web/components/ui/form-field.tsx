@@ -328,6 +328,7 @@ export function FormField({
         autoComplete={autoComplete}
         required={required}
         disabled={disabled}
+        aria-label={label}
       />
       {description && <Field.Hint>{description}</Field.Hint>}
       {error && <Field.Error>{error}</Field.Error>}

@@ -17,7 +17,8 @@ import { defineConfig, devices } from "@playwright/test";
 // ---------------------------------------------------------------------------
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  fullyParallel: !process.env.CI,
+  ...(process.env.CI ? { workers: 1 } : {}),
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["dot"], ["html", { outputFolder: "playwright-report" }]] : "list",

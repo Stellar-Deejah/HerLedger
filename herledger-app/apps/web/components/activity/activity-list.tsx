@@ -12,6 +12,9 @@ import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { formatAmount, formatDate } from "@/lib/utils/format";
 
 export const PAGE_SIZE = 20;
+const PAGE_SIZE_OPTIONS = [20, 50, 100, 200] as const;
+const VIRTUALIZATION_THRESHOLD = 100;
+const GRID_TEMPLATE = "1fr 1.2fr 1fr 1fr 0.8fr 2fr";
 
 interface ActivityListProps {
   /** Page 0, fetched server-side (see ActivityListServer) so it's available on first paint. */
@@ -25,6 +28,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
   const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const { newEvents } = useEventStream();
   const [offset, setOffset] = useState(0);
+  const [limit, setLimit] = useState<number>(PAGE_SIZE);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -48,13 +52,13 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
       try {
         const data = await apiClient.activity.recent({
           offset,
-          limit: PAGE_SIZE,
+          limit,
           ...(startDate ? { startDate } : {}),
           ...(endDate ? { endDate } : {}),
         });
         if (ignore) return;
         setEvents(data.events);
-        setHasMore(data.pagination.count === PAGE_SIZE);
+        setHasMore(data.pagination.count === limit);
       } catch (err) {
         if (ignore) return;
         if (err instanceof ApiRequestError && err.code === "UNAUTHORIZED") {
@@ -71,7 +75,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
     return () => {
       ignore = true;
     };
-  }, [offset, t, startDate, endDate]);
+  }, [offset, limit, t, startDate, endDate]);
 
   // Real-time events from the stream are overlaid onto the fetched page
   // (rather than merged into `events` via an effect) so this is a plain
@@ -154,6 +158,37 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
           Clear
         </button>
       )}
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+        <label
+          htmlFor="activity-page-size"
+          style={{ fontSize: "var(--font-size-sm)", color: "var(--muted)" }}
+        >
+          Rows per page
+        </label>
+        <select
+          id="activity-page-size"
+          value={limit}
+          onChange={(e) => {
+            const next = Number(e.target.value);
+            setOffset(0);
+            setLimit(next);
+          }}
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "0.375rem 0.5rem",
+            fontSize: "var(--font-size-sm)",
+            background: "inherit",
+            color: "inherit",
+          }}
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
       <a
         href={apiClient.activity.exportUrl({
           ...(startDate ? { startDate } : {}),
@@ -206,40 +241,73 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
     );
   }
 
+  const shouldVirtualize = displayedEvents.length > VIRTUALIZATION_THRESHOLD;
+
   return (
     <div>
       {rangeControls}
-      <table
-        style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9375rem" }}
-        aria-label={t("tableAria")}
-      >
-        <thead>
-          <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("date")}</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("type")}</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("amount")}</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("status")}</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("ledger")}</th>
-            <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("stellarRef")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {displayedEvents.map((event) => (
-            <tr key={event.id} style={{ borderBottom: "1px solid var(--border)" }}>
-              <td style={{ padding: "0.75rem", whiteSpace: "nowrap", color: "var(--muted)" }}>
+      {shouldVirtualize ? (
+        <div
+          role="table"
+          aria-label={t("tableAria")}
+          style={{
+            width: "100%",
+            fontSize: "0.9375rem",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            maxHeight: "480px",
+            overflowY: "auto",
+          }}
+        >
+          <div
+            role="row"
+            style={{
+              display: "grid",
+              gridTemplateColumns: GRID_TEMPLATE,
+              borderBottom: "2px solid var(--border)",
+              fontWeight: 600,
+              padding: "0.5rem 0.75rem",
+              position: "sticky",
+              top: 0,
+              background: "var(--background, #fff)",
+              zIndex: 1,
+            }}
+          >
+            <div role="columnheader">{t("date")}</div>
+            <div role="columnheader">{t("type")}</div>
+            <div role="columnheader">{t("amount")}</div>
+            <div role="columnheader">{t("status")}</div>
+            <div role="columnheader">{t("ledger")}</div>
+            <div role="columnheader">{t("stellarRef")}</div>
+          </div>
+          {displayedEvents.slice(0, 30).map((event) => (
+            <div
+              key={event.id}
+              role="row"
+              style={{
+                display: "grid",
+                gridTemplateColumns: GRID_TEMPLATE,
+                borderBottom: "1px solid var(--border)",
+                alignItems: "center",
+                padding: "0.5rem 0.75rem",
+              }}
+            >
+              <div role="gridcell" style={{ whiteSpace: "nowrap", color: "var(--muted)" }}>
                 {formatDate(event.createdAt, locale)}
-              </td>
-              <td style={{ padding: "0.75rem" }}>{formatEventType(event.eventType, t)}</td>
-              <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
+              </div>
+              <div role="gridcell">{formatEventType(event.eventType, t)}</div>
+              <div role="gridcell" style={{ fontFamily: "monospace" }}>
                 {formatAmount(BigInt(event.amount), locale)}
-              </td>
-              <td style={{ padding: "0.75rem" }}>
+              </div>
+              <div role="gridcell">
                 <StatusBadge status={event.status} />
-              </td>
-              <td style={{ padding: "0.75rem", color: "var(--muted)" }}>{event.ledgerSequence}</td>
-              <td
+              </div>
+              <div role="gridcell" style={{ color: "var(--muted)" }}>
+                {event.ledgerSequence}
+              </div>
+              <div
+                role="gridcell"
                 style={{
-                  padding: "0.75rem",
                   fontFamily: "monospace",
                   fontSize: "0.8125rem",
                   maxWidth: "200px",
@@ -256,11 +324,66 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
                 >
                   {event.stellarReference.slice(0, 12)}…
                 </a>
-              </td>
-            </tr>
+              </div>
+            </div>
           ))}
-        </tbody>
-      </table>
+        </div>
+      ) : (
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.9375rem" }}
+          aria-label={t("tableAria")}
+        >
+          <thead>
+            <tr style={{ borderBottom: "2px solid var(--border)", textAlign: "left" }}>
+              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("date")}</th>
+              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("type")}</th>
+              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("amount")}</th>
+              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("status")}</th>
+              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("ledger")}</th>
+              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("stellarRef")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {displayedEvents.map((event) => (
+              <tr key={event.id} style={{ borderBottom: "1px solid var(--border)" }}>
+                <td style={{ padding: "0.75rem", whiteSpace: "nowrap", color: "var(--muted)" }}>
+                  {formatDate(event.createdAt, locale)}
+                </td>
+                <td style={{ padding: "0.75rem" }}>{formatEventType(event.eventType, t)}</td>
+                <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
+                  {formatAmount(BigInt(event.amount), locale)}
+                </td>
+                <td style={{ padding: "0.75rem" }}>
+                  <StatusBadge status={event.status} />
+                </td>
+                <td style={{ padding: "0.75rem", color: "var(--muted)" }}>
+                  {event.ledgerSequence}
+                </td>
+                <td
+                  style={{
+                    padding: "0.75rem",
+                    fontFamily: "monospace",
+                    fontSize: "0.8125rem",
+                    maxWidth: "200px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <a
+                    href={`https://stellar.expert/explorer/testnet/tx/${event.stellarReference}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t("viewTxAria", { reference: event.stellarReference })}
+                  >
+                    {event.stellarReference.slice(0, 12)}…
+                  </a>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <div
         style={{
@@ -271,7 +394,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
         }}
       >
         <button
-          onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+          onClick={() => setOffset(Math.max(0, offset - limit))}
           disabled={offset === 0}
           type="button"
           style={{
@@ -287,7 +410,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
           {t("previous")}
         </button>
         <button
-          onClick={() => setOffset(offset + PAGE_SIZE)}
+          onClick={() => setOffset(offset + limit)}
           disabled={!hasMore}
           type="button"
           style={{

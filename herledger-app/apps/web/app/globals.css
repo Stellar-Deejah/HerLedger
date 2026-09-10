@@ -177,6 +177,7 @@ a:hover {
    from it so the reduced-motion rule is honored app-wide in one place.
 --------------------------------------------------------------------------- */
 .skeleton {
+  display: inline-block;
   background-color: var(--color-muted-bg);
   border-radius: var(--radius-sm);
   animation: skeleton-pulse 1.6s ease-in-out infinite;

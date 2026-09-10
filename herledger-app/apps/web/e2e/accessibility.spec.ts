@@ -8,52 +8,35 @@ import {
   seedAuthenticatedUser,
 } from "./helpers/seed";
 
-const test = base;
+interface AccessibilityFixtures {
+  seededUser: { userId: string };
+}
+
+const test = base.extend<AccessibilityFixtures>({
+  seededUser: [
+    async ({ context, baseURL, page }, provide) => {
+      const { userId, sessionToken } = await seedAuthenticatedUser();
+      await addSessionCookie(context, sessionToken, baseURL ?? "http://localhost:3000");
+      await mockEventStream(page);
+
+      await provide({ userId });
+
+      await cleanupSeed(userId);
+    },
+    { auto: true },
+  ],
+});
 
 // ---------------------------------------------------------------------------
 // axe-core sweep of every /dashboard route (issue #8 acceptance criteria).
-//
-// Overview, Activity, and Attestations (below, in their own describe block)
-// were converted to Server Components by issue #11's RSC migration — their
-// initial data now loads during SSR via a real auth.api.getSession() +
-// Prisma call, not a browser-side fetch(), so page.route()-based session/
-// data mocking can no longer reach them (a fake, unsigned session cookie
-// fails better-auth's signature check server-side, and the resulting
-// redirect-to-sign-in collides with middleware's "already have a cookie"
-// redirect-back-to-dashboard check, producing ERR_TOO_MANY_REDIRECTS).
-// These three seed a real session + rows via ./helpers/seed instead, the
-// same way e2e/attestations.spec.ts does.
-//
-// Business, Disputes, Settings, and the pre-wallet-connection Attestation
-// pages are unaffected by that migration (still client-fetched, or don't
-// fetch at all) and keep the original fixture/mockSession approach.
-//
-// Scope: fails the build on "critical" or "serious" impact violations, which
-// is what the issue asks for. "moderate"/"minor" findings aren't asserted on
-// here — see the PR description for known gaps that still need manual
-// screen-reader verification.
+// All dashboard routes are protected by middleware proxy.ts and require a
+// valid signed session in Postgres. The auto fixture above ensures every
+// test runs with a real seeded session and signed HMAC cookie.
 // ---------------------------------------------------------------------------
-
-const SESSION_FIXTURE = {
-  user: {
-    id: "e2e-user",
-    email: "e2e-user@example.com",
-    name: "E2E User",
-    emailVerified: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  session: {
-    id: "e2e-session",
-    userId: "e2e-user",
-    expiresAt: new Date(Date.now() + 86_400_000).toISOString(),
-  },
-};
 
 // DashboardNav opens an SSE connection on every /dashboard/* route via
 // useEventStream; keep it inert rather than leaving it to hit the real
-// (unmocked) endpoint on the dev server. Needed by both describe blocks
-// below regardless of how the session itself is set up.
+// (unmocked) endpoint on the dev server.
 async function mockEventStream(page: Page) {
   await page.route("**/api/events/stream", async (route) => {
     await route.fulfill({
@@ -62,24 +45,6 @@ async function mockEventStream(page: Page) {
       body: ":\n\n",
     });
   });
-}
-
-async function mockSession(page: Page) {
-  await page.context().addCookies([
-    {
-      name: "better-auth.session_token",
-      value: "e2e-fixture-session",
-      url: process.env.APP_URL ?? "http://localhost:3000",
-    },
-  ]);
-  await page.route("**/api/auth/get-session", async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(SESSION_FIXTURE),
-    });
-  });
-  await mockEventStream(page);
 }
 
 async function runAxe(page: Page) {
@@ -103,10 +68,6 @@ async function runAxe(page: Page) {
 }
 
 test.describe("Dashboard accessibility (axe-core)", () => {
-  test.beforeEach(async ({ page }) => {
-    await mockSession(page);
-  });
-
   test("business profile registration form has no critical/serious violations", async ({
     page,
   }) => {
@@ -196,53 +157,26 @@ test.describe("Dashboard accessibility (axe-core)", () => {
     await expect(page.getByRole("heading", { name: "Create attestation" })).toBeVisible();
     await runAxe(page);
   });
-});
 
-interface RscFixtures {
-  seededUser: { userId: string };
-}
-
-const rscTest = base.extend<RscFixtures>({
-  seededUser: async ({ context, baseURL, page }, provide) => {
-    const { userId, sessionToken } = await seedAuthenticatedUser();
-    await addSessionCookie(context, sessionToken, baseURL ?? "http://localhost:3000");
-    await mockEventStream(page);
-
-    await provide({ userId });
-
-    await cleanupSeed(userId);
-  },
-});
-
-rscTest.describe("Dashboard accessibility (axe-core) — RSC routes", () => {
-  rscTest.afterAll(async () => {
+  test.afterAll(async () => {
     await disconnectSeedClient();
   });
 
-  rscTest(
-    "dashboard summary has no critical/serious violations",
-    async ({ page, seededUser: _u }) => {
-      await page.goto("/dashboard");
-      await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-      await runAxe(page);
-    }
-  );
+  test("dashboard summary has no critical/serious violations", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await runAxe(page);
+  });
 
-  rscTest(
-    "financial activity list has no critical/serious violations",
-    async ({ page, seededUser: _u }) => {
-      await page.goto("/dashboard/activity");
-      await expect(page.getByRole("heading", { name: "Financial Activity" })).toBeVisible();
-      await runAxe(page);
-    }
-  );
+  test("financial activity list has no critical/serious violations", async ({ page }) => {
+    await page.goto("/dashboard/activity");
+    await expect(page.getByRole("heading", { name: "Financial Activity" })).toBeVisible();
+    await runAxe(page);
+  });
 
-  rscTest(
-    "attestations list has no critical/serious violations",
-    async ({ page, seededUser: _u }) => {
-      await page.goto("/dashboard/attestations");
-      await expect(page.getByRole("heading", { name: "Attestations" })).toBeVisible();
-      await runAxe(page);
-    }
-  );
+  test("attestations list has no critical/serious violations", async ({ page }) => {
+    await page.goto("/dashboard/attestations");
+    await expect(page.getByRole("heading", { name: "Attestations" })).toBeVisible();
+    await runAxe(page);
+  });
 });
