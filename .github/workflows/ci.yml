@@ -360,8 +360,15 @@ jobs:
       - name: Install Stellar CLI
         run: |
           if ! command -v stellar >/dev/null 2>&1; then
-            cargo install stellar-cli@26.1.0 --allow-dirty || cargo install stellar-cli
+            if curl -fsSL -o /tmp/stellar-cli.deb https://github.com/stellar/stellar-cli/releases/download/v26.1.0/stellar-cli_26.1.0_amd64.deb; then
+              sudo dpkg -i /tmp/stellar-cli.deb || sudo apt-get install -f -y
+            else
+              cargo install --locked stellar-cli@26.1.0 || cargo install stellar-cli@26.1.0
+            fi
+            mkdir -p ~/.cargo/bin
+            sudo cp -n "$(which stellar)" ~/.cargo/bin/stellar 2>/dev/null || true
           fi
+          stellar --version
 
       - name: Build contracts
         run: ./scripts/build.sh

@@ -55,12 +55,12 @@ function findCssFiles(dir) {
 
 function main() {
   const budgetKb = parseBudgetKb();
-  const cssDir = join(process.cwd(), ".next", "static", "css");
-  const cssFiles = findCssFiles(cssDir);
+  const staticDir = join(process.cwd(), ".next", "static");
+  const cssFiles = findCssFiles(staticDir);
 
   if (cssFiles.length === 0) {
     console.error(
-      `[css-budget] No CSS files found under ${cssDir}. Run "next build" first, ` +
+      `[css-budget] No CSS files found under ${staticDir}. Run "next build" first, ` +
         `or the build output location has changed and this script needs updating.`
     );
     process.exit(1);
