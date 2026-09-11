@@ -10,7 +10,7 @@
 
 > **Non-custodial, verifiable financial history and reputation for women-owned businesses, powered by the Stellar blockchain and Soroban smart contracts.**
 
-HerLedger gives women entrepreneurs a tamper-resistant, portable record of their commercial activity — anchored to real Stellar transactions and accredited third-party attestations — without requiring a legacy banking relationship or credit bureau intermediary.
+HerLedger gives women entrepreneurs a tamper-resistant, portable record of their commercial activity anchored to real Stellar transactions and accredited third-party attestations without requiring a legacy banking relationship or credit bureau intermediary.
 
 ---
 
