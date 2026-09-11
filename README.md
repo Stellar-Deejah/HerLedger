@@ -42,7 +42,7 @@ HerLedger gives women entrepreneurs a tamper-resistant, portable record of their
 
 Women entrepreneurs own over 33% of formal businesses and more than 50% of micro-enterprises in emerging markets. Yet according to the **International Finance Corporation (IFC)** and the **World Bank**, women-owned businesses face a staggering **$1.7 trillion unmet financing gap**.
 
-The bottleneck is rarely commercial viability — it is **verifiability**:
+The bottleneck is rarely commercial viability ; it is **verifiability**:
 - **No Credit Bureau Footprint**: Emerging market entrepreneurs frequently operate in cash, mobile money, or localized digital accounts that never report to formal credit rating agencies.
 - **Collateral Bias**: Traditional banking systems demand physical real estate or asset pledges that female founders disproportionately lack due to customary property laws.
 - **Siloed & Alterable Records**: Paper invoices, informal ledgers, and proprietary transaction receipts are easily forged, lost, or dismissed as unverifiable by institutional microfinance lenders.
