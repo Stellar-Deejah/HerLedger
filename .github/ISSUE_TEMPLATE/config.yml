@@ -1,0 +1,8 @@
+﻿blank_issues_enabled: false
+contact_links:
+  - name: GrantFox Community Platform
+    url: https://contribute.grantfox.xyz
+    about: Explore active bounties, contribution campaigns, and milestone escrows.
+  - name: Trustless Work Escrow Viewer
+    url: https://viewer.trustlesswork.com
+    about: Inspect on-chain escrow contracts and milestone proofs on Stellar.
