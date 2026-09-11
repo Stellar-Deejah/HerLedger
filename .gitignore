@@ -1,29 +1,27 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 .pnpm-store/
 
 # Build outputs
+target/
 dist/
 .next/
 out/
 build/
 storybook-static/
 
-# Environment
+# Environment files
 .env
 .env.local
 .env.*.local
 apps/web/.env.local
-
-# Database
-prisma/migrations/dev/
 
 # Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
 
-# Editor & Tools
+# Editor & Tooling
 .vscode/
 .idea/
 *.swp
@@ -31,17 +29,15 @@ pnpm-debug.log*
 .kilo/
 *.kilo
 
-# OS
+# Operating System
 .DS_Store
 Thumbs.db
 
-# Test
+# Test & Coverage
 coverage/
 playwright-report/
 test-results/
+test_snapshots/
 
 # TypeScript
 *.tsbuildinfo
-
-# Generated SDK API docs (pnpm --filter @herledger/sdk docs)
-packages/sdk/docs/
