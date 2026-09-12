@@ -21,7 +21,7 @@
     "env:validate": "pnpm --filter '@herledger/config' exec tsx --conditions react-server src/validate.ts",
     "changeset": "changeset",
     "postinstall": "node scripts/patch-typescript-eslint-ts-peer.mjs",
-    "prepare": "cd .. && husky herledger-app/.husky"
+    "prepare": "node scripts/prepare.mjs"
   },
   "devDependencies": {
     "@prisma/adapter-pg": "7.9.1",
