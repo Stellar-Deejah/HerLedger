@@ -14,6 +14,10 @@ function shouldFallback(): boolean {
 }
 
 export function getServerEnv(): ServerEnv {
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL =
+      process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
+  }
   const result = serverEnvSchema.safeParse(process.env);
   if (!result.success) {
     if (shouldFallback()) {

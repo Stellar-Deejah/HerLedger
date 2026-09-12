@@ -26,7 +26,10 @@ function shouldFallback(): boolean {
 }
 
 function buildDatabaseUrl(): string {
-  const raw = process.env["DATABASE_URL"];
+  const raw =
+    process.env["DATABASE_URL"] ||
+    process.env["POSTGRES_PRISMA_URL"] ||
+    process.env["POSTGRES_URL"];
   if (!raw) {
     if (shouldFallback()) {
       return "postgresql://mock:mock@localhost:5432/mock";
