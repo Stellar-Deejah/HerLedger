@@ -16,7 +16,7 @@ HerLedger gives women entrepreneurs a tamper-resistant, portable record of their
 
 ## Table of Contents
 
-1. [Grants Executive Summary](#grants-executive-summary)
+1. [ Executive Summary](#executive-summary)
    - [The Global Credit Gap ($1.7 Trillion)](#the-global-credit-gap-17-trillion)
    - [The HerLedger Solution](#the-herledger-solution)
    - [Why Stellar & Soroban?](#why-stellar--soroban)
@@ -27,7 +27,7 @@ HerLedger gives women entrepreneurs a tamper-resistant, portable record of their
    - [Hybrid Privacy Architecture](#hybrid-privacy-architecture)
 3. [System Architecture](#system-architecture)
 4. [Current Project Status & CI Verification](#current-project-status--ci-verification)
-5. [Grant Roadmap & Milestones](#grant-roadmap--milestones)
+5. [ Roadmap & Milestones](#grant-roadmap--milestones)
 6. [Evaluator Quickstart (Run & Verify in 5 Mins)](#evaluator-quickstart-run--verify-in-5-mins)
 7. [Repository Structure](#repository-structure)
 8. [Local Development Setup](#local-development-setup)
@@ -36,7 +36,7 @@ HerLedger gives women entrepreneurs a tamper-resistant, portable record of their
 
 ---
 
-## Grants Executive Summary
+##  Executive Summary
 
 ### The Global Credit Gap ($1.7 Trillion)
 
