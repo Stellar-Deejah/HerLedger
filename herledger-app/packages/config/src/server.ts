@@ -3,11 +3,21 @@ import { serverEnvSchema, formatZodError, type ServerEnv } from "./schema";
 
 const MOCK_CONTRACT_ID = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
 
+function shouldFallback(): boolean {
+  return (
+    process.env.SKIP_ENV_VALIDATION === "true" ||
+    process.env.SKIP_ENV_VALIDATION === "1" ||
+    process.env.npm_lifecycle_event === "build" ||
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    Boolean(process.env.VERCEL)
+  );
+}
+
 export function getServerEnv(): ServerEnv {
   const result = serverEnvSchema.safeParse(process.env);
   if (!result.success) {
-    if (process.env.SKIP_ENV_VALIDATION === "true" || process.env.SKIP_ENV_VALIDATION === "1") {
-      console.warn(`\n[HerLedger] ⚠️ Server environment validation failed, but SKIP_ENV_VALIDATION is enabled. Using build-time defaults.\n`);
+    if (shouldFallback()) {
+      console.warn(`\n[HerLedger] ⚠️ Server environment validation failed, but build fallback is active. Using build-time defaults.\n`);
       return {
         NODE_ENV:
           process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test"

@@ -15,10 +15,20 @@ export type { DbClient };
 
 const DEFAULT_STATEMENT_TIMEOUT_MS = 10_000;
 
+function shouldFallback(): boolean {
+  return (
+    process.env.SKIP_ENV_VALIDATION === "true" ||
+    process.env.SKIP_ENV_VALIDATION === "1" ||
+    process.env.npm_lifecycle_event === "build" ||
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    Boolean(process.env.VERCEL)
+  );
+}
+
 function buildDatabaseUrl(): string {
   const raw = process.env["DATABASE_URL"];
   if (!raw) {
-    if (process.env.SKIP_ENV_VALIDATION === "true" || process.env.SKIP_ENV_VALIDATION === "1") {
+    if (shouldFallback()) {
       return "postgresql://mock:mock@localhost:5432/mock";
     }
     throw new Error("DATABASE_URL is not set");

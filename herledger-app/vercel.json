@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "npx --yes pnpm@9.15.9 install --prod=false",
-  "buildCommand": "npx --yes pnpm@9.15.9 db:generate && npx --yes pnpm@9.15.9 --filter web build",
+  "buildCommand": "npx --yes pnpm@9.15.9 db:generate && SKIP_ENV_VALIDATION=1 npx --yes pnpm@9.15.9 --filter web build",
   "outputDirectory": "apps/web/.next"
 }

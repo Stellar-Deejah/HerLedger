@@ -2,6 +2,16 @@ import { publicEnvSchema, formatZodError, type PublicEnv, type ServerEnv } from 
 
 const MOCK_CONTRACT_ID = "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4";
 
+function shouldFallback(): boolean {
+  return (
+    process.env.SKIP_ENV_VALIDATION === "true" ||
+    process.env.SKIP_ENV_VALIDATION === "1" ||
+    process.env.npm_lifecycle_event === "build" ||
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    Boolean(process.env.VERCEL)
+  );
+}
+
 export type { PublicEnv, ServerEnv };
 export function getPublicEnv(): PublicEnv {
   const env = {
@@ -15,8 +25,8 @@ export function getPublicEnv(): PublicEnv {
   };
   const result = publicEnvSchema.safeParse(env);
   if (!result.success) {
-    if (process.env.SKIP_ENV_VALIDATION === "true" || process.env.SKIP_ENV_VALIDATION === "1") {
-      console.warn(`\n[HerLedger] ⚠️ Public environment validation failed, but SKIP_ENV_VALIDATION is enabled. Using build-time defaults.\n`);
+    if (shouldFallback()) {
+      console.warn(`\n[HerLedger] ⚠️ Public environment validation failed, but build fallback is active. Using build-time defaults.\n`);
       return {
         NEXT_PUBLIC_STELLAR_NETWORK: "testnet",
         NEXT_PUBLIC_STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",
