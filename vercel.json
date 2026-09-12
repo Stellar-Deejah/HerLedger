@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "buildCommand": "cd herledger-app && pnpm install && pnpm db:generate && pnpm --filter web build",
+  "outputDirectory": "herledger-app/apps/web/.next"
+}

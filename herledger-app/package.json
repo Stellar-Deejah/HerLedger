@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build",
+    "build": "pnpm db:generate && pnpm --filter web build",
+    "vercel-build": "pnpm db:generate && pnpm --filter web build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
@@ -30,6 +31,7 @@
     "eslint": "9.18.0",
     "husky": "9.1.7",
     "lint-staged": "17.3.0",
+    "next": "16.3.1",
     "prettier": "3.4.2",
     "prisma": "7.9.1",
     "tsx": "4.19.2",

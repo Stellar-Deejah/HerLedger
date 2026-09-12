@@ -1,0 +1,12 @@
+{
+  "name": "herledger-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "cd herledger-app && pnpm db:generate && pnpm --filter web build",
+    "vercel-build": "cd herledger-app && pnpm install && pnpm db:generate && pnpm --filter web build"
+  },
+  "devDependencies": {
+    "next": "16.3.1"
+  }
+}

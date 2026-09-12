@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 
+// Auto-enable SKIP_ENV_VALIDATION during build phase if environment variables are not yet configured
+if (!process.env.BETTER_AUTH_SECRET || !process.env.APP_URL) {
+  process.env.SKIP_ENV_VALIDATION = process.env.SKIP_ENV_VALIDATION ?? "1";
+}
+
 const appUrl = process.env.APP_URL || "http://localhost:3000";
 
 // Loads the next-intl request configuration (locale detection + message

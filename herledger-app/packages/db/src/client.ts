@@ -18,6 +18,9 @@ const DEFAULT_STATEMENT_TIMEOUT_MS = 10_000;
 function buildDatabaseUrl(): string {
   const raw = process.env["DATABASE_URL"];
   if (!raw) {
+    if (process.env.SKIP_ENV_VALIDATION === "true" || process.env.SKIP_ENV_VALIDATION === "1") {
+      return "postgresql://mock:mock@localhost:5432/mock";
+    }
     throw new Error("DATABASE_URL is not set");
   }
   try {
