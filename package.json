@@ -2,9 +2,14 @@
   "name": "herledger-monorepo",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20.19.0 || ^22.12.0 || >=24.0.0",
+    "pnpm": ">=9"
+  },
   "scripts": {
-    "build": "cd herledger-app && pnpm db:generate && pnpm --filter web build",
-    "vercel-build": "cd herledger-app && pnpm install && pnpm db:generate && pnpm --filter web build"
+    "build": "npx --yes pnpm@9.15.9 --prefix herledger-app db:generate && npx --yes pnpm@9.15.9 --prefix herledger-app --filter web build",
+    "vercel-build": "npx --yes pnpm@9.15.9 --prefix herledger-app install && npx --yes pnpm@9.15.9 --prefix herledger-app db:generate && npx --yes pnpm@9.15.9 --prefix herledger-app --filter web build"
   },
   "devDependencies": {
     "next": "16.3.1"
