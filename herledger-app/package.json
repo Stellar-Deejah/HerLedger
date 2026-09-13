@@ -18,7 +18,7 @@
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma && tsx prisma/data-migrations/runner.ts",
     "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "db:seed": "tsx prisma/seed.ts",
-    "env:validate": "pnpm --filter '@herledger/config' exec tsx --conditions react-server src/validate.ts",
+    "env:validate": "pnpm --filter @herledger/config exec tsx --conditions react-server src/validate.ts",
     "changeset": "changeset",
     "postinstall": "node scripts/patch-typescript-eslint-ts-peer.mjs",
     "prepare": "node scripts/prepare.mjs"

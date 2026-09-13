@@ -26,7 +26,9 @@ export function getPublicEnv(): PublicEnv {
   const result = publicEnvSchema.safeParse(env);
   if (!result.success) {
     if (shouldFallback()) {
-      console.warn(`\n[HerLedger] ⚠️ Public environment validation failed, but build fallback is active. Using build-time defaults.\n`);
+      console.warn(
+        `\n[HerLedger] ⚠️ Public environment validation failed, but build fallback is active. Using build-time defaults.\n`
+      );
       return {
         NEXT_PUBLIC_STELLAR_NETWORK: "testnet",
         NEXT_PUBLIC_STELLAR_RPC_URL: "https://soroban-testnet.stellar.org",

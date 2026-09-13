@@ -15,13 +15,14 @@ function shouldFallback(): boolean {
 
 export function getServerEnv(): ServerEnv {
   if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL =
-      process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
+    process.env.DATABASE_URL = process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL;
   }
   const result = serverEnvSchema.safeParse(process.env);
   if (!result.success) {
     if (shouldFallback()) {
-      console.warn(`\n[HerLedger] ⚠️ Server environment validation failed, but build fallback is active. Using build-time defaults.\n`);
+      console.warn(
+        `\n[HerLedger] ⚠️ Server environment validation failed, but build fallback is active. Using build-time defaults.\n`
+      );
       return {
         NODE_ENV:
           process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test"
@@ -36,12 +37,16 @@ export function getServerEnv(): ServerEnv {
         EMAIL_FROM: process.env.EMAIL_FROM || "HerLedger <onboarding@resend.dev>",
         STELLAR_NETWORK: process.env.STELLAR_NETWORK === "mainnet" ? "mainnet" : "testnet",
         STELLAR_RPC_URLS: process.env.STELLAR_RPC_URLS || "https://soroban-testnet.stellar.org",
-        STELLAR_HORIZON_URL: process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org",
-        STELLAR_NETWORK_PASSPHRASE: process.env.STELLAR_NETWORK_PASSPHRASE || "Test SDF Network ; September 2015",
+        STELLAR_HORIZON_URL:
+          process.env.STELLAR_HORIZON_URL || "https://horizon-testnet.stellar.org",
+        STELLAR_NETWORK_PASSPHRASE:
+          process.env.STELLAR_NETWORK_PASSPHRASE || "Test SDF Network ; September 2015",
         INDEXER_API_URL: process.env.INDEXER_API_URL || "http://localhost:4000",
-        BUSINESS_REGISTRY_CONTRACT_ID: process.env.BUSINESS_REGISTRY_CONTRACT_ID || MOCK_CONTRACT_ID,
+        BUSINESS_REGISTRY_CONTRACT_ID:
+          process.env.BUSINESS_REGISTRY_CONTRACT_ID || MOCK_CONTRACT_ID,
         FINANCIAL_LEDGER_CONTRACT_ID: process.env.FINANCIAL_LEDGER_CONTRACT_ID || MOCK_CONTRACT_ID,
-        ATTESTATION_REGISTRY_CONTRACT_ID: process.env.ATTESTATION_REGISTRY_CONTRACT_ID || MOCK_CONTRACT_ID,
+        ATTESTATION_REGISTRY_CONTRACT_ID:
+          process.env.ATTESTATION_REGISTRY_CONTRACT_ID || MOCK_CONTRACT_ID,
       };
     }
     const issues = formatZodError(result.error);
