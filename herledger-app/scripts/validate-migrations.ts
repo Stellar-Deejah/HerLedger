@@ -18,8 +18,9 @@ function main() {
 
   // Use the same environment variables or rely on GHA setup
   // Note: --to-schema is the Prisma flag for the schema path
+  const pnpmCmd = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
   const diffResult = spawnSync(
-    "pnpm",
+    pnpmCmd,
     [
       "exec",
       "prisma",
@@ -35,6 +36,7 @@ function main() {
       cwd: rootDir,
       env: process.env,
       encoding: "utf-8",
+      shell: true,
     }
   );
 

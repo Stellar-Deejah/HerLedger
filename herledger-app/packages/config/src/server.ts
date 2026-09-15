@@ -9,7 +9,7 @@ function shouldFallback(): boolean {
     process.env.SKIP_ENV_VALIDATION === "1" ||
     process.env.npm_lifecycle_event === "build" ||
     process.env.NEXT_PHASE === "phase-production-build" ||
-    Boolean(process.env.VERCEL)
+    process.env.CI === "true"
   );
 }
 
@@ -28,7 +28,7 @@ export function getServerEnv(): ServerEnv {
           process.env.NODE_ENV === "production" || process.env.NODE_ENV === "test"
             ? process.env.NODE_ENV
             : "development",
-        APP_URL: process.env.APP_URL || "https://her-ledger.vercel.app",
+        APP_URL: process.env.APP_URL || "http://localhost:3000",
         DATABASE_URL: process.env.DATABASE_URL || "postgresql://mock:mock@localhost:5432/mock",
         BETTER_AUTH_SECRET:
           process.env.BETTER_AUTH_SECRET ||

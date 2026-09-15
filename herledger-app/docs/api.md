@@ -113,7 +113,7 @@ Zod validation is colocated in route files for simplicity (e.g., `app/api/activi
 ### Rate Limiting
 
 - **Strategy**: Sliding window, 60 requests per 60-second window, per-user (keyed by `userId` from the Better Auth session; unauthenticated callers are bucketed by `x-forwarded-for` IP).
-- **Storage**: In-memory `Map` for local dev/test; Vercel KV (`KV_REST_API_URL` / `KV_REST_API_TOKEN`) in production — the `lib/rate-limit.ts` interface is storage-agnostic and falls back to memory if KV is unavailable.
+- **Storage**: In-memory `Map` for local dev/test; distributed KV (`KV_REST_API_URL` / `KV_REST_API_TOKEN`) in production — the `lib/rate-limit.ts` interface is storage-agnostic and falls back to memory if KV is unavailable.
 - **Wrapper**: `withRateLimit(handler, { windowMs: 60000, max: 60 })` extracts the user ID safely via `auth.api.getSession({ headers: await headers() })` without interfering with the auth middleware's own session handling; a cached patch ensures the inner handler sees the same session without requiring a second `mockResolvedValueOnce` in tests.
 - **Headers**:
   - `Retry-After` (seconds) on `429` — when to retry, derived from the oldest timestamp in the window.

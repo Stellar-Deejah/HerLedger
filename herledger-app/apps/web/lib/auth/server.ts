@@ -100,10 +100,10 @@ export const auth = betterAuth({
     disableOriginCheck: false,
     // Rate limiting (and session IP recording) key off the resolved client
     // IP. Without this, Better Auth can't reliably read it from behind a
-    // proxy (Vercel, or any reverse proxy) and every client collapses onto
+    // proxy (reverse proxy, load balancer, or CDN) and every client collapses onto
     // one shared bucket -- confirmed empirically: omitting this made 6
     // sign-in attempts from 3 different test IPs all land in the same
-    // rate-limit counter. x-forwarded-for is what Vercel/Next.js set.
+    // rate-limit counter. x-forwarded-for is standard for reverse proxies.
     ipAddress: {
       ipAddressHeaders: ["x-forwarded-for"],
     },

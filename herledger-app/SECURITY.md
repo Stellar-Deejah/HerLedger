@@ -142,7 +142,7 @@ production for real financial data without a professional security review.
     (no Redis/Upstash).
   - **Client IP resolution**: `advanced.ipAddress.ipAddressHeaders: ["x-forwarded-for"]`.
     Without this, Better Auth can't reliably read the client IP from
-    behind a proxy (Vercel or any reverse proxy) — confirmed empirically
+    behind a reverse proxy or load balancer — confirmed empirically
     against the real handler: omitting it collapsed every caller onto one
     shared rate-limit bucket regardless of IP, which would either lock out
     unrelated users sharing an edge/proxy or (worse) make the whole limit
@@ -214,7 +214,7 @@ exists in the database, so a forged or DB-revoked cookie sailed through.
   this cookie — can still be accepted at the edge for up to `maxAge` after
   the cache was last populated. 30 seconds keeps that window small without
   forcing a DB hit on every single dashboard navigation. There is no
-  separate Edge KV store in this stack (no Cloudflare/Vercel Edge Config or
+  separate Edge KV store in this stack (no external Edge Config or
   similar is provisioned), so the cookie cache is the lightest mechanism
   available that still bounds staleness to a known, documented number.
 - **Latency**: no real p99 benchmark of dashboard cold-load latency was run

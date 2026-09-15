@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "installCommand": "npx --yes pnpm@9.15.9 install --prod=false",
-  "buildCommand": "npx --yes pnpm@9.15.9 db:generate && SKIP_ENV_VALIDATION=1 npx --yes pnpm@9.15.9 --filter web build && node -e \"const fs=require('fs'); if (!fs.existsSync('.next')) { try { fs.symlinkSync('apps/web/.next','.next','junction'); } catch(e) { fs.cpSync('apps/web/.next','.next',{recursive:true}); } }\"",
-  "outputDirectory": "apps/web/.next"
-}

@@ -8,12 +8,10 @@
     "pnpm": ">=6"
   },
   "scripts": {
-    "build": "npx --yes pnpm@9.15.9 --prefix herledger-app db:generate && npx --yes pnpm@9.15.9 --prefix herledger-app --filter web build",
-    "vercel-build": "npx --yes pnpm@9.15.9 --prefix herledger-app install --prod=false && npx --yes pnpm@9.15.9 --prefix herledger-app db:generate && npx --yes pnpm@9.15.9 --prefix herledger-app --filter web build"
-  },
-  "dependencies": {
-    "next": "16.3.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "build": "pnpm --prefix herledger-app build",
+    "lint": "pnpm --prefix herledger-app lint",
+    "typecheck": "pnpm --prefix herledger-app typecheck",
+    "test": "pnpm --prefix herledger-app test",
+    "format": "pnpm --prefix herledger-app format"
   }
 }

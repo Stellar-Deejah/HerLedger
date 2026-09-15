@@ -443,7 +443,7 @@ E2E tests must not depend on Mainnet ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â use 
 
 > **Statement timeout:** the indexer connects to Postgres with a statement_timeout (default 10s) appended to DATABASE_URL at runtime, configurable via DB_STATEMENT_TIMEOUT_MS. This kills a slow or locked query instead of holding its connection (and pool slot) indefinitely. Timed-out queries are logged as errors -- see indexer/src/db/client.ts.
 
-### Frontend ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Vercel (or equivalent)
+### Frontend — Production Deployment (Node / Docker / Container)
 
 | Setting        | Value                     |
 | -------------- | ------------------------- |
@@ -452,7 +452,7 @@ E2E tests must not depend on Mainnet ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â use 
 | Start command  | `pnpm --filter web start` |
 | Node version   | 20.x or 22.x              |
 
-Set all environment variables in the Vercel dashboard.
+Set all environment variables in your hosting environment or container configuration.
 
 - Never expose `DATABASE_URL` or `BETTER_AUTH_SECRET` as `NEXT_PUBLIC_*`.
 - All NEXT*PUBLIC*`*` variables must also be set.
@@ -1439,7 +1439,7 @@ E2E tests must not depend on Mainnet ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â use 
 
 > **Statement timeout:** the indexer connects to Postgres with a statement_timeout (default 10s) appended to DATABASE_URL at runtime, configurable via DB_STATEMENT_TIMEOUT_MS. This kills a slow or locked query instead of holding its connection (and pool slot) indefinitely. Timed-out queries are logged as errors -- see indexer/src/db/client.ts.
 
-### Frontend ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Vercel (or equivalent)
+### Frontend — Production Deployment (Node / Docker / Container)
 
 | Setting        | Value                     |
 | -------------- | ------------------------- |
@@ -1448,7 +1448,7 @@ E2E tests must not depend on Mainnet ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â use 
 | Start command  | `pnpm --filter web start` |
 | Node version   | 20.x or 22.x              |
 
-Set all environment variables in the Vercel dashboard.
+Set all environment variables in your hosting environment or container configuration.
 
 - Never expose `DATABASE_URL` or `BETTER_AUTH_SECRET` as `NEXT_PUBLIC_*`.
 - All NEXT*PUBLIC*`*` variables must also be set.
@@ -2476,7 +2476,7 @@ E2E tests must not depend on Mainnet — use Testnet or mocks.
 
 > **Per-ledger batch writes:** the indexer batches `StellarTransaction` and `FinancialEvent` writes per ledger using `createMany` with `skipDuplicates: true` (PostgreSQL only) instead of issuing per-row `upsert`s -- a single DB round-trip per model per ledger. `skipDuplicates` also makes re-indexing already-synced ledgers safe (duplicates are silently ignored rather than raising unique-constraint errors). Each payment's Stellar transaction plus its derived financial events are written inside a single `prisma.$transaction(...)`, so a partial write failure rolls back the whole payment and the raw ledger never diverges from the events derived from it. Status transitions (Pending → Verified) still flow through the explicit status-update path -- see indexer/src/db/schema/financial-events.ts and indexer/src/index/financial-events.ts.
 
-### Frontend — Vercel (or equivalent)
+### Frontend — Production Deployment (Node / Docker / Container)
 
 | Setting        | Value                     |
 | -------------- | ------------------------- |
@@ -2485,7 +2485,7 @@ E2E tests must not depend on Mainnet — use Testnet or mocks.
 | Start command  | `pnpm --filter web start` |
 | Node version   | 20.x or 22.x              |
 
-Set all environment variables in the Vercel dashboard.
+Set all environment variables in your hosting environment or container configuration.
 
 - Never expose `DATABASE_URL` or `BETTER_AUTH_SECRET` as `NEXT_PUBLIC_*`.
 - All NEXT*PUBLIC*`*` variables must also be set.

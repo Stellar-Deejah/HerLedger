@@ -21,7 +21,7 @@ function shouldFallback(): boolean {
     process.env.SKIP_ENV_VALIDATION === "1" ||
     process.env.npm_lifecycle_event === "build" ||
     process.env.NEXT_PHASE === "phase-production-build" ||
-    Boolean(process.env.VERCEL)
+    process.env.CI === "true"
   );
 }
 

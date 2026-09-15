@@ -1,0 +1,25 @@
+FROM node:22-slim AS base
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+
+FROM base AS builder
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/config/package.json packages/config/package.json
+COPY packages/db/package.json packages/db/package.json
+COPY packages/sdk/package.json packages/sdk/package.json
+COPY indexer/package.json indexer/package.json
+COPY scripts ./scripts
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm db:generate
+RUN SKIP_ENV_VALIDATION=1 pnpm --filter web build
+
+FROM base AS runner
+ENV NODE_ENV=production
+WORKDIR /app
+COPY --from=builder /app ./
+EXPOSE 3000
+CMD ["pnpm", "--filter", "web", "start"]

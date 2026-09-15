@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "pnpm --filter web dev",
     "build": "pnpm db:generate && pnpm --filter web build",
-    "vercel-build": "pnpm db:generate && pnpm --filter web build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "format": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",

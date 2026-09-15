@@ -26,10 +26,10 @@ export interface RateLimitResult {
 const DEFAULT_WINDOW_MS = 60_000;
 const DEFAULT_MAX = 60;
 
-// In-memory store for local dev / test. In production with Vercel KV
-// available (`KV_REST_API_URL` set), this would be replaced by a KV-backed
-// implementation — the interface is intentionally storage-agnostic so the
-// wrapper below does not need to change when KV is introduced.
+// In-memory store for local dev / test. In production with distributed KV / Redis
+// available (`KV_REST_API_URL` set), this can be replaced by a distributed store —
+// the interface is intentionally storage-agnostic so the wrapper below does not
+// need to change when a distributed store is introduced.
 type TimestampWindow = number[];
 const memoryStore = new Map<string, TimestampWindow>();
 
@@ -57,7 +57,7 @@ function pruneWindow(win: TimestampWindow, windowMs: number, now: number): void 
 /**
  * Core sliding-window check. Returns whether the request is allowed and
  * when the window resets. This is the pure algorithm; storage is the
- * in-memory Map above, or Vercel KV in production.
+ * in-memory Map above, or distributed KV in production.
  */
 export function checkRateLimit(
   key: string,
@@ -94,7 +94,7 @@ export function checkRateLimit(
 }
 
 /**
- * Async variant that would consult Vercel KV in production. For now it
+ * Async variant that would consult distributed KV in production. For now it
  * delegates to the synchronous `checkRateLimit` — the shape is async so a
  * future KV implementation can be dropped in without changing callers.
  */

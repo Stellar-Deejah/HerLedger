@@ -1,7 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
-  "installCommand": "npm install",
-  "buildCommand": "npx --yes pnpm@9.15.9 --prefix herledger-app install --prod=false && npx --yes pnpm@9.15.9 --prefix herledger-app db:generate && SKIP_ENV_VALIDATION=1 npx --yes pnpm@9.15.9 --prefix herledger-app --filter web build && node -e \"const fs=require('fs'); if (!fs.existsSync('.next')) { try { fs.symlinkSync('herledger-app/apps/web/.next','.next','junction'); } catch(e) { fs.cpSync('herledger-app/apps/web/.next','.next',{recursive:true}); } }\"",
-  "outputDirectory": "herledger-app/apps/web/.next"
-}
