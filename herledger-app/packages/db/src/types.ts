@@ -6,6 +6,7 @@ import type {
   FinancialEvent,
   IndexerError,
   PrismaClient,
+  StellarTransaction,
   User,
 } from "@prisma/client";
 
@@ -236,6 +237,7 @@ export interface IndexerErrorsRepository {
 
 export interface StellarTransactionsRepository {
   upsert(input: UpsertStellarTransactionInput): Promise<void>;
+  findByHash(hash: string): Promise<StellarTransaction | null>;
 }
 
 export interface UsersRepository {
@@ -245,6 +247,7 @@ export interface UsersRepository {
 
 export interface DisputesRepository {
   findByEventId(eventId: string): Promise<Dispute | null>;
+  findAllByEventId(eventId: string): Promise<Dispute[]>;
   create(data: CreateDisputeInput): Promise<Dispute>;
 }
 

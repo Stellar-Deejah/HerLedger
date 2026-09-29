@@ -6,6 +6,8 @@ import {
   cleanupSeed,
   disconnectSeedClient,
   seedAuthenticatedUser,
+  seedBusinessProfile,
+  seedFinancialEvent,
 } from "./helpers/seed";
 
 interface AccessibilityFixtures {
@@ -177,6 +179,18 @@ test.describe("Dashboard accessibility (axe-core)", () => {
   test("attestations list has no critical/serious violations", async ({ page }) => {
     await page.goto("/dashboard/attestations");
     await expect(page.getByRole("heading", { name: "Attestations" })).toBeVisible();
+    await runAxe(page);
+  });
+
+  test("financial event detail has no critical/serious violations", async ({
+    page,
+    seededUser,
+  }) => {
+    const { businessId } = await seedBusinessProfile(seededUser.userId);
+    const { eventId } = await seedFinancialEvent(businessId);
+
+    await page.goto(`/dashboard/activity/${eventId}`);
+    await expect(page.getByRole("link", { name: "View on Stellar Expert" })).toBeVisible();
     await runAxe(page);
   });
 });

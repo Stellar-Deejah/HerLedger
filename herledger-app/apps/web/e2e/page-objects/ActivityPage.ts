@@ -19,9 +19,11 @@ export class ActivityPage {
   }
 
   async getEventRow(eventId: string): Promise<Locator> {
-    // Assuming rows can be identified by the event ID or a generic test id.
-    // Playwright recommends user-facing attributes where possible.
-    return this.page.locator(`tr:has-text("${eventId.slice(0, 8)}")`);
+    // The table never renders the raw on-chain eventId as text (only a
+    // formatted date/type/amount/status and the *stellarReference*), so a
+    // text-based locator can't target a row -- use the stable test id
+    // ActivityList sets on each <tr> instead.
+    return this.page.locator(`[data-testid="activity-row-${eventId}"]`);
   }
 
   async clickEvent(eventId: string) {

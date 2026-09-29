@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -8,6 +9,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useEventStream } from "@/hooks/use-event-stream";
+import { Link, useRouter } from "@/i18n/navigation";
 import { apiClient, ApiRequestError } from "@/lib/api/client";
 import { formatAmount, formatDate } from "@/lib/utils/format";
 
@@ -18,6 +20,12 @@ const PAGE_SIZE_OPTIONS = [20, 50, 100, 200] as const;
 const VIRTUALIZATION_THRESHOLD = 100;
 const GRID_TEMPLATE = "1fr 1.2fr 1fr 1fr 0.8fr 2fr";
 
+// Cast needed: typedRoutes can't statically validate a dynamic segment built
+// from a runtime value, only literal route strings.
+function detailHref(eventId: string): Route {
+  return `/dashboard/activity/${eventId}` as Route;
+}
+
 interface ActivityListProps {
   /** Page 0, fetched server-side (see ActivityListServer) so it's available on first paint. */
   initialEvents: FinancialEventDto[];
@@ -27,6 +35,7 @@ interface ActivityListProps {
 export function ActivityList({ initialEvents, initialHasMore }: ActivityListProps) {
   const t = useTranslations("activity");
   const locale = useLocale();
+  const router = useRouter();
   const [events, setEvents] = useState<FinancialEventDto[]>(initialEvents);
   const { newEvents } = useEventStream();
   const [offset, setOffset] = useState(0);
@@ -263,6 +272,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
         >
           <div
             role="row"
+            className="activity-grid-row"
             style={{
               display: "grid",
               gridTemplateColumns: GRID_TEMPLATE,
@@ -279,36 +289,53 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
             <div role="columnheader">{t("type")}</div>
             <div role="columnheader">{t("amount")}</div>
             <div role="columnheader">{t("status")}</div>
-            <div role="columnheader">{t("ledger")}</div>
-            <div role="columnheader">{t("stellarRef")}</div>
+            <div role="columnheader" className="activity-col-secondary">
+              {t("ledger")}
+            </div>
+            <div role="columnheader" className="activity-col-secondary">
+              {t("stellarRef")}
+            </div>
           </div>
           {displayedEvents.slice(0, 30).map((event) => (
+            // Mouse-only convenience: keyboard/screen-reader access to the
+            // detail page goes through the real <Link> in the Type cell.
             <div
               key={event.id}
               role="row"
+              className="activity-grid-row"
+              data-testid={`activity-row-${event.eventId}`}
+              onClick={() => router.push(detailHref(event.eventId))}
               style={{
                 display: "grid",
                 gridTemplateColumns: GRID_TEMPLATE,
                 borderBottom: "1px solid var(--border)",
                 alignItems: "center",
                 padding: "0.5rem 0.75rem",
+                cursor: "pointer",
               }}
             >
               <div role="gridcell" style={{ whiteSpace: "nowrap", color: "var(--muted)" }}>
                 {formatDate(event.createdAt, locale)}
               </div>
-              <div role="gridcell">{formatEventType(event.eventType, t)}</div>
+              <div role="gridcell">
+                <Link href={detailHref(event.eventId)}>{formatEventType(event.eventType, t)}</Link>
+              </div>
               <div role="gridcell" style={{ fontFamily: "monospace" }}>
                 {formatAmount(BigInt(event.amount), locale)}
               </div>
               <div role="gridcell">
                 <StatusBadge status={event.status} />
               </div>
-              <div role="gridcell" style={{ color: "var(--muted)" }}>
+              <div
+                role="gridcell"
+                className="activity-col-secondary"
+                style={{ color: "var(--muted)" }}
+              >
                 {event.ledgerSequence}
               </div>
               <div
                 role="gridcell"
+                className="activity-col-secondary"
                 style={{
                   fontFamily: "monospace",
                   fontSize: "0.8125rem",
@@ -323,6 +350,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={t("viewTxAria", { reference: event.stellarReference })}
+                  onClick={(e) => e.stopPropagation()}
                 >
                   {event.stellarReference.slice(0, 12)}…
                 </a>
@@ -341,27 +369,52 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
               <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("type")}</th>
               <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("amount")}</th>
               <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("status")}</th>
-              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("ledger")}</th>
-              <th style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}>{t("stellarRef")}</th>
+              <th
+                className="activity-col-secondary"
+                style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}
+              >
+                {t("ledger")}
+              </th>
+              <th
+                className="activity-col-secondary"
+                style={{ padding: "0.5rem 0.75rem", fontWeight: 600 }}
+              >
+                {t("stellarRef")}
+              </th>
             </tr>
           </thead>
           <tbody>
             {displayedEvents.map((event) => (
-              <tr key={event.id} style={{ borderBottom: "1px solid var(--border)" }}>
+              // Mouse-only convenience: keyboard/screen-reader access to the
+              // detail page goes through the real <Link> in the Type cell.
+              <tr
+                key={event.id}
+                data-testid={`activity-row-${event.eventId}`}
+                onClick={() => router.push(detailHref(event.eventId))}
+                style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}
+              >
                 <td style={{ padding: "0.75rem", whiteSpace: "nowrap", color: "var(--muted)" }}>
                   {formatDate(event.createdAt, locale)}
                 </td>
-                <td style={{ padding: "0.75rem" }}>{formatEventType(event.eventType, t)}</td>
+                <td style={{ padding: "0.75rem" }}>
+                  <Link href={detailHref(event.eventId)}>
+                    {formatEventType(event.eventType, t)}
+                  </Link>
+                </td>
                 <td style={{ padding: "0.75rem", fontFamily: "monospace" }}>
                   {formatAmount(BigInt(event.amount), locale)}
                 </td>
                 <td style={{ padding: "0.75rem" }}>
                   <StatusBadge status={event.status} />
                 </td>
-                <td style={{ padding: "0.75rem", color: "var(--muted)" }}>
+                <td
+                  className="activity-col-secondary"
+                  style={{ padding: "0.75rem", color: "var(--muted)" }}
+                >
                   {event.ledgerSequence}
                 </td>
                 <td
+                  className="activity-col-secondary"
                   style={{
                     padding: "0.75rem",
                     fontFamily: "monospace",
@@ -377,6 +430,7 @@ export function ActivityList({ initialEvents, initialHasMore }: ActivityListProp
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={t("viewTxAria", { reference: event.stellarReference })}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {event.stellarReference.slice(0, 12)}…
                   </a>

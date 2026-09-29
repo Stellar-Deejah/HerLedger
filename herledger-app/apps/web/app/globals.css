@@ -273,3 +273,19 @@ a:hover {
   background: rgba(0, 0, 0, 0.4);
   z-index: 90;
 }
+
+/* Responsive table columns: secondary columns (e.g. Ledger, Stellar ref in
+   ActivityList) are hidden below this width rather than wrapped in a
+   horizontal-scroll container, so narrow viewports lose no keyboard-focusable
+   content to an off-screen scroll area. */
+@media (max-width: 767px) {
+  .activity-col-secondary {
+    display: none;
+  }
+
+  /* The virtualized ActivityList sets its 6-column grid template inline;
+     drop to the 4 primary columns so hidden cells don't shift the rest. */
+  .activity-grid-row {
+    grid-template-columns: 1fr 1.2fr 1fr 1fr !important;
+  }
+}
