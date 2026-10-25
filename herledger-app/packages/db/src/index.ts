@@ -66,6 +66,7 @@ export {
 
 export {
   upsertStellarTransaction,
+  findStellarTransactionByHash,
   createStellarTransactionsRepository,
 } from "./repositories/stellar-transactions";
 
@@ -73,6 +74,7 @@ export { findUserById, deleteUserAccount, createUsersRepository } from "./reposi
 
 export {
   findDisputeByEventId,
+  findAllDisputesByEventId,
   createDispute,
   createDisputesRepository,
 } from "./repositories/disputes";

@@ -83,6 +83,7 @@ export function createMockDbClient(overrides?: Partial<DbClient>): DbClient {
 
   const mockStellarTransactions: StellarTransactionsRepository = {
     upsert: vi.fn().mockResolvedValue(undefined),
+    findByHash: vi.fn().mockResolvedValue(null),
     ...overrides?.stellarTransactions,
   };
 
@@ -94,6 +95,7 @@ export function createMockDbClient(overrides?: Partial<DbClient>): DbClient {
 
   const mockDisputes: DisputesRepository = {
     findByEventId: vi.fn().mockResolvedValue(null),
+    findAllByEventId: vi.fn().mockResolvedValue([]),
     create: vi.fn().mockResolvedValue({}),
     ...overrides?.disputes,
   };

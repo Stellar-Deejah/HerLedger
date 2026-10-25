@@ -8,7 +8,7 @@
     "pnpm": ">=6"
   },
   "scripts": {
-    "build": "pnpm --prefix herledger-app build",
+    "build": "node api.js && pnpm --prefix herledger-app build",
     "lint": "pnpm --prefix herledger-app lint",
     "typecheck": "pnpm --prefix herledger-app typecheck",
     "test": "pnpm --prefix herledger-app test",
