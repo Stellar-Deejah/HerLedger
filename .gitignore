@@ -11,8 +11,6 @@ build/
 storybook-static/
 
 # Environment files
-.env
-.env.local
 .env.*.local
 apps/web/.env.local
 
@@ -22,7 +20,6 @@ npm-debug.log*
 pnpm-debug.log*
 
 # Editor & Tooling
-.vscode/
 .idea/
 *.swp
 *.swo
@@ -41,3 +38,4 @@ test_snapshots/
 
 # TypeScript
 *.tsbuildinfo
+config.bat
